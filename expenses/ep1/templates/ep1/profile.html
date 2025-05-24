@@ -1,0 +1,28 @@
+{% extends 'ep1/base.html' %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="container py-4">
+  <h2>Hồ Sơ của tôi</h2>
+  <form method="post">
+    {% csrf_token %}
+    <h5>Thông tin tài khoản</h5>
+    <div class="mb-3">
+      <label>Email</label>
+      {{ u_form.email|add_class:"form-control" }}
+      {{ u_form.email.errors }}
+    </div>
+
+    <hr>
+    <h5>Thông tin cá nhân</h5>
+    {% for field in p_form %}
+      <div class="mb-3">
+        <label>{{ field.label }}</label>
+        {{ field|add_class:"form-control" }}
+        {{ field.errors }}
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Lưu hồ sơ</button>
+  </form>
+</div>
+{% endblock %}

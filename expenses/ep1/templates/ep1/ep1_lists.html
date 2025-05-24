@@ -1,0 +1,115 @@
+{% extends 'ep1/base.html' %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-6">
+    <h2><i class="fas fa-list me-2"></i>Danh sách chi tiêu</h2>
+  </div>
+  <div class="col-md-6 text-end">
+    <form method="post" class="d-inline-block me-2">
+      {% csrf_token %}
+      <div class="input-group input-group-sm d-inline-flex align-items-stretch">
+        <span class="input-group-text">₫</span>
+        {{ b_form.total }} 
+        <button name="budget_submit" class="btn btn-success" type="submit">
+          <i class="fas fa-wallet"></i>
+        </button>
+      </div>
+    </form>
+    <a href="{% url 'ep1:add_ep1' %}" class="btn btn-primary">
+      <i class="fas fa-plus me-1"></i> Thêm mới
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-table me-1"></i> Chi tiêu gần đây
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Số tiền</th>
+                        <th>Mô tả</th>
+                        <th>Danh mục</th>
+                        <th>Ngày</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses %}
+                    <tr>
+                        <td>{{ expense.amount|floatformat:0 }} ₫</td>
+                        <td>{{ expense.description|truncatechars:30 }}</td>
+                        <td>
+                            <span class="badge bg-primary">
+                                {{ expense.category }}
+                            </span>
+                        </td>
+                        <td>{{ expense.date|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="{% url 'ep1:edit_ep1' expense.id %}" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa" data-bs-toggle="tooltip">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'ep1:delete_ep1' expense.id %}" class="btn btn-sm btn-outline-danger" title="Xóa" data-bs-toggle="tooltip">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Không có chi tiêu nào được ghi nhận</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê -->
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card border-left-primary h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-primary fw-bold">Tổng chi tiêu</h6>
+                        <h3 class="mb-0">{{ total_spent|floatformat:0 }} ₫</h3>
+                    </div>
+                    <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card border-left-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-success fw-bold">Chi nhiều nhất</h6>
+                        <h3 class="mb-0">{{ top_category }}</h3>
+                    </div>
+                    <i class="fas fa-utensils fa-2x text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card border-left-info h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-info fw-bold">Ngân sách còn lại</h6>
+                        <h3 class="mb-0">{{ remaining|floatformat:0 }} ₫</h3>
+                    </div>
+                    <i class="fas fa-wallet fa-2x text-gray-300"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

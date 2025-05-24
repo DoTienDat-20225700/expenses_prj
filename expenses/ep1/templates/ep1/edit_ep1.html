@@ -1,0 +1,73 @@
+{% extends 'ep1/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-edit me-1"></i> Chỉnh sửa chi tiêu
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_amount" class="form-label">Số tiền (₫)</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="amount" id="id_amount" 
+                                       required step="1000" min="1000" value="{{ form.amount.value }}">
+                                <span class="input-group-text">₫</span>
+                                <div class="invalid-feedback">
+                                    Vui lòng nhập số tiền hợp lệ (tối thiểu 1,000₫)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_date" class="form-label">Ngày chi tiêu</label>
+                            <input type="date" class="form-control" name="date" id="id_date" 
+                                   required value="{{ form.date.value|date:'Y-m-d' }}">
+                            <div class="invalid-feedback">
+                                Vui lòng chọn ngày
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label">Mô tả</label>
+                        <textarea class="form-control" name="description" id="id_description" 
+                                  rows="3">{{ form.description.value }}</textarea>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_category" class="form-label">Danh mục</label>
+                        <select class="form-select" name="category" id="id_category" required>
+                            <option value="" disabled>-- Chọn danh mục --</option>
+                            {% for category in form.category.field.queryset %}
+                                <option value="{{ category.id }}" 
+                                    {% if form.category.value == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">
+                            Vui lòng chọn danh mục
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'ep1:ep1_lists' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Hủy bỏ
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Cập nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
