@@ -1,4 +1,5 @@
 {% extends 'ep1/base.html' %}
+{% load humanize %}
 {% block content %}
 <div class="row mb-4">
   <div class="col-md-6">
@@ -20,53 +21,86 @@
     </a>
   </div>
 </div>
+<!-- Danh sách -->
+<form method="get">
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Số tiền</th>
+            <th>Mô tả</th>
+            <th>Danh mục</th>
+            <th>Ngày</th>
+            <th>Hành động</th>
+        </tr>
+        <tr>
+            <!-- Sắp xếp số tiền -->
+            <th>
+              <select name="sort_amount" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">---</option>
+                <option value="asc" {% if sort_amount == 'asc' %}selected{% endif %}>Tăng dần</option>
+                <option value="desc" {% if sort_amount == 'desc' %}selected{% endif %}>Giảm dần</option>
+              </select>
+            </th>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="fas fa-table me-1"></i> Chi tiêu gần đây
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Số tiền</th>
-                        <th>Mô tả</th>
-                        <th>Danh mục</th>
-                        <th>Ngày</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for expense in expenses %}
-                    <tr>
-                        <td>{{ expense.amount|floatformat:0 }} ₫</td>
-                        <td>{{ expense.description|truncatechars:30 }}</td>
-                        <td>
-                            <span class="badge bg-primary">
-                                {{ expense.category }}
-                            </span>
-                        </td>
-                        <td>{{ expense.date|date:"d/m/Y" }}</td>
-                        <td>
-                            <a href="{% url 'ep1:edit_ep1' expense.id %}" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa" data-bs-toggle="tooltip">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="{% url 'ep1:delete_ep1' expense.id %}" class="btn btn-sm btn-outline-danger" title="Xóa" data-bs-toggle="tooltip">
-                                <i class="fas fa-trash-alt"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center">Không có chi tiêu nào được ghi nhận</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+            <th></th>
+
+            <!-- Lọc danh mục -->
+            <th>
+              <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Tất cả</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+              </select>
+            </th>
+
+            <!-- Lọc khoảng ngày -->
+            <th>
+              <div class="d-flex gap-1">
+                <input type="date" name="date_from" class="form-control form-control-sm" 
+                       value="{{ date_from }}" onchange="this.form.submit()" 
+                       placeholder="Từ ngày" />
+                <input type="date" name="date_to" class="form-control form-control-sm" 
+                       value="{{ date_to }}" onchange="this.form.submit()" 
+                       placeholder="Đến ngày" />
+              </div>
+              <select name="sort_date" class="form-select form-select-sm mt-1" onchange="this.form.submit()">
+                <option value="">---</option>
+                <option value="asc" {% if sort_date == 'asc' %}selected{% endif %}>Tăng dần</option>
+                <option value="desc" {% if sort_date == 'desc' %}selected{% endif %}>Giảm dần</option>
+              </select>
+            </th>
+
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+      {% for expense in expenses %}
+      <tr>
+          <td>{{ expense.amount|floatformat:0|intcomma:0 }} ₫</td>
+          <td>{{ expense.description|truncatechars:30 }}</td>
+          <td>
+              <span class="badge bg-primary">{{ expense.category }}</span>
+          </td>
+          <td>{{ expense.date|date:"d/m/Y" }}</td>
+          <td>
+              <a href="{% url 'ep1:edit_ep1' expense.id %}" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa" data-bs-toggle="tooltip">
+                  <i class="fas fa-edit"></i>
+              </a>
+              <a href="{% url 'ep1:delete_ep1' expense.id %}" class="btn btn-sm btn-outline-danger" title="Xóa" data-bs-toggle="tooltip">
+                  <i class="fas fa-trash-alt"></i>
+              </a>
+          </td>
+      </tr>
+      {% empty %}
+      <tr>
+          <td colspan="5" class="text-center">Không có chi tiêu nào được ghi nhận</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+</table>
+    <a href="{% url 'ep1:ep1_lists' %}" class="btn btn-sm btn-secondary">Bỏ lọc</a>
+</form>
 
 <!-- Thống kê -->
 <div class="row">
@@ -76,7 +110,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-primary fw-bold">Tổng chi tiêu</h6>
-                        <h3 class="mb-0">{{ total_spent|floatformat:0 }} ₫</h3>
+                        <h3 class="mb-0">{{ total_spent|floatformat:0|intcomma:0 }} ₫</h3>
                     </div>
                     <i class="fas fa-calendar fa-2x text-gray-300"></i>
                 </div>
@@ -104,7 +138,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-info fw-bold">Ngân sách còn lại</h6>
-                        <h3 class="mb-0">{{ remaining|floatformat:0 }} ₫</h3>
+                            <h3 class="mb-0">{{ remaining|floatformat:0|intcomma:0}} ₫</h3>
                     </div>
                     <i class="fas fa-wallet fa-2x text-gray-300"></i>
                 </div>
@@ -112,4 +146,202 @@
         </div>
     </div>
 </div>
+
+<!--Biểu đồ  -->
+<div class="row mb-4">
+    <!-- Biểu đồ tròn (Pie chart) -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-1"></i> Biểu đồ chi tiêu theo danh mục
+            </div>
+            <div class="card-body" style="max-width: 100%; max-height: 400px;">
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ cột theo ngày (Bar chart) -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-1"></i> Biểu đồ cột chi tiêu theo ngày
+            </div>
+            <div class="card-body" style="max-width: 100%; max-height: 400px;">
+                <canvas id="barChartDay"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Pie chart
+    const ctxPie = document.getElementById('expenseChart').getContext('2d');
+    new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Chi tiêu (₫)',
+                data: {{ chart_data|safe }},
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.7)',
+                    'rgba(28, 200, 138, 0.7)',
+                    'rgba(54, 185, 204, 0.7)',
+                    'rgba(246, 194, 62, 0.7)',
+                    'rgba(231, 74, 59, 0.7)',
+                    'rgba(133, 135, 150, 0.7)',
+                    'rgba(97, 106, 179, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.parsed.toLocaleString() + ' ₫';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Bar chart theo ngày
+    const ctxBar = document.getElementById('barChartDay').getContext('2d');
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels_day|safe }},
+            datasets: [{
+                label: 'Chi tiêu (₫)',
+                data: {{ chart_data_day|safe }},
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                borderRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' ₫';
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 90,
+                        minRotation: 45,
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toLocaleString() + ' ₫';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Bar chart chi tiêu theo ngày
+    const ctxDay = document.getElementById('barChartDay').getContext('2d');
+    const barChartDay = new Chart(ctxDay, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_labels_day|safe }},
+            datasets: [{
+                label: 'Chi tiêu (₫)',
+                data: {{ chart_data_day|safe }},
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                borderRadius: 4, // bo góc cột cho đẹp
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString() + ' ₫';
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 90,
+                        minRotation: 45,
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toLocaleString() + ' ₫';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.querySelector('input[name="total"]');
+
+    function formatNumber(value) {
+        // Xóa hết ký tự không phải số
+        value = value.replace(/[^\d]/g, "");
+        // Thêm dấu phẩy phân cách hàng nghìn
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    input.addEventListener('input', function(e) {
+        let cursorPosition = input.selectionStart;
+        let oldLength = input.value.length;
+
+        input.value = formatNumber(input.value);
+
+        let newLength = input.value.length;
+        cursorPosition += newLength - oldLength;
+        input.setSelectionRange(cursorPosition, cursorPosition);
+    });
+
+    // Khi submit form, loại bỏ dấu phẩy để gửi dữ liệu đúng định dạng decimal
+    input.closest('form').addEventListener('submit', function() {
+        input.value = input.value.replace(/,/g, '');
+    });
+});
+</script>
+
 {% endblock %}

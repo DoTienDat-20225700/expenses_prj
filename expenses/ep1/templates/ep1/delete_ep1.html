@@ -14,7 +14,7 @@
                 
                 <div class="card mb-4">
                     <div class="card-body">
-                        <p class="mb-1"><strong>Số tiền:</strong> {{ expense.amount|floatformat:0 }} ₫</p>
+                        <p class="mb-1"><strong>Số tiền:</strong> {{ expense.amount|floatformat:0|intcomma:0 }} ₫</p>
                         <p class="mb-1"><strong>Danh mục:</strong> {{ expense.category }}</p>
                         <p class="mb-1"><strong>Ngày:</strong> {{ expense.date|date:"d/m/Y" }}</p>
                         {% if expense.description %}

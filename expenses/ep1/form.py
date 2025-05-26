@@ -33,17 +33,22 @@ class BudgetForm(forms.ModelForm):
         model = Budget
         fields = ['total']
         widgets = {
-            'total': forms.NumberInput(attrs={
+            'total': forms.TextInput(attrs={
                 'class': 'form-control form-control-sm text-end',
-                'style': 'width: 6rem;',  # điều chỉnh rộng vừa đủ
+                'style': 'width: 6rem;',  
                 'min': '0',
-                'step': '1000',
+                'step': '10000',
                 'placeholder': '0'
             }),
         }
         labels = {
             'total': ''
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.total:
+            self.initial['total'] = "{:,.0f}".format(self.instance.total)
 
 class UserUpdateForm(forms.ModelForm):
     email = forms.EmailField(label="Email",

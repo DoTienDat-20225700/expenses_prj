@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
+from django.db.models.functions import TruncDate
 from django.db.models import Sum
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from .models import *
 from .form import *
 from django.contrib import messages
 from django.contrib.auth import get_user
+
 
 def register(request):
     if request.method == 'POST':
@@ -55,30 +58,72 @@ def profile(request):
         'p_form': p_form,
     })
 
-from django.db.models import Sum
-from .models import Expense, Category, Budget
-from .form import ExpenseForm, RegisterForm, BudgetForm
+from django.db.models.functions import TruncDate
 
 @login_required
 def ep1_lists(request):
-    #Lấy danh sách chi tiêu của user
     expenses = Expense.objects.filter(user=request.user)
 
-    #Tổng chi tiêu
+    # Lọc theo danh mục
+    category_id = request.GET.get('category')
+    if category_id:
+        expenses = expenses.filter(category_id=category_id)
+
+    # Lọc theo khoảng ngày
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from and date_to:
+        expenses = expenses.filter(date__range=[date_from, date_to])
+    elif date_from:
+        expenses = expenses.filter(date__gte=date_from)
+    elif date_to:
+        expenses = expenses.filter(date__lte=date_to)
+
+    # Lấy tham số sắp xếp
+    sort_amount = request.GET.get('sort_amount')
+    sort_date = request.GET.get('sort_date')
+
+    # Gom sắp xếp vào 1 list
+    order_fields = []
+    if sort_amount == 'asc':
+        order_fields.append('amount')
+    elif sort_amount == 'desc':
+        order_fields.append('-amount')
+
+    if sort_date == 'asc':
+        order_fields.append('date')
+    elif sort_date == 'desc':
+        order_fields.append('-date')
+
+    # Nếu có sắp xếp thì order, nếu không thì mặc định order theo ngày giảm dần
+    if order_fields:
+        expenses = expenses.order_by(*order_fields)
+    else:
+        expenses = expenses.order_by('-date')
+
+    # Phần còn lại giữ nguyên (tính tổng, category_data...)
     total_spent = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
 
-    #Danh mục chi nhiều nhất
-    top = (expenses
-           .values('category__name')
-           .annotate(total=Sum('amount'))
-           .order_by('-total')
-           .first())
+    category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
+    labels = [item['category__name'] for item in category_data]
+    data = [float(item['total']) for item in category_data]
+
+    from django.db.models.functions import TruncDate
+    daily_data = (
+        expenses
+        .annotate(day=TruncDate('date'))
+        .values('day')
+        .annotate(total=Sum('amount'))
+        .order_by('day')
+    )
+    labels_day = [item['day'].strftime('%d/%m/%Y') for item in daily_data]
+    data_day = [float(item['total']) for item in daily_data]
+
+    top = category_data.first()
     top_category = top['category__name'] if top else '—'
 
-    #Budget: get_or_create (mặc định total=0)
     budget_obj, _ = Budget.objects.get_or_create(user=request.user)
 
-    #Xử lý BudgetForm khi user submit
     if request.method == 'POST' and 'budget_submit' in request.POST:
         b_form = BudgetForm(request.POST, instance=budget_obj)
         if b_form.is_valid():
@@ -87,16 +132,25 @@ def ep1_lists(request):
     else:
         b_form = BudgetForm(instance=budget_obj)
 
-    #Ngân sách còn lại = Budget.total – tổng đã chi
-    remaining = budget_obj.total - total_spent
+    categories = Category.objects.filter(user=request.user)
 
     return render(request, 'ep1/ep1_lists.html', {
-        'expenses':      expenses,
-        'total_spent':   total_spent,
-        'top_category':  top_category,
-        'remaining':     remaining,
-        'b_form':        b_form,
-        'budget_obj':    budget_obj,
+        'expenses': expenses,
+        'total_spent': total_spent,
+        'top_category': top_category,
+        'remaining': budget_obj.total - total_spent,
+        'b_form': b_form,
+        'budget_obj': budget_obj,
+        'chart_labels': labels,
+        'chart_data': data,
+        'chart_labels_day': labels_day,
+        'chart_data_day': data_day,
+        'categories': categories,
+        'selected_category': int(category_id) if category_id else None,
+        'sort_amount': sort_amount,
+        'sort_date': sort_date,
+        'date_from': date_from,
+        'date_to': date_to,
     })
 
 @login_required

@@ -17,8 +17,8 @@
                         <div class="col-md-6">
                             <label for="id_amount" class="form-label">Số tiền (₫)</label>
                             <div class="input-group">
-                                <input type="number" class="form-control" name="amount" id="id_amount" 
-                                       required step="1000" min="1000" value="{{ form.amount.value|default_if_none:'' }}">
+                                <input type="text" class="form-control" name="amount" id="id_amount" 
+                                       required value="{{ form.amount.value|default_if_none:'' }}">
                                 <span class="input-group-text">₫</span>
                                 <div class="invalid-feedback">
                                     Vui lòng nhập số tiền hợp lệ (tối thiểu 1,000₫)
@@ -72,14 +72,12 @@
 </div>
 
 <script>
-// Example starter JavaScript for disabling form submissions if there are invalid fields
+    /* Tự động thêm dấu phẩy mỗi 3 chữ số khi nhập
+       Loại bỏ dấu phẩy khi submit form để gửi về backend giá trị số thuần */
 (function () {
     'use strict'
-    
-    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+
     var forms = document.querySelectorAll('.needs-validation')
-    
-    // Loop over them and prevent submission
     Array.prototype.slice.call(forms)
         .forEach(function (form) {
             form.addEventListener('submit', function (event) {
@@ -87,10 +85,31 @@
                     event.preventDefault()
                     event.stopPropagation()
                 }
-                
                 form.classList.add('was-validated')
             }, false)
         })
-})()
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('id_amount');
+
+    function formatNumberWithCommas(value) {
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    input.addEventListener('input', function() {
+        let value = this.value.replace(/,/g, '');
+        if (isNaN(value)) {
+            this.value = '';
+            return;
+        }
+        this.value = formatNumberWithCommas(value);
+    });
+
+    const form = input.closest('form');
+    form.addEventListener('submit', function() {
+        input.value = input.value.replace(/,/g, '');
+    });
+});
 </script>
 {% endblock %}
