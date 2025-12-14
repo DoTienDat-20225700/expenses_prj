@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'ep1',
+    'app_expenses.apps.AppExpensesConfig',
     'widget_tweaks'
 ]
 
@@ -61,7 +61,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'expenses.urls'
+ROOT_URLCONF = 'expenses.config.urls'
 
 TEMPLATES = [
     {
@@ -78,7 +78,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'expenses.wsgi.application'
+WSGI_APPLICATION = 'expenses.config.wsgi.application'
 
 
 # Database
@@ -131,7 +131,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'expenses/static')]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

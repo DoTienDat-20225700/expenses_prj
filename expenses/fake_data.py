@@ -7,7 +7,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expenses.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from ep1.models import Category, Expense, Budget
+from app_expenses.models import Category, Expense, Budget
 from faker import Faker
 
 fake = Faker('vi_VN')
