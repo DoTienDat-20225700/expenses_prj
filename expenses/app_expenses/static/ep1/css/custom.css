@@ -36,51 +36,6 @@ body {
     font-size: 1.4rem;
 }
 
-/* --- CARDS (Thẻ nội dung) --- */
-.card {
-    border: none;
-    /* Bỏ viền cứng */
-    border-radius: 0.75rem;
-    /* Bo góc mềm hơn */
-    box-shadow: var(--card-shadow);
-    transition: all 0.3s ease-in-out;
-    margin-bottom: 1.5rem;
-}
-
-.card:hover {
-    transform: translateY(-3px);
-    /* Hiệu ứng nổi lên khi di chuột */
-    box-shadow: var(--hover-shadow);
-}
-
-.card-header {
-    background-color: #fff;
-    /* Chuyển nền header sang trắng cho sạch */
-    border-bottom: 1px solid #e3e6f0;
-    font-weight: 700;
-    color: var(--primary-color);
-    padding: 1rem 1.25rem;
-    border-top-left-radius: 0.75rem !important;
-    border-top-right-radius: 0.75rem !important;
-}
-
-/* Các card thống kê có viền màu bên trái */
-.border-left-primary {
-    border-left: 0.25rem solid var(--primary-color) !important;
-}
-
-.border-left-success {
-    border-left: 0.25rem solid var(--success-color) !important;
-}
-
-.border-left-info {
-    border-left: 0.25rem solid var(--info-color) !important;
-}
-
-.border-left-warning {
-    border-left: 0.25rem solid var(--warning-color) !important;
-}
-
 /* --- BẢNG (TABLES) --- */
 .table {
     margin-bottom: 0;
@@ -169,4 +124,113 @@ body {
 /* Đồng bộ màu chữ primary (Ví dụ: số tiền) */
 .text-primary {
     color: var(--primary-color) !important;
+}
+
+/* --- GIAO DIỆN LOGIN / REGISTER --- */
+.auth-wrapper {
+    min-height: 85vh;
+    /* Căn giữa theo chiều dọc */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    border: none;
+    border-radius: 1.5rem;
+    /* Bo góc tròn trịa */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    /* Đổ bóng sâu */
+    background: #fff;
+    transition: transform 0.3s ease;
+}
+
+.auth-card:hover {
+    transform: translateY(-5px);
+    /* Hiệu ứng bay lên nhẹ */
+}
+
+.auth-header-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(16, 185, 129, 0.1);
+    /* Nền xanh nhạt (theo màu Money) */
+    color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 1.5rem auto;
+}
+
+.auth-title {
+    color: var(--dark-text);
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.auth-subtitle {
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+.form-control-lg {
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.form-control-lg:focus {
+    background-color: #fff;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+/* --- CARDS (Thẻ nội dung) --- */
+.card {
+    border: none;
+    /* Bỏ viền cứng */
+    border-radius: 0.75rem;
+    /* Bo góc mềm hơn */
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease-in-out;
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    /* Hiệu ứng nổi lên khi di chuột */
+    box-shadow: var(--hover-shadow);
+}
+
+.card-header {
+    background-color: #fff;
+    /* Chuyển nền header sang trắng cho sạch */
+    border-bottom: 1px solid #e3e6f0;
+    font-weight: 700;
+    color: var(--primary-color);
+    padding: 1rem 1.25rem;
+    border-top-left-radius: 0.75rem !important;
+    border-top-right-radius: 0.75rem !important;
+}
+
+/* Các card thống kê có viền màu bên trái */
+.border-left-primary {
+    border-left: 0.25rem solid var(--primary-color) !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid var(--success-color) !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid var(--info-color) !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid var(--warning-color) !important;
 }
