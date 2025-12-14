@@ -7,67 +7,88 @@
     <title>Quản Lý Chi Tiêu Cá Nhân</title>
 
     <link
-      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
-
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-
     <link rel="stylesheet" href="{% static 'ep1/css/custom.css' %}" />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <nav class="navbar navbar-expand-lg mb-4 sticky-top">
       <div class="container">
-        <a class="navbar-brand" href="{% url 'ep1:ep1_lists' %}">
-          <i class="fas fa-wallet me-2"></i>Quản Lý Chi Tiêu
+        <a
+          class="navbar-brand d-flex align-items-center"
+          href="{% url 'ep1:ep1_lists' %}"
+        >
+          <i class="fas fa-wallet me-2 fa-lg"></i>
+          <span>MoneyManager</span>
         </a>
+
         <button
-          class="navbar-toggler"
+          class="navbar-toggler border-0"
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#navbarNav"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
+          <ul class="navbar-nav ms-auto align-items-center">
+            <li class="nav-item me-2">
+              <button
+                class="btn nav-link"
+                id="theme-toggle"
+                title="Chổi giao diện"
+              >
+                <i class="fas fa-moon" id="theme-icon"></i>
+              </button>
+            </li>
+
             {% if user.is_authenticated %}
             <li class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle"
+                class="nav-link dropdown-toggle btn-user-profile"
                 href="#"
                 id="navbarDropdown"
                 role="button"
                 data-bs-toggle="dropdown"
               >
-                <i class="fas fa-user me-1"></i> {{ user.username }}
+                <i class="fas fa-user-circle me-1"></i> {{ user.username }}
               </a>
-              <ul class="dropdown-menu">
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                 <li>
                   <a class="dropdown-item" href="{% url 'ep1:profile' %}"
-                    >Hồ sơ</a
+                    ><i class="fas fa-id-card me-2 opacity-50"></i>Hồ sơ</a
                   >
                 </li>
                 <li>
                   <a
                     class="dropdown-item"
                     href="{% url 'ep1:password_change' %}"
-                    >Đổi mật khẩu</a
+                    ><i class="fas fa-key me-2 opacity-50"></i>Đổi mật khẩu</a
                   >
                 </li>
                 <li><hr class="dropdown-divider" /></li>
-                <form method="post" action="{% url 'ep1:logout' %}">
-                  {% csrf_token %}
-                  <button type="submit" class="dropdown-item">Đăng xuất</button>
-                </form>
+                <li>
+                  <form
+                    method="post"
+                    action="{% url 'ep1:logout' %}"
+                    class="d-inline"
+                  >
+                    {% csrf_token %}
+                    <button type="submit" class="dropdown-item text-danger">
+                      <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                    </button>
+                  </form>
+                </li>
               </ul>
             </li>
             {% endif %}
@@ -76,13 +97,13 @@
       </div>
     </nav>
 
-    <div class="container">
+    <div class="container main-container">
       {% if messages %} {% for message in messages %}
       <div
-        class="alert alert-{{ message.tags }} alert-dismissible fade show"
+        class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0"
         role="alert"
       >
-        {{ message }}
+        <i class="fas fa-info-circle me-2"></i>{{ message }}
         <button
           type="button"
           class="btn-close"
@@ -98,11 +119,40 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        // 1. Tooltips
         var tooltipTriggerList = [].slice.call(
           document.querySelectorAll('[data-bs-toggle="tooltip"]')
         );
         tooltipTriggerList.map(function (tooltipTriggerEl) {
           return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // 2. Dark Mode Logic
+        const toggleBtn = document.getElementById("theme-toggle");
+        const icon = document.getElementById("theme-icon");
+        const body = document.body;
+
+        // Kiểm tra localStorage xem người dùng đã chọn mode nào chưa
+        const currentTheme = localStorage.getItem("theme");
+
+        if (currentTheme === "dark") {
+          body.classList.add("dark-mode");
+          icon.classList.remove("fa-moon");
+          icon.classList.add("fa-sun");
+        }
+
+        toggleBtn.addEventListener("click", function () {
+          body.classList.toggle("dark-mode");
+
+          if (body.classList.contains("dark-mode")) {
+            icon.classList.remove("fa-moon");
+            icon.classList.add("fa-sun");
+            localStorage.setItem("theme", "dark");
+          } else {
+            icon.classList.remove("fa-sun");
+            icon.classList.add("fa-moon");
+            localStorage.setItem("theme", "light");
+          }
         });
       });
     </script>

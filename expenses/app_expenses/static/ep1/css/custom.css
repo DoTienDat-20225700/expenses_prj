@@ -1,135 +1,320 @@
-/* --- CẤU HÌNH CHUNG --- */
+/* --- 1. CẤU HÌNH BIẾN MÀU (THEMING VARIABLES) --- */
 :root {
-    --primary-color: #10b981;
-    /* Xanh Emerald chủ đạo */
-    --secondary-color: #64748b;
-    --success-color: #059669;
-    --info-color: #0ea5e9;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --light-bg: #f1f5f9;
-    /* Nền hơi xám xanh nhẹ */
-    --dark-text: #334155;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* CHẾ ĐỘ SÁNG (LIGHT MODE) */
+    --primary: #10b981;
+    /* Xanh Emerald */
+    --primary-hover: #059669;
+    --bg-body: #f8fafc;
+    /* Nền trang sáng */
+    --bg-card: #ffffff;
+    /* Nền thẻ trắng */
+    --text-main: #1e293b;
+    /* Chữ đen xám */
+    --text-muted: #64748b;
+    /* Chữ mờ */
+    --border-color: #e2e8f0;
+    /* Viền nhạt */
+    --input-bg: #f1f5f9;
+    /* Nền ô nhập liệu */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --navbar-bg: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --navbar-text: #ffffff;
 }
 
+/* =========================================
+   CHẾ ĐỘ TỐI (DARK MODE) - PHIÊN BẢN FINAL
+   ========================================= */
+body.dark-mode {
+    /* --- 1. Bộ biến màu Dark Mode --- */
+    --primary: #34d399;
+    /* Xanh sáng (Emerald 400) */
+    --primary-hover: #10b981;
+    --bg-body: #0f172a;
+    /* Nền trang tối thẫm */
+    --bg-card: #1e293b;
+    /* Nền thẻ tối */
+
+    --text-main: #f1f5f9;
+    /* Chữ trắng */
+    --text-muted: #cbd5e1;
+    /* Chữ xám sáng */
+
+    --input-bg: #334155;
+    /* Nền ô nhập liệu */
+    --input-text: #f1f5f9;
+    --border-color: #475569;
+    /* Viền xám xanh */
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.7);
+    --navbar-bg: #1e293b;
+    --navbar-text: #f1f5f9;
+}
+
+/* --- 2. Ép nền Thẻ & Form --- */
+body.dark-mode .card,
+body.dark-mode .auth-card,
+body.dark-mode .table-responsive {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main);
+}
+
+/* --- 3. Xử lý Input & Select --- */
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode .input-group-text {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    background-color: var(--input-bg) !important;
+    border-color: var(--primary) !important;
+    color: var(--text-main) !important;
+    box-shadow: 0 0 0 0.25rem rgba(52, 211, 153, 0.25);
+}
+
+/* Icon lịch trong ô chọn ngày */
+body.dark-mode input[type="date"] {
+    color-scheme: dark;
+}
+
+/* Nền menu xổ xuống */
+body.dark-mode select option {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
+/* --- 4. XỬ LÝ BẢNG (TABLE) - KHẮC PHỤC LỖI CHỮ ĐEN --- */
+body.dark-mode .table {
+    --bs-table-bg: transparent !important;
+    --bs-table-color: var(--text-main) !important;
+    /* Biến đè màu chữ của Bootstrap */
+    color: var(--text-main) !important;
+}
+
+/* Ép màu trực tiếp vào từng ô (td, th) để chắc chắn 100% */
+body.dark-mode .table td,
+body.dark-mode .table th {
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+    background-color: transparent !important;
+    /* Tránh bị nền trắng đè lên */
+}
+
+/* --- 5. Chữ mờ & Nút bấm --- */
+body.dark-mode .text-muted {
+    color: var(--text-muted) !important;
+}
+
+body.dark-mode .btn-outline-primary {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+body.dark-mode .btn-outline-primary:hover {
+    background-color: var(--primary) !important;
+    color: #fff !important;
+}
+
+body.dark-mode .btn-outline-danger {
+    color: #f87171 !important;
+    border-color: #f87171 !important;
+}
+
+body.dark-mode .btn-outline-danger:hover {
+    background-color: #ef4444 !important;
+    color: #fff !important;
+}
+
+/* --- XỬ LÝ MENU ADMIN (DROPDOWN) DARK MODE --- */
+
+/* 1. Đổi nền và viền của menu thả xuống */
+body.dark-mode .dropdown-menu {
+    background-color: var(--bg-card);
+    /* Dùng nền tối của thẻ Card */
+    border-color: var(--border-color);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
+    /* Bóng đổ đậm hơn */
+}
+
+/* 2. Đổi màu chữ trong menu */
+body.dark-mode .dropdown-item {
+    color: var(--text-main);
+}
+
+/* 3. Hiệu ứng khi di chuột vào từng mục (Hover) */
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Nền sáng nhẹ */
+    color: var(--primary);
+    /* Chữ chuyển màu xanh chủ đạo */
+}
+
+/* 4. Đổi màu đường gạch ngang phân cách */
+body.dark-mode .dropdown-divider {
+    border-top-color: var(--border-color);
+}
+
+/* 5. (Tùy chọn) Đổi màu icon nhỏ bên trong menu */
+body.dark-mode .dropdown-item i {
+    color: var(--text-muted);
+}
+
+/* --- 2. CẤU TRÚC CHUNG (BASE) --- */
 body {
-    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--light-bg);
-    color: var(--dark-text);
+    font-family: 'Nunito', sans-serif;
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    /* Hiệu ứng chuyển màu mượt */
 }
 
-/* --- NAVBAR --- */
+/* --- 3. NAVBAR --- */
 .navbar {
-    /* Gradient từ Xanh đậm sang Xanh ngọc */
-    background: linear-gradient(135deg, #059669 0%, #34d399 100%);
-    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
-    /* Đổ bóng màu xanh */
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    background: var(--navbar-bg);
+    box-shadow: var(--shadow-md);
+    padding: 0.8rem 0;
 }
 
-.navbar-brand {
+.navbar-brand,
+.nav-link,
+.navbar-toggler-icon {
+    color: var(--navbar-text) !important;
+}
+
+.nav-link:hover {
+    opacity: 0.8;
+}
+
+/* Nút user dropdown đẹp hơn */
+.btn-user-profile {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 5px 15px !important;
+    backdrop-filter: blur(5px);
+}
+
+/* --- 4. CARDS (THẺ) --- */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    background-color: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--primary);
     font-weight: 700;
-    letter-spacing: 0.5px;
-    font-size: 1.4rem;
+    border-top-left-radius: 1rem !important;
+    border-top-right-radius: 1rem !important;
 }
 
-/* --- BẢNG (TABLES) --- */
+/* --- 5. BẢNG DỮ LIỆU (TABLES) --- */
 .table {
+    color: var(--text-main);
     margin-bottom: 0;
-    color: #858796;
 }
 
 .table thead th {
-    background-color: #f1f3f9;
-    color: var(--primary-color);
-    border-bottom: 2px solid #e3e6f0;
-    font-weight: 700;
+    background-color: var(--bg-body);
+    /* Header bảng đổi màu theo nền */
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-color);
     text-transform: uppercase;
-    font-size: 0.85rem;
-    padding: 1rem;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
 }
 
 .table tbody td {
+    border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
-    padding: 1rem;
-    border-top: 1px solid #e3e6f0;
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(78, 115, 223, 0.05);
-    transition: background-color 0.2s;
+    background-color: rgba(16, 185, 129, 0.05);
 }
 
-/* --- BUTTONS & INPUTS --- */
-.btn {
-    border-radius: 0.35rem;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
+/* --- 6. FORM & INPUTS --- */
 .form-control,
 .form-select {
-    border-radius: 0.35rem;
-    padding: 0.6rem 1rem;
-    border: 1px solid #d1d3e2;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 0.5rem;
 }
 
 .form-control:focus,
 .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    background-color: var(--input-bg);
+    border-color: var(--primary);
+    color: var(--text-main);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
-/* --- BADGES (Nhãn danh mục) --- */
-.badge {
-    padding: 0.5em 0.8em;
-    font-weight: 600;
-    border-radius: 1rem;
-    /* Bo tròn hẳn như viên thuốc */
+/* Placeholder màu cho dark mode */
+.form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
 }
 
-/* --- ĐỒNG BỘ MÀU NÚT BẤM (BUTTONS) --- */
-/* Ép nút btn-primary theo màu chủ đạo */
+/* --- 7. BUTTONS --- */
 .btn-primary {
-    background-color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(16, 185, 129, 0.4);
 }
 
 .btn-primary:hover {
-    /* Khi di chuột vào sẽ chuyển sang màu đậm hơn một chút */
-    filter: brightness(90%);
+    background-color: var(--primary-hover) !important;
+    transform: translateY(-1px);
 }
 
-/* Ép nút viền (như nút sửa) theo màu chủ đạo */
-.btn-outline-primary {
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
+.btn-secondary {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-main);
 }
 
-.btn-outline-primary:hover {
-    background-color: var(--primary-color) !important;
-    color: #fff !important;
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    color: var(--text-main);
 }
 
-/* Đồng bộ màu chữ primary (Ví dụ: số tiền) */
+/* --- 8. TEXT UTILS --- */
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
 .text-primary {
-    color: var(--primary-color) !important;
+    color: var(--primary) !important;
 }
 
-/* --- GIAO DIỆN LOGIN / REGISTER --- */
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-main);
+}
+
+/* --- 9. LOGIN / REGISTER SPECIFIC --- */
 .auth-wrapper {
     min-height: 85vh;
-    /* Căn giữa theo chiều dọc */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -138,99 +323,19 @@ body {
 .auth-card {
     border: none;
     border-radius: 1.5rem;
-    /* Bo góc tròn trịa */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    /* Đổ bóng sâu */
-    background: #fff;
-    transition: transform 0.3s ease;
-}
-
-.auth-card:hover {
-    transform: translateY(-5px);
-    /* Hiệu ứng bay lên nhẹ */
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow-md);
 }
 
 .auth-header-icon {
     width: 80px;
     height: 80px;
     background: rgba(16, 185, 129, 0.1);
-    /* Nền xanh nhạt (theo màu Money) */
-    color: var(--primary-color);
+    color: var(--primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 2.5rem;
     margin: 0 auto 1.5rem auto;
-}
-
-.auth-title {
-    color: var(--dark-text);
-    font-weight: 800;
-    margin-bottom: 0.5rem;
-}
-
-.auth-subtitle {
-    color: var(--secondary-color);
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-}
-
-.form-control-lg {
-    font-size: 1rem;
-    padding: 0.8rem 1rem;
-    border-radius: 0.5rem;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-}
-
-.form-control-lg:focus {
-    background-color: #fff;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-}
-
-/* --- CARDS (Thẻ nội dung) --- */
-.card {
-    border: none;
-    /* Bỏ viền cứng */
-    border-radius: 0.75rem;
-    /* Bo góc mềm hơn */
-    box-shadow: var(--card-shadow);
-    transition: all 0.3s ease-in-out;
-    margin-bottom: 1.5rem;
-}
-
-.card:hover {
-    transform: translateY(-3px);
-    /* Hiệu ứng nổi lên khi di chuột */
-    box-shadow: var(--hover-shadow);
-}
-
-.card-header {
-    background-color: #fff;
-    /* Chuyển nền header sang trắng cho sạch */
-    border-bottom: 1px solid #e3e6f0;
-    font-weight: 700;
-    color: var(--primary-color);
-    padding: 1rem 1.25rem;
-    border-top-left-radius: 0.75rem !important;
-    border-top-right-radius: 0.75rem !important;
-}
-
-/* Các card thống kê có viền màu bên trái */
-.border-left-primary {
-    border-left: 0.25rem solid var(--primary-color) !important;
-}
-
-.border-left-success {
-    border-left: 0.25rem solid var(--success-color) !important;
-}
-
-.border-left-info {
-    border-left: 0.25rem solid var(--info-color) !important;
-}
-
-.border-left-warning {
-    border-left: 0.25rem solid var(--warning-color) !important;
 }
