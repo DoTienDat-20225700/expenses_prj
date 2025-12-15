@@ -50,6 +50,17 @@ class BudgetForm(forms.ModelForm):
         if self.instance and self.instance.total:
             self.initial['total'] = "{:,.0f}".format(self.instance.total)
 
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Nhập tên danh mục (Ví dụ: Tiền học, Đầu tư...)'
+            }),
+        }
+
 class UserUpdateForm(forms.ModelForm):
     email = forms.EmailField(label="Email",
         widget=forms.EmailInput(attrs={'class':'form-control'}))

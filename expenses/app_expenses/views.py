@@ -263,3 +263,53 @@ def export_expenses_csv(request):
         ])
 
     return response
+
+@login_required
+def category_list(request):
+    categories = Category.objects.filter(user=request.user)
+    return render(request, 'ep1/category_list.html', {'categories': categories})
+
+@login_required
+def add_category(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save(commit=False)
+            category.user = request.user
+            category.save()
+            messages.success(request, 'Thêm danh mục thành công!')
+            return redirect('ep1:category_list')
+    else:
+        form = CategoryForm()
+    return render(request, 'ep1/add_category.html', {'form': form, 'title': 'Thêm danh mục'})
+
+@login_required
+def edit_category(request, pk):
+    category = get_object_or_404(Category, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Cập nhật danh mục thành công!')
+            return redirect('ep1:category_list')
+    else:
+        form = CategoryForm(instance=category)
+    return render(request, 'ep1/add_category.html', {'form': form, 'title': 'Sửa danh mục'})
+
+@login_required
+def delete_category(request, pk):
+    category = get_object_or_404(Category, pk=pk, user=request.user)
+    # Kiểm tra xem danh mục này đã có chi tiêu nào chưa
+    if category.expense_set.exists():
+        messages.error(request, 'Không thể xóa danh mục đang có dữ liệu chi tiêu!')
+        return redirect('ep1:category_list')
+        
+    if request.method == 'POST':
+        category.delete()
+        messages.success(request, 'Đã xóa danh mục.')
+        return redirect('ep1:category_list')
+        
+    return render(request, 'ep1/delete_ep1.html', {
+        'expense': category, 
+        'title': 'Xóa danh mục' 
+    }) # Tận dụng lại template xóa cũ
