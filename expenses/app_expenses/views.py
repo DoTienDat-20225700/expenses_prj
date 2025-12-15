@@ -150,17 +150,50 @@ def ep1_lists(request):
 
 @login_required
 def add_ep1(request):
+    # Tạo danh mục mặc định nếu chưa có (như cũ)
     if not Category.objects.filter(user=request.user).exists():
         create_default_categories(request.user)
+
     if request.method == 'POST':
         form = ExpenseForm(request.POST, user=request.user)
         if form.is_valid():
             expense = form.save(commit=False)
-            expense.user = get_user(request) 
+            expense.user = request.user 
+            
+            # --- BẮT ĐẦU ĐOẠN LOGIC CẢNH BÁO NGÂN SÁCH ---
+            try:
+                # 1. Lấy ngân sách hiện tại của user
+                budget = Budget.objects.get(user=request.user)
+                
+                # 2. Tính tổng tiền đã chi tiêu trước đó
+                # (Dùng aggregate để tính tổng cột amount trong database)
+                current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+                
+                # 3. Dự tính tổng mới (Tổng cũ + Số tiền sắp thêm)
+                new_total = current_total + expense.amount
+                
+                # 4. So sánh và Cảnh báo
+                if new_total > budget.total:
+                    # Tính số tiền bị lố
+                    over_amount = new_total - budget.total
+                    messages.warning(
+                        request, 
+                        f'⚠️ Cảnh báo: Bạn đã vượt quá ngân sách {over_amount:,.0f} ₫!'
+                    )
+                else:
+                    # Nếu không lố thì báo thành công bình thường
+                    messages.success(request, 'Thêm chi tiêu thành công!')
+                    
+            except Budget.DoesNotExist:
+                # Nếu chưa cài ngân sách thì bỏ qua, không cảnh báo
+                pass
+            # --- KẾT THÚC ĐOẠN LOGIC ---
+
             expense.save()
             return redirect('ep1:ep1_lists')
     else:
         form = ExpenseForm(user=request.user)
+        
     return render(request, 'ep1/add_ep1.html', {'form': form})
 
 @login_required
