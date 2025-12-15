@@ -13,6 +13,7 @@ urlpatterns = [
     path('edit/<int:pk>/', views.edit_ep1, name='edit_ep1'),
     path('delete/<int:pk>/', views.delete_ep1, name='delete_ep1'),
     path('profile/', views.profile, name='profile'),
+    path('export/', views.export_expenses_csv, name='export_expenses'),
     path('password_change/', 
          auth_views.PasswordChangeView.as_view(
              template_name='ep1/password_change.html',

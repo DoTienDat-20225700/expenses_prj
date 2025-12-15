@@ -17,6 +17,9 @@
         </button>
       </div>
     </form>
+    <a href="{% url 'ep1:export_expenses' %}?{{ request.GET.urlencode }}" class="btn btn-success shadow-sm me-1" title="Xuất ra Excel">
+      <i class="fas fa-file-excel me-1"></i> Xuất Excel
+    </a>
     <a href="{% url 'ep1:add_ep1' %}" class="btn btn-primary shadow-sm">
       <i class="fas fa-plus me-1"></i> Thêm mới
     </a>

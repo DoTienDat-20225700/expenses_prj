@@ -1,3 +1,5 @@
+import csv
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.db.models.functions import TruncDate
@@ -182,3 +184,35 @@ def delete_ep1(request, pk):
         return redirect('ep1:ep1_lists')
     
     return render(request, 'ep1/delete_ep1.html', {'expense': expense})
+
+@login_required
+def export_expenses_csv(request):
+    """Xuất dữ liệu chi tiêu ra file CSV (Mở được bằng Excel)"""
+    
+    # 1. Lấy dữ liệu giống hệt như đang hiển thị ở danh sách (có lọc/sắp xếp)
+    base_expenses = Expense.objects.filter(user=request.user)
+    filtered_expenses = _apply_filters(base_expenses, request.GET)
+    expenses = _apply_sorting(filtered_expenses, request.GET)
+
+    # 2. Tạo response trả về file CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="bao_cao_chi_tieu.csv"'
+    
+    # 3. Thêm BOM (Byte Order Mark) để Excel đọc được tiếng Việt UTF-8
+    response.write(u'\ufeff'.encode('utf8'))
+
+    writer = csv.writer(response)
+    
+    # 4. Viết dòng tiêu đề
+    writer.writerow(['Ngày', 'Danh mục', 'Số tiền (VNĐ)', 'Mô tả'])
+
+    # 5. Viết dữ liệu
+    for expense in expenses:
+        writer.writerow([
+            expense.date.strftime('%d/%m/%Y'),
+            expense.category.name if expense.category else 'Khác',
+            int(expense.amount), # Chuyển về số nguyên cho đẹp
+            expense.description
+        ])
+
+    return response
