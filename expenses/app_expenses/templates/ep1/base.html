@@ -21,14 +21,16 @@
     <link rel="stylesheet" href="{% static 'ep1/css/custom.css' %}" />
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg mb-4 sticky-top">
+    <nav
+      class="navbar navbar-expand-lg mb-4 sticky-top border-bottom border-secondary-subtle"
+    >
       <div class="container">
         <a
           class="navbar-brand d-flex align-items-center"
           href="{% url 'ep1:ep1_lists' %}"
         >
           <i class="fas fa-wallet me-2 fa-lg"></i>
-          <span>MoneyManager</span>
+          <span class="fw-bold fs-4">MoneyManager</span>
         </a>
 
         <button
@@ -36,45 +38,54 @@
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto align-items-center">
-            <li class="nav-item me-2">
+          <ul class="navbar-nav ms-auto align-items-center gap-2 mt-3 mt-lg-0">
+            <li class="nav-item">
               <button
-                class="btn nav-link"
+                class="btn nav-link px-2"
                 id="theme-toggle"
-                title="Chổi giao diện"
+                title="Đổi giao diện"
               >
-                <i class="fas fa-moon" id="theme-icon"></i>
+                <i class="fas fa-moon fs-5" id="theme-icon"></i>
+                <span class="d-lg-none ms-2">Giao diện Tối/Sáng</span>
               </button>
             </li>
 
             {% if user.is_authenticated %}
             <li class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle btn-user-profile"
+                class="nav-link dropdown-toggle btn-user-profile d-flex align-items-center"
                 href="#"
-                id="navbarDropdown"
                 role="button"
                 data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
-                <i class="fas fa-user-circle me-1"></i> {{ user.username }}
+                <i class="fas fa-user-circle fs-4 me-2"></i>
+                <span class="fw-semibold">{{ user.username }}</span>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+
+              <ul
+                class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2"
+              >
                 <li>
-                  <a class="dropdown-item" href="{% url 'ep1:profile' %}"
-                    ><i class="fas fa-id-card me-2 opacity-50"></i>Hồ sơ</a
-                  >
+                  <a class="dropdown-item py-2" href="{% url 'ep1:profile' %}">
+                    <i class="fas fa-id-card me-2 opacity-75 w-20"></i>Hồ sơ
+                  </a>
                 </li>
                 <li>
                   <a
-                    class="dropdown-item"
+                    class="dropdown-item py-2"
                     href="{% url 'ep1:password_change' %}"
-                    ><i class="fas fa-key me-2 opacity-50"></i>Đổi mật khẩu</a
                   >
+                    <i class="fas fa-key me-2 opacity-75 w-20"></i>Đổi mật khẩu
+                  </a>
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
@@ -84,8 +95,11 @@
                     class="d-inline"
                   >
                     {% csrf_token %}
-                    <button type="submit" class="dropdown-item text-danger">
-                      <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                    <button
+                      type="submit"
+                      class="dropdown-item py-2 text-danger fw-bold"
+                    >
+                      <i class="fas fa-sign-out-alt me-2 w-20"></i>Đăng xuất
                     </button>
                   </form>
                 </li>
@@ -119,7 +133,6 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        // 1. Tooltips
         var tooltipTriggerList = [].slice.call(
           document.querySelectorAll('[data-bs-toggle="tooltip"]')
         );
@@ -127,12 +140,9 @@
           return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
-        // 2. Dark Mode Logic
         const toggleBtn = document.getElementById("theme-toggle");
         const icon = document.getElementById("theme-icon");
         const body = document.body;
-
-        // Kiểm tra localStorage xem người dùng đã chọn mode nào chưa
         const currentTheme = localStorage.getItem("theme");
 
         if (currentTheme === "dark") {
@@ -143,7 +153,6 @@
 
         toggleBtn.addEventListener("click", function () {
           body.classList.toggle("dark-mode");
-
           if (body.classList.contains("dark-mode")) {
             icon.classList.remove("fa-moon");
             icon.classList.add("fa-sun");
