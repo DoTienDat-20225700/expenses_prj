@@ -366,3 +366,42 @@ h6 {
     /* Nền trắng mờ */
     outline: none;
 }
+
+/* --- THANH PHÂN TRANG (PAGINATION) --- */
+.page-link {
+    color: var(--primary);
+    border: none;
+    margin: 0 3px;
+    border-radius: 8px !important;
+    /* Bo tròn nút */
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background-color: #e6fffa;
+    color: var(--primary-hover);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #fff !important;
+}
+
+/* Dark Mode cho Pagination */
+body.dark-mode .page-link {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    box-shadow: var(--shadow-sm);
+}
+
+body.dark-mode .page-link:hover {
+    background-color: var(--input-bg);
+    color: var(--primary);
+}
+
+body.dark-mode .page-item.disabled .page-link {
+    background-color: transparent;
+    color: var(--text-muted);
+    box-shadow: none;
+}

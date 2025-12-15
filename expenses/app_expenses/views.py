@@ -2,6 +2,7 @@ import csv
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
+from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
 from django.db.models import Sum
 from django.db.models import Q
@@ -103,6 +104,18 @@ def ep1_lists(request):
     filtered_expenses = _apply_filters(base_expenses, request.GET)
     expenses = _apply_sorting(filtered_expenses, request.GET)
 
+# --- ĐOẠN CODE PHÂN TRANG (MỚI) ---
+    # Chia danh sách thành các trang, mỗi trang 10 dòng
+    paginator = Paginator(expenses, 10) 
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    # ----------------------------------
+
+    # Tính toán thống kê (Vẫn dùng biến 'expenses' gốc để tính tổng toàn bộ, không chỉ trang hiện tại)
+    total_spent = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
+    category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
+    daily_data = expenses.annotate(day=TruncDate('date')).values('day').annotate(total=Sum('amount')).order_by('day')
+
     # Tính toán thống kê
     total_spent = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
     category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
@@ -128,7 +141,8 @@ def ep1_lists(request):
         b_form = BudgetForm(instance=budget_obj)
 
     context = {
-        'expenses': expenses,
+        'expenses': page_obj, # QUAN TRỌNG: Truyền page_obj vào đây để bảng chỉ hiện 10 dòng
+        'page_obj': page_obj, # Truyền thêm biến này để vẽ thanh điều hướng
         'total_spent': total_spent,
         'top_category': top_category,
         'remaining': budget_obj.total - total_spent,
