@@ -428,3 +428,75 @@ body.dark-mode .page-item.disabled .page-link {
     color: var(--text-muted);
     box-shadow: none;
 }
+
+/* --- TÙY CHỈNH NÚT EXCEL VÀ NGÂN SÁCH (HOVER EFFECTS) --- */
+
+/* 1. Nút Xuất Excel & Nút Lưu Ngân sách (Class .btn-success) */
+.btn-success {
+    background-color: var(--primary) !important;
+    /* Màu xanh chủ đạo */
+    border-color: var(--primary) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Bóng nhẹ */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Chuyển động mượt */
+}
+
+/* HIỆU ỨNG KHI DI CHUỘT (HOVER) */
+.btn-success:hover {
+    background-color: var(--primary-hover) !important;
+    /* Xanh đậm hơn */
+    border-color: var(--primary-hover) !important;
+    transform: translateY(-2px);
+    /* Nút "bay" lên nhẹ 2px */
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    /* Đổ bóng xanh phát sáng */
+}
+
+/* Hiệu ứng khi bấm (Active) */
+.btn-success:active {
+    transform: translateY(0);
+    /* Nút lún xuống lại */
+    box-shadow: none;
+}
+
+/* 2. Tinh chỉnh ô nhập Ngân sách cho liền mạch */
+.input-group .input-group-text {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+/* Ô nhập tiền */
+input[name="total"] {
+    border-right: none !important;
+    /* Xóa viền phải để dính liền nút tick */
+    font-weight: bold;
+    color: var(--primary);
+    /* Số tiền màu xanh cho nổi */
+}
+
+/* Nút Tick (V) dính liền */
+button[name="budget_submit"] {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* --- DARK MODE FIX (Sửa lỗi màu ô nhập bị tối quá trong Dark Mode) --- */
+body.dark-mode input[name="total"] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    /* Nền trong suốt nhẹ */
+    color: #fff !important;
+    /* Chữ trắng */
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.dark-mode .input-group-text {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}

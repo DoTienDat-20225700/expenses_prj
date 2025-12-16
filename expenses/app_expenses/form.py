@@ -35,7 +35,7 @@ class BudgetForm(forms.ModelForm):
         widgets = {
             'total': forms.TextInput(attrs={
                 'class': 'form-control form-control-sm text-end',
-                'style': 'width: 6rem;',  
+                'style': 'width: 8rem;',  
                 'min': '0',
                 'step': '10000',
                 'placeholder': '0'
