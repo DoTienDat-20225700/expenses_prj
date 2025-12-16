@@ -100,37 +100,40 @@ def _apply_sorting(queryset, params):
 
 @login_required
 def ep1_lists(request):
+    # 1. Lấy TOÀN BỘ dữ liệu (Dùng để tính Ngân sách còn lại & Top danh mục)
     base_expenses = Expense.objects.filter(user=request.user)
 
-    # Áp dụng lọc và sắp xếp
+    # 2. Tạo dữ liệu ĐÃ LỌC (Dùng để hiển thị Bảng, Biểu đồ & tính Tổng chi tiêu theo lọc)
     filtered_expenses = _apply_filters(base_expenses, request.GET)
     expenses = _apply_sorting(filtered_expenses, request.GET)
 
-# --- ĐOẠN CODE PHÂN TRANG (MỚI) ---
-    # Chia danh sách thành các trang, mỗi trang 10 dòng
+    # --- PHÂN TRANG ---
     paginator = Paginator(expenses, 10) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    # ----------------------------------
 
-    # Tính toán thống kê (Vẫn dùng biến 'expenses' gốc để tính tổng toàn bộ, không chỉ trang hiện tại)
-    total_spent = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
+    # --- TÍNH TOÁN (XỬ LÝ RIÊNG 2 PHẦN) ---
+
+    # A. Tính số liệu THEO BỘ LỌC (Để hiển thị ở ô "Tổng chi tiêu")
+    # Giúp bạn biết: "Tháng này tiêu bao nhiêu?" hoặc "Ăn uống hết bao nhiêu?"
+    filtered_total = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
+
+    # B. Tính số liệu TOÀN BỘ (Để tính "Ngân sách còn lại" và "Chi nhiều nhất")
+    # Giúp số dư ví không bị sai khi bạn lọc dữ liệu
+    global_total = base_expenses.aggregate(sum=Sum('amount'))['sum'] or 0
+    
+    global_category_data = base_expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
+    top_category_item = global_category_data.first()
+    top_category = top_category_item['category__name'] if top_category_item else '—'
+
+    # --- DỮ LIỆU BIỂU ĐỒ (Dùng dữ liệu đã lọc để biểu đồ khớp với bảng) ---
     category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
     daily_data = expenses.annotate(day=TruncDate('date')).values('day').annotate(total=Sum('amount')).order_by('day')
 
-    # Tính toán thống kê
-    total_spent = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
-    category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
-    daily_data = expenses.annotate(day=TruncDate('date')).values('day').annotate(total=Sum('amount')).order_by('day')
-
-    # Dữ liệu cho biểu đồ
     chart_labels = [item['category__name'] for item in category_data]
     chart_data = [float(item['total']) for item in category_data]
     chart_labels_day = [item['day'].strftime('%d/%m/%Y') for item in daily_data]
     chart_data_day = [float(item['total']) for item in daily_data]
-
-    top_category_item = category_data.first()
-    top_category = top_category_item['category__name'] if top_category_item else '—'
 
     # Xử lý Budget form
     budget_obj, _ = Budget.objects.get_or_create(user=request.user)
@@ -143,11 +146,15 @@ def ep1_lists(request):
         b_form = BudgetForm(instance=budget_obj)
 
     context = {
-        'expenses': page_obj, # QUAN TRỌNG: Truyền page_obj vào đây để bảng chỉ hiện 10 dòng
-        'page_obj': page_obj, # Truyền thêm biến này để vẽ thanh điều hướng
-        'total_spent': total_spent,
-        'top_category': top_category,
-        'remaining': budget_obj.total - total_spent,
+        'expenses': page_obj, 
+        'page_obj': page_obj,
+        
+        # --- CÁC BIẾN QUAN TRỌNG ĐÃ CHỈNH SỬA ---
+        'total_spent': filtered_total,                 # Hiển thị số tiền ĐÃ LỌC
+        'remaining': budget_obj.total - global_total,  # Hiển thị ngân sách THỰC TẾ (Toàn bộ)
+        'top_category': top_category,                  # Hiển thị Top danh mục TOÀN BỘ
+        # ------------------------------------------
+
         'b_form': b_form,
         'budget_obj': budget_obj,
         'chart_labels': chart_labels,
@@ -155,7 +162,6 @@ def ep1_lists(request):
         'chart_labels_day': chart_labels_day,
         'chart_data_day': chart_data_day,
         'categories': Category.objects.filter(user=request.user),
-        # Giữ lại các giá trị filter/sort trên UI
         'selected_category': int(request.GET.get('category')) if request.GET.get('category') else None,
         'sort_amount': request.GET.get('sort_amount'),
         'sort_date': request.GET.get('sort_date'),
@@ -166,7 +172,6 @@ def ep1_lists(request):
 
 @login_required
 def add_ep1(request):
-    # Tạo danh mục mặc định nếu chưa có (như cũ)
     if not Category.objects.filter(user=request.user).exists():
         create_default_categories(request.user)
 
@@ -176,34 +181,22 @@ def add_ep1(request):
             expense = form.save(commit=False)
             expense.user = request.user 
             
-            # --- BẮT ĐẦU ĐOẠN LOGIC CẢNH BÁO NGÂN SÁCH ---
             try:
-                # 1. Lấy ngân sách hiện tại của user
                 budget = Budget.objects.get(user=request.user)
-                
-                # 2. Tính tổng tiền đã chi tiêu trước đó
-                # (Dùng aggregate để tính tổng cột amount trong database)
                 current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
-                
-                # 3. Dự tính tổng mới (Tổng cũ + Số tiền sắp thêm)
                 new_total = current_total + expense.amount
                 
-                # 4. So sánh và Cảnh báo
                 if new_total > budget.total:
-                    # Tính số tiền bị lố
                     over_amount = new_total - budget.total
                     messages.warning(
                         request, 
                         f'⚠️ Cảnh báo: Bạn đã vượt quá ngân sách {over_amount:,.0f} ₫!'
                     )
                 else:
-                    # Nếu không lố thì báo thành công bình thường
                     messages.success(request, 'Thêm chi tiêu thành công!')
                     
             except Budget.DoesNotExist:
-                # Nếu chưa cài ngân sách thì bỏ qua, không cảnh báo
                 pass
-            # --- KẾT THÚC ĐOẠN LOGIC ---
 
             expense.save()
             try:
@@ -240,31 +233,22 @@ def delete_ep1(request, pk):
 
 @login_required
 def export_expenses_csv(request):
-    """Xuất dữ liệu chi tiêu ra file CSV (Mở được bằng Excel)"""
-    
-    # 1. Lấy dữ liệu giống hệt như đang hiển thị ở danh sách (có lọc/sắp xếp)
     base_expenses = Expense.objects.filter(user=request.user)
     filtered_expenses = _apply_filters(base_expenses, request.GET)
     expenses = _apply_sorting(filtered_expenses, request.GET)
 
-    # 2. Tạo response trả về file CSV
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="bao_cao_chi_tieu.csv"'
-    
-    # 3. Thêm BOM (Byte Order Mark) để Excel đọc được tiếng Việt UTF-8
     response.write(u'\ufeff'.encode('utf8'))
 
     writer = csv.writer(response)
-    
-    # 4. Viết dòng tiêu đề
     writer.writerow(['Ngày', 'Danh mục', 'Số tiền (VNĐ)', 'Mô tả'])
 
-    # 5. Viết dữ liệu
     for expense in expenses:
         writer.writerow([
             expense.date.strftime('%d/%m/%Y'),
             expense.category.name if expense.category else 'Khác',
-            int(expense.amount), # Chuyển về số nguyên cho đẹp
+            int(expense.amount), 
             expense.description
         ])
 
@@ -305,7 +289,6 @@ def edit_category(request, pk):
 @login_required
 def delete_category(request, pk):
     category = get_object_or_404(Category, pk=pk, user=request.user)
-    # Kiểm tra xem danh mục này đã có chi tiêu nào chưa
     if category.expense_set.exists():
         messages.error(request, 'Không thể xóa danh mục đang có dữ liệu chi tiêu!')
         return redirect('ep1:category_list')
@@ -320,7 +303,6 @@ def delete_category(request, pk):
         'title': 'Xóa danh mục' 
     }) 
 
-# --- Thêm View API mới vào cuối file ---
 @login_required
 def predict_category_api(request):
     description = request.GET.get('description', '').strip()
@@ -328,7 +310,6 @@ def predict_category_api(request):
     if not description:
         return JsonResponse({'category_id': None})
     
-    # Gọi hàm dự đoán
     cat_id = predict_category(description, request.user)
     
     return JsonResponse({'category_id': cat_id})

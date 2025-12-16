@@ -22,6 +22,29 @@
     --navbar-text: #ffffff;
 }
 
+/* --- HÌNH NỀN TOÀN TRANG: CHỦ ĐỀ TÀI CHÍNH --- */
+
+/* --- HÌNH NỀN TOÀN TRANG (SỬA LẠI) --- */
+body {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)),
+        /* Giảm xuống 0.75 để thấy rõ ảnh */
+        url('https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?q=80&w=2500&auto=format&fit=crop');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    /* Quan trọng: Giữ ảnh đứng yên */
+}
+
+/* Dark Mode: Phủ đen mờ 85% */
+body.dark-mode {
+    background-image:
+        linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)),
+        url('https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?q=80&w=2500&auto=format&fit=crop');
+}
+
 /* =========================================
    CHẾ ĐỘ TỐI (DARK MODE) - PHIÊN BẢN FINAL
    ========================================= */

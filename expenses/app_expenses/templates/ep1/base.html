@@ -4,7 +4,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quản Lý Chi Tiêu Cá Nhân</title>
+    <title>MoneyManager</title>
+    <link rel="icon" type="image/png" href="{% static 'ep1/img/logo.png' %}" />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap"
@@ -29,7 +30,13 @@
           class="navbar-brand d-flex align-items-center"
           href="{% url 'ep1:ep1_lists' %}"
         >
-          <i class="fas fa-wallet me-2 fa-lg"></i>
+          <img
+            src="{% static 'ep1/img/logo.png' %}"
+            alt="MoneyManager Logo"
+            height="45"
+            class="me-2"
+          />
+
           <span class="fw-bold fs-4">MoneyManager</span>
         </a>
 
