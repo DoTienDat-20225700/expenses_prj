@@ -112,4 +112,55 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.getElementById('id_amount');
+    const descInput = document.getElementById('id_description');
+    const categorySelect = document.getElementById('id_category');
+    
+    // --- 1. Logic Format tiền tệ (Giữ nguyên cũ) ---
+    function formatNumberWithCommas(value) {
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    amountInput.addEventListener('input', function() {
+        let value = this.value.replace(/,/g, '');
+        if (!isNaN(value) && value.length > 0) {
+            this.value = formatNumberWithCommas(value);
+        }
+    });
+    const form = amountInput.closest('form');
+    form.addEventListener('submit', function() {
+        amountInput.value = amountInput.value.replace(/,/g, '');
+    });
+
+    // --- 2. Logic AI Gợi ý danh mục (MỚI) ---
+    let timeout = null;
+    descInput.addEventListener('input', function() {
+        const text = this.value;
+        
+        // Chỉ gọi AI khi gõ xong 500ms để tránh spam server
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            if (text.length > 2) { // Chỉ dự đoán khi có trên 2 ký tự
+                fetch(`{% url 'ep1:predict_category' %}?description=${encodeURIComponent(text)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.category_id) {
+                            // Tự động chọn danh mục
+                            categorySelect.value = data.category_id;
+                            
+                            // Tạo hiệu ứng nhấp nháy nhẹ để báo user biết AI đã chọn
+                            categorySelect.style.transition = "background-color 0.3s";
+                            categorySelect.style.backgroundColor = "#d1fae5"; // Màu xanh nhạt
+                            setTimeout(() => {
+                                categorySelect.style.backgroundColor = "";
+                            }, 500);
+                        }
+                    });
+            }
+        }, 500);
+    });
+});
+</script>
 {% endblock %}

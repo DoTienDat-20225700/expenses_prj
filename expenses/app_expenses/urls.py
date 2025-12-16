@@ -16,6 +16,7 @@ urlpatterns = [
     path('categories/add/', views.add_category, name='add_category'),
     path('categories/edit/<int:pk>/', views.edit_category, name='edit_category'),
     path('categories/delete/<int:pk>/', views.delete_category, name='delete_category'),
+    path('api/predict-category/', views.predict_category_api, name='predict_category'),
     path('profile/', views.profile, name='profile'),
     path('export/', views.export_expenses_csv, name='export_expenses'),
     path('password_change/', 

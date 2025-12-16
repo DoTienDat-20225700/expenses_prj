@@ -64,3 +64,8 @@ temp/
 # MySQL dumps (tuỳ chọn, bật nếu bạn có thư mục dump)
 # dumps/
 # *.sql
+
+# Ignore ML models
+*.pkl
+*.joblib
+expense_model.pkl

@@ -1,5 +1,6 @@
 import csv
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.core.paginator import Paginator
@@ -7,10 +8,11 @@ from django.db.models.functions import TruncDate
 from django.db.models import Sum
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from .models import *
-from .form import *
 from django.contrib import messages
 from django.contrib.auth import get_user
+from .models import *
+from .form import *
+from .ml_utils import predict_category, train_model
 
 
 def register(request):
@@ -204,6 +206,10 @@ def add_ep1(request):
             # --- KẾT THÚC ĐOẠN LOGIC ---
 
             expense.save()
+            try:
+                train_model(request.user)
+            except:
+                pass
             return redirect('ep1:ep1_lists')
     else:
         form = ExpenseForm(user=request.user)
@@ -312,4 +318,17 @@ def delete_category(request, pk):
     return render(request, 'ep1/delete_ep1.html', {
         'expense': category, 
         'title': 'Xóa danh mục' 
-    }) # Tận dụng lại template xóa cũ
+    }) 
+
+# --- Thêm View API mới vào cuối file ---
+@login_required
+def predict_category_api(request):
+    description = request.GET.get('description', '').strip()
+    
+    if not description:
+        return JsonResponse({'category_id': None})
+    
+    # Gọi hàm dự đoán
+    cat_id = predict_category(description, request.user)
+    
+    return JsonResponse({'category_id': cat_id})
