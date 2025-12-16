@@ -1,4 +1,5 @@
 import csv
+import threading
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -200,9 +201,12 @@ def add_ep1(request):
 
             expense.save()
             try:
-                train_model(request.user)
-            except:
-                pass
+                thread = threading.Thread(target=train_model, args=(request.user,))
+                thread.start()
+            except Exception as e:
+                print(f"Lỗi chạy background task: {e}")
+            # -----------------------------------------------------
+
             return redirect('ep1:ep1_lists')
     else:
         form = ExpenseForm(user=request.user)
