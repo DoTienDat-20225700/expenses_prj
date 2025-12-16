@@ -1,41 +1,50 @@
-{% extends 'ep1/base.html' %}
-
-{% block content %}
+{% extends 'ep1/base.html' %} {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-6">
-        <div class="card shadow">
-            <div class="card-header py-3 bg-danger text-white">
-                <h6 class="m-0 font-weight-bold">
-                    <i class="fas fa-trash-alt me-1"></i> Xóa chi tiêu
-                </h6>
-            </div>
-            <div class="card-body text-center">
-                <h5 class="mb-4">Bạn có chắc chắn muốn xóa chi tiêu này?</h5>
-                
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <p class="mb-1"><strong>Số tiền:</strong> {{ expense.amount|floatformat:0 }} ₫</p>
-                        <p class="mb-1"><strong>Danh mục:</strong> {{ expense.category }}</p>
-                        <p class="mb-1"><strong>Ngày:</strong> {{ expense.date|date:"d/m/Y" }}</p>
-                        {% if expense.description %}
-                        <p class="mb-0"><strong>Mô tả:</strong> {{ expense.description|truncatechars:50 }}</p>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                        <a href="{% url 'ep1:ep1_lists' %}" class="btn btn-secondary me-md-2">
-                            <i class="fas fa-times me-1"></i> Hủy bỏ
-                        </a>
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash-alt me-1"></i> Xác nhận xóa
-                        </button>
-                    </div>
-                </form>
-            </div>
+  <div class="col-lg-6">
+    <div class="card shadow">
+      <div class="card-header py-3 bg-danger text-white">
+        <h6 class="m-0 font-weight-bold">
+          <i class="fas fa-trash-alt me-1"></i> Xóa chi tiêu
+        </h6>
+      </div>
+      <div class="card-body text-center">
+        <h5 class="mb-4">Bạn có chắc chắn muốn xóa chi tiêu này?</h5>
+
+        <div class="card mb-4">
+          <div class="card-body">
+            <p class="mb-1">
+              <strong>Số tiền:</strong> {{ expense.amount|floatformat:0 }} ₫
+            </p>
+            <p class="mb-1">
+              <strong>Danh mục:</strong> {{ expense.category }}
+            </p>
+            <p class="mb-1">
+              <strong>Ngày:</strong> {{ expense.date|date:"d/m/Y" }}
+            </p>
+            {% if expense.description %}
+            <p class="mb-0">
+              <strong>Mô tả:</strong> {{ expense.description|truncatechars:50 }}
+            </p>
+            {% endif %}
+          </div>
         </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <a
+              href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'ep1:ep1_lists' %}{% endif %}"
+              class="btn btn-secondary me-md-2"
+            >
+              <i class="fas fa-times me-1"></i> Hủy bỏ
+            </a>
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash-alt me-1"></i> Xác nhận xóa
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

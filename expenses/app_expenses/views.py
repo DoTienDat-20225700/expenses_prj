@@ -216,10 +216,13 @@ def add_ep1(request):
 @login_required
 def edit_ep1(request, pk):
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
+    next_url = request.GET.get('next')
     if request.method == 'POST':
         form = ExpenseForm(request.POST, instance=expense, user=request.user)
         if form.is_valid():
             form.save()
+            if next_url:
+                return redirect(f"{next_url}#list-section")
             return redirect('ep1:ep1_lists')
     else:
         form = ExpenseForm(instance=expense, user=request.user)
@@ -229,8 +232,11 @@ def edit_ep1(request, pk):
 @login_required
 def delete_ep1(request, pk):
     expense = get_object_or_404(Expense, pk=pk, user=request.user)
+    next_url = request.GET.get('next')
     if request.method == 'POST':
         expense.delete()
+        if next_url:
+            return redirect(f"{next_url}#list-section")
         return redirect('ep1:ep1_lists')
     
     return render(request, 'ep1/delete_ep1.html', {'expense': expense})
