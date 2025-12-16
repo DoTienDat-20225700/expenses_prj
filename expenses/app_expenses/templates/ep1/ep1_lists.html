@@ -140,22 +140,22 @@
                     </td>
                     <td>{{ expense.date|date:"d/m/Y" }}</td>
                     <td class="text-center">
-    <div class="btn-group">
-        <a href="{% url 'ep1:edit_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
-           class="btn btn-sm btn-outline-primary border-0" 
-           data-bs-toggle="tooltip" 
-           title="Sửa">
-            <i class="fas fa-pen"></i>
-        </a>
-        
-        <a href="{% url 'ep1:delete_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
-           class="btn btn-sm btn-outline-danger border-0" 
-           data-bs-toggle="tooltip" 
-           title="Xóa">
-            <i class="fas fa-trash"></i>
-        </a>
-    </div>
-</td>
+                        <div class="btn-group">
+                            <a href="{% url 'ep1:edit_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
+                               class="btn btn-sm btn-outline-primary border-0" 
+                               data-bs-toggle="tooltip" 
+                               title="Sửa">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            
+                            <a href="{% url 'ep1:delete_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
+                               class="btn btn-sm btn-outline-danger border-0" 
+                               data-bs-toggle="tooltip" 
+                               title="Xóa">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
