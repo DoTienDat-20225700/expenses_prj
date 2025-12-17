@@ -1,5 +1,15 @@
 import os
+import sys
 import django
+from pathlib import Path
+
+# --- THÊM ĐOẠN NÀY ĐỂ SỬA LỖI ---
+# Lấy đường dẫn thư mục hiện tại (expenses)
+current_dir = Path(__file__).resolve().parent
+# Lấy thư mục cha (expenses_prj) để Python nhìn thấy được package 'expenses'
+repo_root = current_dir.parent
+sys.path.append(str(repo_root))
+# -------------------------------
 
 # Thiết lập môi trường Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expenses.config.settings')
@@ -8,9 +18,9 @@ django.setup()
 from django.contrib.auth.models import User
 
 def create_admin():
-    username = 'admin'           # Tên đăng nhập bạn muốn
-    email = 'admin@example.com'  # Email (không quan trọng)
-    password = '123123'   # <--- ĐIỀN MẬT KHẨU BẠN MUỐN VÀO ĐÂY
+    username = 'admin'           # Tên đăng nhập
+    email = 'admin@example.com'  # Email
+    password = 'matkhaucuaban'   # <--- ĐỔI MẬT KHẨU CỦA BẠN
 
     if not User.objects.filter(username=username).exists():
         print(f"Dang tao tai khoan Superuser: {username}...")
