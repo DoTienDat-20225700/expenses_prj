@@ -1,0 +1,146 @@
+{% extends 'ep1/base.html' %} {% block content %}
+<div class="row mb-4">
+  <div class="col-md-8">
+    <h2 class="text-primary fw-bold">
+      <i class="fas fa-bullhorn me-2"></i>Quản lý Thông báo
+    </h2>
+  </div>
+  <div class="col-md-4 text-end">
+    <a
+      href="{% url 'ep1:admin_dashboard' %}"
+      class="btn btn-secondary shadow-sm"
+    >
+      <i class="fas fa-arrow-left me-1"></i> Dashboard
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-4 mb-4">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h6 class="m-0 fw-bold">
+          <i class="fas fa-plus me-1"></i> Đăng thông báo mới
+        </h6>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Tiêu đề</label>
+            <input
+              type="text"
+              name="title"
+              class="form-control"
+              required
+              placeholder="Ví dụ: Bảo trì hệ thống..."
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Loại tin</label>
+            <select name="priority" class="form-select">
+              <option value="info">Thông tin (Xanh dương)</option>
+              <option value="success">Thành công (Xanh lá)</option>
+              <option value="warning">Cảnh báo (Vàng)</option>
+              <option value="danger">Khẩn cấp (Đỏ)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nội dung</label>
+            <textarea
+              name="content"
+              class="form-control"
+              rows="4"
+              required
+              placeholder="Nhập nội dung chi tiết..."
+            ></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Đăng ngay</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header py-3">
+        <h6 class="m-0 fw-bold text-primary">Lịch sử thông báo</h6>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Nội dung</th>
+                <th>Loại</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in announcements %}
+              <tr>
+                <td>
+                  <div class="fw-bold">{{ item.title }}</div>
+                  <small class="text-muted"
+                    >{{ item.created_at|date:"d/m/Y H:i" }}</small
+                  >
+                </td>
+                <td>
+                  {% if item.priority == 'info' %}<span
+                    class="badge bg-info text-dark"
+                    >Info</span
+                  >
+                  {% elif item.priority == 'warning' %}<span
+                    class="badge bg-warning text-dark"
+                    >Warning</span
+                  >
+                  {% elif item.priority == 'danger' %}<span
+                    class="badge bg-danger"
+                    >Danger</span
+                  >
+                  {% else %}<span class="badge bg-success">Success</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.is_active %}
+                  <span class="badge bg-success">Đang hiện</span>
+                  {% else %}
+                  <span class="badge bg-secondary">Đã ẩn</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a
+                    href="{% url 'ep1:toggle_announcement' item.id %}"
+                    class="btn btn-sm btn-outline-secondary"
+                    title="Ẩn/Hiện"
+                  >
+                    <i
+                      class="fas fa-eye{% if not item.is_active %}-slash{% endif %}"
+                    ></i>
+                  </a>
+                  <a
+                    href="{% url 'ep1:delete_announcement' item.id %}"
+                    class="btn btn-sm btn-outline-danger"
+                    onclick="return confirm('Xóa tin này?')"
+                    title="Xóa"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center text-muted">
+                  Chưa có thông báo nào.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

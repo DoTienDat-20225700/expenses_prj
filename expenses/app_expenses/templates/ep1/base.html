@@ -81,6 +81,18 @@
               <ul
                 class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2"
               >
+                {% if user.is_superuser %}
+                <li>
+                  <a
+                    class="dropdown-item py-2 text-primary fw-bold"
+                    href="{% url 'ep1:admin_dashboard' %}"
+                  >
+                    <i class="fas fa-tachometer-alt me-2 w-20"></i>Admin
+                    Dashboard
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                {% endif %}
                 <li>
                   <a
                     class="dropdown-item py-2"

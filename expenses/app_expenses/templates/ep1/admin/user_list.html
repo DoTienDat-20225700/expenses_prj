@@ -1,0 +1,119 @@
+{% extends 'ep1/base.html' %} {% load humanize %} {% block content %}
+<div class="row mb-4">
+  <div class="col-md-8">
+    <h2 class="text-primary fw-bold">
+      <i class="fas fa-users-cog me-2"></i>Quản lý Người dùng
+    </h2>
+  </div>
+  <div class="col-md-4 text-end">
+    <a
+      href="{% url 'ep1:admin_dashboard' %}"
+      class="btn btn-secondary shadow-sm"
+    >
+      <i class="fas fa-arrow-left me-1"></i> Quay lại Dashboard
+    </a>
+  </div>
+</div>
+
+<div class="card shadow mb-4">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">
+      Danh sách tài khoản hệ thống
+    </h6>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table
+        class="table table-bordered table-hover align-middle"
+        width="100%"
+        cellspacing="0"
+      >
+        <thead class="table-light">
+          <tr>
+            <th width="5%">ID</th>
+            <th>Tài khoản</th>
+            <th>Email</th>
+            <th>Ngày tham gia</th>
+            <th class="text-center">Trạng thái</th>
+            <th class="text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr class="{% if not u.is_active %}table-danger{% endif %}">
+            <td>{{ u.id }}</td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div
+                  class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2"
+                  style="width: 35px; height: 35px"
+                >
+                  {{ u.username|make_list|first|upper }}
+                </div>
+                <div>
+                  <div class="fw-bold">{{ u.username }}</div>
+                  {% if u.is_superuser %}
+                  <span
+                    class="badge bg-warning text-dark"
+                    style="font-size: 0.7em"
+                    >ADMIN</span
+                  >
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td>{{ u.email|default:"--" }}</td>
+            <td>{{ u.date_joined|date:"d/m/Y H:i" }}</td>
+
+            <td class="text-center">
+              {% if u.is_active %}
+              <span class="badge bg-success">Hoạt động</span>
+              {% else %}
+              <span class="badge bg-danger">Đã khóa</span>
+              {% endif %}
+            </td>
+
+            <td class="text-center">
+              {% if not u.is_superuser %}
+              <form
+                method="post"
+                action="{% url 'ep1:toggle_user_status' u.id %}"
+                class="d-inline"
+              >
+                {% csrf_token %} {% if u.is_active %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-danger"
+                  title="Khóa tài khoản"
+                  onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản này? User sẽ không thể đăng nhập được nữa.')"
+                >
+                  <i class="fas fa-lock"></i> Khóa
+                </button>
+                {% else %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-success"
+                  title="Mở khóa tài khoản"
+                >
+                  <i class="fas fa-unlock"></i> Mở lại
+                </button>
+                {% endif %}
+              </form>
+              {% else %}
+              <button
+                class="btn btn-sm btn-secondary"
+                disabled
+                title="Không thể tác động lên Admin"
+              >
+                <i class="fas fa-user-shield"></i>
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,19 +1,20 @@
 import csv
 import threading
+import os
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user
+from django.contrib.auth.decorators import user_passes_test, login_required
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncDate
-from django.db.models import Sum
-from django.db.models import Q
-from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, Count, Q
 from django.contrib import messages
-from django.contrib.auth import get_user
+from datetime import timedelta
+from django.utils import timezone
 from .models import *
 from .form import *
-from .ml_utils import predict_category, train_model
+from .ml_utils import predict_category, train_model, get_model_path
 
 
 def register(request):
@@ -26,6 +27,150 @@ def register(request):
     else:
         form = RegisterForm()
     return render(request, 'ep1/register.html', {'form': form})
+
+def is_admin(user):
+    return user.is_authenticated and user.is_superuser
+
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    # 1. Thống kê User
+    total_users = User.objects.count()
+
+    # User mới trong 30 ngày qua
+    month_ago = timezone.now() - timedelta(days=30)
+    new_users = User.objects.filter(date_joined__gte=month_ago).count()
+
+    # 2. Thống kê Dòng tiền (Toàn hệ thống)
+    total_expenses_count = Expense.objects.count()
+    total_money = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # 3. Top Danh mục phổ biến nhất hệ thống (theo số lượng giao dịch)
+    # Lấy tên danh mục và đếm số lần xuất hiện
+    top_categories = Expense.objects.values('category__name') \
+        .annotate(count=Count('id')) \
+        .order_by('-count')[:5]  # Lấy top 5
+
+    context = {
+        'total_users': total_users,
+        'new_users': new_users,
+        'total_expenses_count': total_expenses_count,
+        'total_money': total_money,
+        'top_categories': top_categories
+    }
+    return render(request, 'ep1/admin/dashboard.html', context)
+
+@user_passes_test(is_admin)
+def user_management(request):
+    """Hiển thị danh sách người dùng cho Admin"""
+    # Lấy tất cả user, sắp xếp người mới nhất lên đầu
+    users = User.objects.all().order_by('-date_joined')
+    
+    context = {
+        'users': users
+    }
+    return render(request, 'ep1/admin/user_list.html', context)
+
+@user_passes_test(is_admin)
+def toggle_user_status(request, user_id):
+    """Khóa hoặc Mở khóa tài khoản User"""
+    if request.method == 'POST':
+        user = get_object_or_404(User, pk=user_id)
+        
+        # Không cho phép tự khóa chính mình (Admin)
+        if user == request.user:
+            messages.error(request, "Bạn không thể tự khóa tài khoản của chính mình!")
+            return redirect('ep1:user_management')
+
+        # Đảo ngược trạng thái: Đang mở -> Khóa, Đang khóa -> Mở
+        user.is_active = not user.is_active
+        user.save()
+        
+        status_msg = "đã được mở khóa" if user.is_active else "đã bị khóa"
+        messages.success(request, f"Tài khoản {user.username} {status_msg}.")
+        
+    return redirect('ep1:user_management')
+
+@user_passes_test(is_admin)
+def ai_monitor(request):
+    """Trang giám sát trạng thái Model AI của từng user"""
+    users = User.objects.all().order_by('-date_joined')
+    ai_stats = []
+
+    for user in users:
+        model_path = get_model_path(user)
+        has_model = os.path.exists(model_path)
+        model_size = 0
+        last_modified = None
+
+        if has_model:
+            # Lấy kích thước file (KB)
+            model_size = round(os.path.getsize(model_path) / 1024, 2)
+            # Lấy số lượng dữ liệu đã học (Số bản ghi chi tiêu)
+            data_count = Expense.objects.filter(user=user).count()
+        else:
+            data_count = 0
+
+        ai_stats.append({
+            'user': user,
+            'has_model': has_model,
+            'model_size': model_size,
+            'data_count': data_count
+        })
+
+    context = {
+        'ai_stats': ai_stats
+    }
+    return render(request, 'ep1/admin/ai_monitor.html', context)
+
+@user_passes_test(is_admin)
+def force_retrain_ai(request, user_id):
+    """Admin ép buộc huấn luyện lại AI cho 1 user"""
+    user = get_object_or_404(User, pk=user_id)
+
+    # Gọi hàm train từ ml_utils
+    model = train_model(user)
+
+    if model:
+        messages.success(request, f"Đã huấn luyện lại thành công AI cho user: {user.username}")
+    else:
+        messages.warning(request, f"Không thể huấn luyện. User {user.username} chưa đủ dữ liệu (cần ít nhất 3 chi tiêu).")
+
+    return redirect('ep1:ai_monitor')
+
+# ... import Announcement từ models nếu chưa có (thường là import * rồi nên ok) ...
+
+@user_passes_test(is_admin)
+def announcement_manager(request):
+    """Trang quản lý thông báo của Admin"""
+    if request.method == 'POST':
+        # Xử lý tạo thông báo mới
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        priority = request.POST.get('priority')
+        
+        if title and content:
+            Announcement.objects.create(title=title, content=content, priority=priority)
+            messages.success(request, "Đã đăng thông báo mới!")
+        return redirect('ep1:announcement_manager')
+
+    announcements = Announcement.objects.all()
+    return render(request, 'ep1/admin/announcement_manager.html', {'announcements': announcements})
+
+@user_passes_test(is_admin)
+def delete_announcement(request, pk):
+    """Xóa thông báo"""
+    announcement = get_object_or_404(Announcement, pk=pk)
+    announcement.delete()
+    messages.success(request, "Đã xóa thông báo.")
+    return redirect('ep1:announcement_manager')
+
+@user_passes_test(is_admin)
+def toggle_announcement(request, pk):
+    """Ẩn/Hiện thông báo"""
+    announcement = get_object_or_404(Announcement, pk=pk)
+    announcement.is_active = not announcement.is_active
+    announcement.save()
+    return redirect('ep1:announcement_manager')
 
 def create_default_categories(user):
     default_categories = [
@@ -145,6 +290,9 @@ def ep1_lists(request):
             return redirect('ep1:ep1_lists')
     else:
         b_form = BudgetForm(instance=budget_obj)
+
+    # Lấy các thông báo đang Active (Mới nhất lên đầu)
+    active_announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
 
     context = {
         'expenses': page_obj, 

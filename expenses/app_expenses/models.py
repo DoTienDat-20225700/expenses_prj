@@ -80,6 +80,26 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
+    
+class Announcement(models.Model):
+    TYPE_CHOICES = [
+        ('info', 'Thông tin (Xanh dương)'),
+        ('success', 'Thành công (Xanh lá)'),
+        ('warning', 'Cảnh báo (Vàng)'),
+        ('danger', 'Khẩn cấp (Đỏ)'),
+    ]
+    
+    title = models.CharField("Tiêu đề", max_length=200)
+    content = models.TextField("Nội dung")
+    created_at = models.DateTimeField("Ngày tạo", auto_now_add=True)
+    is_active = models.BooleanField("Hiển thị", default=True)
+    priority = models.CharField("Loại thông báo", max_length=10, choices=TYPE_CHOICES, default='info')
+
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        ordering = ['-created_at']
 
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):

@@ -30,4 +30,14 @@ urlpatterns = [
              template_name='ep1/password_change_done.html'
          ), 
          name='password_change_done'),
+         # --- ADMIN PATH ---
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('export/', views.export_expenses_csv, name='export_expenses'),
+    path('manager/users/', views.user_management, name='user_management'),
+    path('manager/users/toggle/<int:user_id>/', views.toggle_user_status, name='toggle_user_status'),
+    path('manager/ai-monitor/', views.ai_monitor, name='ai_monitor'),
+    path('manager/ai-monitor/retrain/<int:user_id>/', views.force_retrain_ai, name='force_retrain_ai'),
+    path('manager/announcements/', views.announcement_manager, name='announcement_manager'),
+    path('manager/announcements/delete/<int:pk>/', views.delete_announcement, name='delete_announcement'),
+    path('manager/announcements/toggle/<int:pk>/', views.toggle_announcement, name='toggle_announcement'),
 ]

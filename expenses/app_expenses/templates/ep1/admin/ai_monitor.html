@@ -1,0 +1,89 @@
+{% extends 'ep1/base.html' %} {% load humanize %} {% block content %}
+<div class="row mb-4">
+  <div class="col-md-8">
+    <h2 class="text-success fw-bold">
+      <i class="fas fa-brain me-2"></i>Giám sát hệ thống AI
+    </h2>
+  </div>
+  <div class="col-md-4 text-end">
+    <a
+      href="{% url 'ep1:admin_dashboard' %}"
+      class="btn btn-secondary shadow-sm"
+    >
+      <i class="fas fa-arrow-left me-1"></i> Dashboard
+    </a>
+  </div>
+</div>
+
+<div class="card shadow mb-4 border-left-success">
+  <div
+    class="card-header py-3 d-flex justify-content-between align-items-center"
+  >
+    <h6 class="m-0 font-weight-bold text-success">
+      Trạng thái Model máy học (Scikit-learn)
+    </h6>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>User</th>
+            <th class="text-center">Dữ liệu gốc</th>
+            <th class="text-center">Trạng thái Model</th>
+            <th class="text-center">Kích thước</th>
+            <th class="text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in ai_stats %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ item.user.username }}</div>
+              <small class="text-muted">ID: {{ item.user.id }}</small>
+            </td>
+
+            <td class="text-center">
+              <span class="badge bg-secondary">{{ item.data_count }} dòng</span>
+            </td>
+
+            <td class="text-center">
+              {% if item.has_model %}
+              <span class="badge bg-success"
+                ><i class="fas fa-check-circle me-1"></i>Sẵn sàng</span
+              >
+              {% else %}
+              <span class="badge bg-warning text-dark"
+                ><i class="fas fa-exclamation-triangle me-1"></i>Chưa có</span
+              >
+              {% endif %}
+            </td>
+
+            <td class="text-center">
+              {% if item.has_model %} {{ item.model_size }} KB {% else %} --
+              {%endif %}
+            </td>
+
+            <td class="text-center">
+              <form
+                method="post"
+                action="{% url 'ep1:force_retrain_ai' item.user.id %}"
+              >
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-primary"
+                  title="Huấn luyện lại ngay lập tức"
+                >
+                  <i class="fas fa-sync-alt me-1"></i> Re-train
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

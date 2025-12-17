@@ -21,8 +21,7 @@
           <label class="form-label fw-bold small text-muted"
             >Tên đăng nhập</label
           >
-          {{ form.username|add_class:"form-control
-          form-control-lg"|attr:"placeholder:Tên đăng nhập..." }}
+          {{ form.username|add_class:"form-control form-control-lg"|attr:"placeholder:Tên đăng nhập..." }}
           <div class="text-danger small mt-1">{{ form.username.errors }}</div>
         </div>
 
@@ -36,18 +35,27 @@
           <div class="col-md-6 mb-3">
             <label class="form-label fw-bold small text-muted">Mật khẩu</label>
             {{ form.password1|add_class:"form-control form-control-lg"|attr:"placeholder:••••••••" }}
-            <div class="text-danger small mt-1">
-              {{ form.password1.errors }}
-            </div>
           </div>
+
           <div class="col-md-6 mb-4">
             <label class="form-label fw-bold small text-muted"
-              >Nhập lại MK</label
+              >Nhập lại mật khẩu</label
             >
             {{ form.password2|add_class:"form-control form-control-lg"|attr:"placeholder:••••••••" }}
-            <div class="text-danger small mt-1">
-              {{ form.password2.errors }}
+          </div>
+
+          <div class="col-12">
+            {% if form.password1.errors or form.password2.errors %}
+            <div class="alert alert-danger small p-2">
+              <ul class="mb-0 ps-3">
+                {% for error in form.password1.errors %}
+                <li>{{ error }}</li>
+                {% endfor %} {% for error in form.password2.errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
             </div>
+            {% endif %}
           </div>
         </div>
 

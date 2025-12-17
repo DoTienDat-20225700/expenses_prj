@@ -1,0 +1,149 @@
+{% extends 'ep1/base.html' %} {% load humanize %} {% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h2 class="text-primary fw-bold">
+      <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+    </h2>
+    <p class="text-muted">
+      Tổng quan tình hình hoạt động của hệ thống MoneyManager.
+    </p>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-left-primary h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+              Tổng Người Dùng
+            </div>
+            <div class="h3 mb-0 fw-bold text-gray-800">{{ total_users }}</div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-users fa-2x text-gray-300 opacity-25"></i>
+          </div>
+        </div>
+        <div class="mt-2 small text-muted">
+          <i class="fas fa-arrow-up text-success"></i> {{ new_users }} người mới
+          tháng này
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-4">
+    <div class="card shadow-sm border-left-success h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+              Tổng Giao Dịch
+            </div>
+            <div class="h3 mb-0 fw-bold text-gray-800">
+              {{ total_expenses_count }}
+            </div>
+          </div>
+          <div class="col-auto">
+            <i class="fas fa-receipt fa-2x text-gray-300 opacity-25"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card shadow-sm border-left-info h-100 py-2">
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+              Dòng Tiền Hệ Thống
+            </div>
+            <div class="h3 mb-0 fw-bold text-gray-800">
+              {{ total_money|floatformat:0|intcomma:0}} ₫
+            </div>
+          </div>
+          <div class="col-auto">
+            <i
+              class="fas fa-money-bill-wave fa-2x text-gray-300 opacity-25"
+            ></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 fw-bold text-primary">
+          Top Danh Mục Phổ Biến (Toàn hệ thống)
+        </h6>
+      </div>
+      <div class="card-body">
+        {% if top_categories %}
+        <div class="table-responsive">
+          <table class="table table-bordered" width="100%" cellspacing="0">
+            <thead>
+              <tr>
+                <th>Tên Danh Mục</th>
+                <th>Số lần dùng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cat in top_categories %}
+              <tr>
+                <td>
+                  {% if cat.category__name %} {{ cat.category__name }} {% else
+                  %}
+                  <span class="text-muted fst-italic">Không xác định</span>
+                  {% endif %}
+                </td>
+                <td class="fw-bold text-center">{{ cat.count }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-center text-muted py-3">Chưa có dữ liệu nào.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 fw-bold text-warning">Lối tắt quản trị</h6>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a
+            href="{% url 'ep1:user_management' %}"
+            class="btn btn-outline-primary text-start"
+          >
+            <i class="fas fa-users me-2"></i>Quản lý User</a
+          >
+          <a
+            href="{% url 'ep1:ai_monitor' %}"
+            class="btn btn-outline-success text-start"
+          >
+            <i class="fas fa-robot me-2"></i>Monitor AI</a
+          >
+          <a
+            href="{% url 'ep1:announcement_manager' %}"
+            class="btn btn-outline-info text-start"
+          >
+            <i class="fas fa-bullhorn me-2"></i>Gửi thông báo</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
