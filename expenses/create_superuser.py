@@ -20,7 +20,7 @@ from django.contrib.auth.models import User
 def create_admin():
     username = 'admin'           # Tên đăng nhập
     email = 'admin@example.com'  # Email
-    password = 'matkhaucuaban'   # <--- ĐỔI MẬT KHẨU CỦA BẠN
+    password = '123123'   # <--- ĐỔI MẬT KHẨU CỦA BẠN
 
     if not User.objects.filter(username=username).exists():
         print(f"Dang tao tai khoan Superuser: {username}...")
