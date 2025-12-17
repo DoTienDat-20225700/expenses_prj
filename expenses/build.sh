@@ -9,3 +9,5 @@ python manage.py collectstatic --no-input
 
 # Chạy migrate database
 python manage.py migrate
+
+python create_superuser.py
