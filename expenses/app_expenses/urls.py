@@ -36,6 +36,7 @@ urlpatterns = [
     path('export/', views.export_expenses_csv, name='export_expenses'),
     path('manager/users/', views.user_management, name='user_management'),
     path('manager/users/toggle/<int:user_id>/', views.toggle_user_status, name='toggle_user_status'),
+    path('manager/users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
     path('manager/ai-monitor/', views.ai_monitor, name='ai_monitor'),
     path('manager/ai-monitor/retrain/<int:user_id>/', views.force_retrain_ai, name='force_retrain_ai'),
     path('manager/announcements/', views.announcement_manager, name='announcement_manager'),

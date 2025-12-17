@@ -99,6 +99,21 @@
                 </button>
                 {% endif %}
               </form>
+              <form
+                method="post"
+                action="{% url 'ep1:delete_user' u.id %}"
+                class="d-inline ms-1"
+              >
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="btn btn-sm btn-outline-danger"
+                  title="Xóa vĩnh viễn"
+                  onclick="return confirm('CẢNH BÁO: Hành động này KHÔNG THỂ hoàn tác!\n\nToàn bộ dữ liệu của user {{ u.username }} (Chi tiêu, Ngân sách, Hồ sơ...) sẽ bị XÓA SẠCH.\n\nBạn có chắc chắn muốn xóa?');"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
               {% else %}
               <button
                 class="btn btn-sm btn-secondary"

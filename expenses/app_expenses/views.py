@@ -71,6 +71,25 @@ def user_management(request):
     return render(request, 'ep1/admin/user_list.html', context)
 
 @user_passes_test(is_admin)
+def delete_user(request, user_id):
+    """Xóa vĩnh viễn tài khoản User và toàn bộ dữ liệu liên quan"""
+    if request.method == 'POST':
+        user = get_object_or_404(User, pk=user_id)
+        
+        # Bảo vệ: Không cho phép Admin tự xóa chính mình
+        if user == request.user:
+            messages.error(request, "Bạn không thể tự xóa tài khoản của chính mình!")
+            return redirect('ep1:user_management')
+            
+        username = user.username
+        # Lệnh này sẽ tự động xóa sạch Profile, Expense, Budget... nhờ on_delete=models.CASCADE
+        user.delete() 
+        
+        messages.success(request, f"Đã xóa vĩnh viễn user '{username}' và toàn bộ dữ liệu của họ.")
+        
+    return redirect('ep1:user_management')
+
+@user_passes_test(is_admin)
 def toggle_user_status(request, user_id):
     """Khóa hoặc Mở khóa tài khoản User"""
     if request.method == 'POST':
