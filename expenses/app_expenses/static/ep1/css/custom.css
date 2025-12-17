@@ -27,7 +27,7 @@
 /* --- HÌNH NỀN TOÀN TRANG (SỬA LẠI) --- */
 body {
     background-image:
-        linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.65)),
+        linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.55)),
         /* Giảm xuống 0.75 để thấy rõ ảnh */
         url('../img/bg.png');
 
@@ -41,7 +41,7 @@ body {
 /* Dark Mode: Phủ đen mờ 85% */
 body.dark-mode {
     background-image:
-        linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)),
+        linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.65)),
         url('../img/bg.png');
 }
 
