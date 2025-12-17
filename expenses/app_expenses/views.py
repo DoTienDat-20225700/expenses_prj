@@ -341,9 +341,6 @@ def ep1_lists(request):
 
 @login_required
 def add_ep1(request):
-    if not Category.objects.filter(user=request.user).exists():
-        create_default_categories(request.user)
-
     if request.method == 'POST':
         form = ExpenseForm(request.POST, user=request.user)
         if form.is_valid():
