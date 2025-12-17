@@ -1,11 +1,12 @@
 from django.urls import path, reverse_lazy
 from . import views
 from django.contrib.auth import views as auth_views
+from app_expenses.form import UserLoginForm 
 
 app_name = 'ep1' 
 
 urlpatterns = [
-    path('login/', auth_views.LoginView.as_view(template_name='ep1/login.html'), name='login'),
+    path('login/', auth_views.LoginView.as_view(template_name='ep1/login.html', authentication_form=UserLoginForm), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='ep1:login'), name='logout'),
     path('register/', views.register, name='register'),
     path('', views.ep1_lists, name='ep1_lists'),

@@ -1,6 +1,7 @@
 from django import forms
 from .models import *
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.models import User
 from .models import Budget
@@ -27,6 +28,31 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+User = get_user_model()
+
+class UserLoginForm(AuthenticationForm):
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+
+        if username and password:
+            # Kiểm tra xem user có tồn tại và password đúng không
+            try:
+                user = User.objects.get(username=username)
+                
+                # Nếu pass đúng NHƯNG tài khoản bị khóa (is_active=False)
+                if user.check_password(password) and not user.is_active:
+                    raise forms.ValidationError(
+                        "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để mở lại.",
+                        code='inactive',
+                    )
+            except User.DoesNotExist:
+                # Nếu user không tồn tại, cứ để mặc định Django xử lý lỗi chung
+                pass
+        
+        # Gọi lại hàm cha để xử lý các lỗi đăng nhập thông thường
+        return super().clean()
 
 class BudgetForm(forms.ModelForm):
     class Meta:
