@@ -105,4 +105,10 @@ class Announcement(models.Model):
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+        default_categories = [
+            "Ăn uống", "Đi lại", "Nhà cửa", "Hóa đơn", "Mua sắm",
+            "Giải trí", "Y tế", "Giáo dục", "Tiết kiệm", "Quà tặng"
+        ]
+        for cat_name in default_categories:
+            Category.objects.create(name=cat_name, user=instance)
     instance.profile.save()

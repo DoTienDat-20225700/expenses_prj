@@ -2,8 +2,8 @@ import os
 import sys
 import django
 from pathlib import Path
+from django.contrib.auth.models import User
 
-# --- THÊM ĐOẠN NÀY ĐỂ SỬA LỖI ---
 # Lấy đường dẫn thư mục hiện tại (expenses)
 current_dir = Path(__file__).resolve().parent
 # Lấy thư mục cha (expenses_prj) để Python nhìn thấy được package 'expenses'
@@ -15,7 +15,6 @@ sys.path.append(str(repo_root))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expenses.config.settings')
 django.setup()
 
-from django.contrib.auth.models import User
 
 def create_admin():
     username = 'admin'           # Tên đăng nhập

@@ -22,7 +22,6 @@ def register(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-            create_default_categories(user)
             login(request, user)  
             return redirect('ep1:ep1_lists')  
     else:
