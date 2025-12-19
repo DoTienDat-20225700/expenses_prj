@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.staticfiles',
     'app_expenses.apps.AppExpensesConfig',
-    'widget_tweaks'
+    'widget_tweaks',
+    'django_cleanup.apps.CleanupConfig'
 ]
 
 MIDDLEWARE = [

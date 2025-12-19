@@ -1,75 +1,145 @@
 {% extends 'ep1/base.html' %} {% load widget_tweaks %} {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-lg-10">
-      <div class="card shadow-sm border-0 rounded-3">
+    <div class="col-lg-11">
+      <div class="card shadow border-0 rounded-4 overflow-hidden">
         <div class="card-header bg-primary text-white py-3">
-          <h4 class="mb-0"><i class="fas fa-id-card me-2"></i>Hồ Sơ Của Tôi</h4>
+          <h5 class="mb-0 fw-bold">
+            <i class="fas fa-user-circle me-2"></i>Hồ Sơ Cá Nhân
+          </h5>
         </div>
 
-        <div class="card-body p-4">
+        <div class="card-body p-0">
           <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
-            <div class="row">
-              <div class="col-md-4 text-center border-end mb-4 mb-md-0">
-                <div class="mb-3 position-relative d-inline-block">
-                  <img id="avatar-preview" 
-                      src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}https://via.placeholder.com/180?text=No+Avatar{% endif %}" 
-                      class="rounded-circle img-thumbnail border-2 shadow-sm" 
-                      style="width: 180px; height: 180px; object-fit: cover;"
-                      alt="Avatar">
+            <div class="row g-0">
+              <div
+                class="col-md-4 profile-left-col border-end d-flex flex-column align-items-center py-5"
+              >
+                <div class="avatar-wrapper mb-3 position-relative">
+                  <img
+                    id="avatar-preview"
+                    src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}/media/avatars/default.png{% endif %}"
+                    class="rounded-circle img-thumbnail border-0 shadow"
+                    style="
+                      width: 160px;
+                      height: 160px;
+                      object-fit: cover;
+                      cursor: pointer;
+                    "
+                    alt="Avatar"
+                    onclick="openPreviewModal()"
+                  />
 
-                  <label for="id_avatar_upload" 
-                        class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow"
-                        style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; transform: translate(-5px, -5px); cursor: pointer; border: 3px solid white; z-index: 10;"
-                        title="Đổi ảnh đại diện">
-                    <i class="fas fa-camera fs-5"></i>
+                  <label
+                    for="id_avatar_field"
+                    class="btn-camera shadow-sm"
+                    title="Thay đổi ảnh"
+                  >
+                    <i class="fas fa-camera"></i>
                   </label>
                 </div>
-                
-                <h5 class="fw-bold text-dark mt-3">{{ user.username }}</h5>
-                <p class="text-muted small mb-3">Thành viên từ: {{ user.date_joined|date:"d/m/Y" }}</p>
 
-                <div style="width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; position: absolute; z-index: -1;">
-                    {% render_field p_form.avatar id="id_avatar_upload" accept="image/*" onchange="previewImage(this);" %}
+                {% render_field p_form.avatar id="id_avatar_field" accept="image/*" onchange="previewImage(this);" style="display: none;" %}
+
+                <h4 class="fw-bold mb-1 user-name-text">{{ user.username }}</h4>
+                <p class="text-muted small mb-3">
+                  <i class="fas fa-clock me-1"></i>Tham gia: {{ user.date_joined|date:"d/m/Y" }}
+                </p>
+
+                {% if p_form.instance.avatar %}
+                <div
+                  class="mt-2 px-3 py-2 rounded-pill shadow-sm border d-flex align-items-center switch-box"
+                >
+                  <div
+                    class="form-check form-switch m-0 d-flex align-items-center"
+                  >
+                    <input
+                      class="form-check-input me-2"
+                      type="checkbox"
+                      name="{{ p_form.avatar.html_name }}-clear"
+                      id="deleteAvatarSwitch"
+                      style="width: 35px; height: 20px"
+                    />
+                    <label
+                      class="form-check-label small fw-bold text-danger pt-1"
+                      for="deleteAvatarSwitch"
+                      style="cursor: pointer"
+                    >
+                      Gỡ ảnh hiện tại
+                    </label>
+                  </div>
                 </div>
-
-                <div class="text-danger small mt-2">{{ p_form.avatar.errors }}</div>
+                {% endif %} {% if p_form.avatar.errors %}
+                <div class="text-danger small mt-2">
+                  {{ p_form.avatar.errors }}
+                </div>
+                {% endif %}
               </div>
-              </div>
 
-              <div class="col-md-8 ps-md-4">
-                <h5 class="text-primary mb-3 border-bottom pb-2">
-                  Thông tin tài khoản
-                </h5>
+              <div class="col-md-8 p-4 p-md-5 profile-right-col">
+                <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
+                  <i class="fas fa-shield-alt me-2 text-primary"></i>Tài khoản
+                </h6>
 
-                <div class="mb-3">
-                  <label class="form-label fw-bold">Email</label>
-                  {{ u_form.email|add_class:"form-control" }}
+                <div class="mb-4">
+                  <label class="form-label fw-bold">Địa chỉ Email</label>
+                  <div class="input-group">
+                    <span class="input-group-text border-end-0 bg-transparent"
+                      ><i class="fas fa-envelope text-muted"></i
+                    ></span>
+                    {{ u_form.email|add_class:"form-control border-start-0 ps-0" }}
+                  </div>
                   <div class="text-danger small">{{ u_form.email.errors }}</div>
                 </div>
 
-                <h5 class="text-primary mt-4 mb-3 border-bottom pb-2">
-                  Thông tin cá nhân
-                </h5>
+                <hr class="my-4 border-light opacity-25" />
 
-                <div class="row">
-                  {% for field in p_form %} {% if field.name != 'avatar' %}
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">{{ field.label }}</label>
-                    {{ field|add_class:"form-control" }}
-                    <div class="text-danger small">{{ field.errors }}</div>
+                <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
+                  <i class="fas fa-id-card me-2 text-primary"></i>Thông tin chi
+                  tiết
+                </h6>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold small">Họ và tên</label>
+                    {{ p_form.full_name|add_class:"form-control" }}
                   </div>
-                  {% endif %} {% endfor %}
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold small">Ngày sinh</label>
+                    {{ p_form.date_of_birth|add_class:"form-control" }}
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold small">Giới tính</label>
+                    {{ p_form.gender|add_class:"form-select" }}
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold small">Dân tộc</label>
+                    {{ p_form.ethnicity|add_class:"form-control" }}
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label fw-bold small">Quê quán</label>
+                    {{ p_form.hometown|add_class:"form-control" }}
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label fw-bold small">Nghề nghiệp</label>
+                    {{ p_form.occupation|add_class:"form-control" }}
+                  </div>
                 </div>
 
-                <div class="mt-4 text-end">
+                <div class="mt-5 text-end">
+                  <a href="/" class="btn btn-secondary me-2 fw-bold">Hủy bỏ</a>
                   <button
                     type="submit"
-                    class="btn btn-primary px-4 py-2 fw-bold shadow-sm"
+                    class="btn btn-primary px-4 py-2 fw-bold shadow-sm rounded-pill"
                   >
-                    <i class="fas fa-save me-2"></i>Lưu Hồ Sơ
+                    <i class="fas fa-save me-2"></i>Lưu hồ sơ
                   </button>
                 </div>
               </div>
@@ -81,19 +151,44 @@
   </div>
 </div>
 
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-transparent border-0 shadow-none">
+      <button
+        type="button"
+        class="btn-close btn-close-white position-absolute top-0 end-0 m-3 z-3"
+        data-bs-dismiss="modal"
+      ></button>
+      <div class="modal-body text-center p-0">
+        <img
+          id="modal-img-target"
+          src=""
+          class="img-fluid rounded-3 shadow-lg"
+          style="max-height: 85vh"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   function previewImage(input) {
     if (input.files && input.files[0]) {
       var reader = new FileReader();
-
       reader.onload = function (e) {
-        // Tìm thẻ img có id="avatar-preview" và thay đổi src
         document.getElementById("avatar-preview").src = e.target.result;
+        document.getElementById("modal-img-target").src = e.target.result;
       };
-
       reader.readAsDataURL(input.files[0]);
     }
   }
+  function openPreviewModal() {
+    var src = document.getElementById("avatar-preview").src;
+    document.getElementById("modal-img-target").src = src;
+    var myModal = new bootstrap.Modal(
+      document.getElementById("imagePreviewModal")
+    );
+    myModal.show();
+  }
 </script>
-
 {% endblock %}

@@ -500,3 +500,251 @@ body.dark-mode .input-group-text {
     border-color: rgba(255, 255, 255, 0.1) !important;
     color: #fff !important;
 }
+
+/* --- ÉP MÀU THEME EMERALD CHO CÁC CLASS BOOTSTRAP --- */
+.bg-primary,
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+
+.text-primary {
+    color: var(--primary) !important;
+}
+
+/* --- STYLE RIÊNG CHO TRANG PROFILE --- */
+.profile-card {
+    overflow: hidden;
+}
+
+.avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Ảnh đại diện: Thêm con trỏ tay và hiệu ứng mượt */
+.avatar-wrapper img {
+    cursor: pointer;
+    /* Quan trọng: Hiện bàn tay để biết là bấm được */
+    transition: all 0.3s ease;
+    /* Hiệu ứng mượt mà */
+    border: 3px solid #fff;
+    /* Viền trắng cho nổi bật (tùy chọn) */
+}
+
+/* Hiệu ứng khi di chuột vào ảnh: Tối đi chút + Phóng to nhẹ */
+.avatar-wrapper:hover img {
+    filter: brightness(0.9);
+    transform: scale(1.02);
+    /* Phóng to 2% tạo cảm giác tương tác */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Nút camera nổi bật trên nền Emerald */
+.btn-camera {
+    width: 42px;
+    height: 42px;
+    background-color: var(--primary);
+    color: white;
+    border: 3px solid white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.2s ease;
+    z-index: 10;
+}
+
+.btn-camera:hover {
+    transform: scale(1.1);
+    background-color: var(--primary-hover);
+}
+
+/* Input file ẩn theo cách an toàn cho macOS */
+.hidden-file-input {
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+/* ======================================================
+   PHẦN BỔ SUNG CHO TRANG PROFILE (Fix giao diện Avatar)
+   ====================================================== */
+
+/* 1. Căn giữa toàn bộ cột bên trái */
+.profile-left-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100%;
+}
+
+/* 2. Hộp hiển thị thông tin file (Thay thế cho style inline cũ) */
+.file-info-box {
+    background-color: var(--input-bg);
+    /* Dùng biến màu của bạn -> Hợp tông với form */
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    /* Bo góc mềm mại hơn */
+    padding: 12px 15px;
+    margin-top: 20px;
+    margin-bottom: 15px;
+    width: 100%;
+    max-width: 260px;
+    /* Giới hạn chiều rộng để hộp không bị bè ra quá to */
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    text-align: left;
+    /* Căn trái nội dung bên trong hộp */
+}
+
+/* Hiệu ứng khi di chuột vào hộp file */
+.file-info-box:hover {
+    border-color: var(--primary);
+    /* Viền sáng màu xanh chủ đạo */
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* 3. Tinh chỉnh Link tên file */
+.file-name-text {
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    /* Kỹ thuật cắt chữ nếu tên file quá dài */
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+    /* Độ dài tối đa trước khi hiện dấu ... */
+}
+
+.file-name-text:hover {
+    color: var(--primary);
+    /* Hover vào đổi màu xanh */
+}
+
+/* 4. Tinh chỉnh Label "Xóa ảnh" */
+.delete-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ef4444;
+    /* Màu đỏ đẹp hơn (Red-500) */
+    cursor: pointer;
+    margin-left: 8px;
+    user-select: none;
+}
+
+/* Fix căn chỉnh icon hình ảnh */
+.file-icon {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-right: 10px;
+}
+
+/* =========================================================
+   STYLE CHO TRANG PROFILE MỚI (CẬP NHẬT)
+   ========================================================= */
+
+/* 1. Tiện ích khoảng cách chữ (Letter Spacing) */
+.ls-1 {
+    letter-spacing: 1px;
+}
+
+/* 2. Hiệu ứng Focus cho ô nhập liệu (Mềm mại hơn) */
+/* Ghi đè bootstrap mặc định để dùng màu xanh chủ đạo */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.15) !important;
+}
+
+/* 3. Nút Camera (Tinh chỉnh lại kích thước nhỏ hơn cho layout mới) */
+/* CSS này sẽ ghi đè class .btn-camera cũ nếu bạn dán nó ở cuối file */
+.btn-camera {
+    width: 38px;
+    height: 38px;
+    background: var(--primary);
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 50%;
+
+    /* Căn vị trí góc phải dưới của avatar */
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-camera:hover {
+    transform: scale(1.1);
+    background: var(--primary-hover);
+}
+
+/* 4. Switch xóa ảnh (Tùy chỉnh con trỏ chuột) */
+.form-check-input {
+    cursor: pointer;
+}
+
+/* =========================================================
+   FIX LỖI DARK MODE CHO TRANG PROFILE
+   ========================================================= */
+
+/* 1. Cột trái (Avatar) */
+.profile-left-col {
+    background-color: var(--bg-card);
+    /* Sáng: Xám nhạt | Tối: Xám xanh tối */
+    transition: background-color 0.3s ease;
+    color: var(--text-main);
+}
+
+/* 2. Cột phải (Form nhập liệu) */
+.profile-right-col {
+    background-color: var(--bg-card);
+    /* Sáng: Trắng | Tối: Xám đậm */
+    transition: background-color 0.3s ease;
+    color: var(--text-main);
+}
+
+/* 3. Sửa nền cho input group icon (icon phong bì thư) */
+.input-group-text {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-muted);
+}
+
+/* 4. Fix màu tên User */
+.user-name-text {
+    color: var(--text-main) !important;
+}
+
+/* 5. Fix cái hộp nút Switch xóa ảnh */
+.switch-box {
+    background-color: var(--bg-card) !important;
+    /* Đổi màu nền hộp switch theo theme */
+    border-color: var(--border-color) !important;
+}
+
+/* 6. Fix viền giữa 2 cột trong Dark Mode */
+.border-end {
+    border-right-color: var(--border-color) !important;
+}

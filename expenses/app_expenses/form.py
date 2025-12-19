@@ -4,8 +4,10 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.models import User
-from .models import Budget
+from .models import Budget, Profile
 
+class CustomClearableFileInput(forms.ClearableFileInput):
+    template_name = 'django/forms/widgets/file.html'
 
 class ExpenseForm(forms.ModelForm):
     class Meta:
@@ -95,21 +97,27 @@ class UserUpdateForm(forms.ModelForm):
         fields = ['email']
 
 class ProfileUpdateForm(forms.ModelForm):
+    avatar        = forms.ImageField(label="Ảnh đại diện", required=False, widget=CustomClearableFileInput(attrs={'style': 'display:none;'}))
+
     full_name     = forms.CharField(label="Họ tên",
-        widget=forms.TextInput(attrs={'class':'form-control'}))
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nhập họ và tên'}))
+    
     date_of_birth = forms.DateField(label="Ngày sinh",
         widget=forms.DateInput(attrs={'type':'date','class':'form-control'}))
+    
     gender        = forms.ChoiceField(label="Giới tính",
         choices=Profile.GENDER_CHOICES,
         widget=forms.Select(attrs={'class':'form-control'}))
+    
     hometown      = forms.CharField(label="Quê quán",
         widget=forms.TextInput(attrs={'class':'form-control'}))
+    
     ethnicity     = forms.CharField(label="Dân tộc",
         widget=forms.TextInput(attrs={'class':'form-control'}))
+    
     occupation    = forms.CharField(label="Nghề nghiệp",
         widget=forms.TextInput(attrs={'class':'form-control'}))
 
     class Meta:
         model  = Profile
         fields = ['avatar', 'full_name', 'date_of_birth', 'gender', 'hometown', 'ethnicity', 'occupation']
-        fields = ['full_name','date_of_birth','gender','hometown','ethnicity','occupation']
