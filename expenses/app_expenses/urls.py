@@ -43,3 +43,4 @@ urlpatterns = [
     path('manager/announcements/delete/<int:pk>/', views.delete_announcement, name='delete_announcement'),
     path('manager/announcements/toggle/<int:pk>/', views.toggle_announcement, name='toggle_announcement'),
 ]
+

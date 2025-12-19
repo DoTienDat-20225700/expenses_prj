@@ -111,4 +111,5 @@ class ProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model  = Profile
+        fields = ['avatar', 'full_name', 'date_of_birth', 'gender', 'hometown', 'ethnicity', 'occupation']
         fields = ['full_name','date_of_birth','gender','hometown','ethnicity','occupation']

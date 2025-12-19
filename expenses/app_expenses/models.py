@@ -66,7 +66,8 @@ class Budget(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    full_name     = models.CharField("Họ tên",      max_length=150, null=True, blank=True)
+    avatar = models.ImageField("Ảnh đại diện", upload_to='avatars/', default='avatars/default.png', blank=True)
+    full_name = models.CharField("Họ tên",  max_length=150, null=True, blank=True)
     date_of_birth = models.DateField("Ngày sinh",   null=True, blank=True)
     GENDER_CHOICES = [
         ('M','Nam'),

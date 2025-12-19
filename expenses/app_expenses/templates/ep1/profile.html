@@ -1,28 +1,99 @@
-{% extends 'ep1/base.html' %}
-{% load widget_tweaks %}
-{% block content %}
-<div class="container py-4">
-  <h2>Hồ Sơ của tôi</h2>
-  <form method="post">
-    {% csrf_token %}
-    <h5>Thông tin tài khoản</h5>
-    <div class="mb-3">
-      <label>Email</label>
-      {{ u_form.email|add_class:"form-control" }}
-      {{ u_form.email.errors }}
-    </div>
+{% extends 'ep1/base.html' %} {% load widget_tweaks %} {% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white py-3">
+          <h4 class="mb-0"><i class="fas fa-id-card me-2"></i>Hồ Sơ Của Tôi</h4>
+        </div>
 
-    <hr>
-    <h5>Thông tin cá nhân</h5>
-    {% for field in p_form %}
-      <div class="mb-3">
-        <label>{{ field.label }}</label>
-        {{ field|add_class:"form-control" }}
-        {{ field.errors }}
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="row">
+              <div class="col-md-4 text-center border-end mb-4 mb-md-0">
+                <div class="mb-3 position-relative d-inline-block">
+                  <img id="avatar-preview" 
+                      src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}https://via.placeholder.com/180?text=No+Avatar{% endif %}" 
+                      class="rounded-circle img-thumbnail border-2 shadow-sm" 
+                      style="width: 180px; height: 180px; object-fit: cover;"
+                      alt="Avatar">
+
+                  <label for="id_avatar_upload" 
+                        class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow"
+                        style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; transform: translate(-5px, -5px); cursor: pointer; border: 3px solid white; z-index: 10;"
+                        title="Đổi ảnh đại diện">
+                    <i class="fas fa-camera fs-5"></i>
+                  </label>
+                </div>
+                
+                <h5 class="fw-bold text-dark mt-3">{{ user.username }}</h5>
+                <p class="text-muted small mb-3">Thành viên từ: {{ user.date_joined|date:"d/m/Y" }}</p>
+
+                <div style="width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; position: absolute; z-index: -1;">
+                    {% render_field p_form.avatar id="id_avatar_upload" accept="image/*" onchange="previewImage(this);" %}
+                </div>
+
+                <div class="text-danger small mt-2">{{ p_form.avatar.errors }}</div>
+              </div>
+              </div>
+
+              <div class="col-md-8 ps-md-4">
+                <h5 class="text-primary mb-3 border-bottom pb-2">
+                  Thông tin tài khoản
+                </h5>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Email</label>
+                  {{ u_form.email|add_class:"form-control" }}
+                  <div class="text-danger small">{{ u_form.email.errors }}</div>
+                </div>
+
+                <h5 class="text-primary mt-4 mb-3 border-bottom pb-2">
+                  Thông tin cá nhân
+                </h5>
+
+                <div class="row">
+                  {% for field in p_form %} {% if field.name != 'avatar' %}
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">{{ field.label }}</label>
+                    {{ field|add_class:"form-control" }}
+                    <div class="text-danger small">{{ field.errors }}</div>
+                  </div>
+                  {% endif %} {% endfor %}
+                </div>
+
+                <div class="mt-4 text-end">
+                  <button
+                    type="submit"
+                    class="btn btn-primary px-4 py-2 fw-bold shadow-sm"
+                  >
+                    <i class="fas fa-save me-2"></i>Lưu Hồ Sơ
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-    {% endfor %}
-
-    <button type="submit" class="btn btn-primary">Lưu hồ sơ</button>
-  </form>
+    </div>
+  </div>
 </div>
+
+<script>
+  function previewImage(input) {
+    if (input.files && input.files[0]) {
+      var reader = new FileReader();
+
+      reader.onload = function (e) {
+        // Tìm thẻ img có id="avatar-preview" và thay đổi src
+        document.getElementById("avatar-preview").src = e.target.result;
+      };
+
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+
 {% endblock %}
