@@ -134,7 +134,7 @@
                     <td class="ps-3 fw-bold text-primary">{{ expense.amount|floatformat:0|intcomma:0 }} ₫</td>
                     <td class="text-muted">{{ expense.description|truncatechars:40|default:"--" }}</td>
                     <td>
-                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                        <span class="badge px-3 py-2 rounded-pill category-badge">
                             {{ expense.category }}
                         </span>
                     </td>

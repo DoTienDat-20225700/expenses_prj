@@ -748,3 +748,44 @@ body.dark-mode .input-group-text {
 .border-end {
     border-right-color: var(--border-color) !important;
 }
+
+/* =========================================================
+   PASSWORD TOGGLE BUTTON
+   ========================================================= */
+.password-toggle {
+    padding: 0.5rem;
+    text-decoration: none;
+    border: none;
+    background: transparent;
+    outline: none;
+    box-shadow: none !important;
+    z-index: 10;
+}
+
+.password-toggle:hover,
+.password-toggle:focus {
+    color: var(--primary) !important;
+    background: transparent !important;
+    outline: none;
+}
+
+.password-toggle i {
+    font-size: 1.1rem;
+    transition: color 0.2s ease;
+}
+
+/* =========================================================
+   CATEGORY BADGE
+   ========================================================= */
+.category-badge {
+    background-color: var(--primary) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.category-badge:hover {
+    background-color: var(--primary-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
