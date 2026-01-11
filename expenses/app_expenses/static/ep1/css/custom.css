@@ -260,9 +260,11 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 
 /* Hiệu ứng bay lên khi hover vào thẻ */
 .card:hover {
-    transform: translateY(-5px) scale(1.005);
+    transform: translateY(-5px);
     box-shadow: var(--shadow-hover);
     border-color: rgba(16, 185, 129, 0.3);
+    z-index: 10;
+    position: relative;
     /* Viền sáng xanh nhẹ */
 }
 
