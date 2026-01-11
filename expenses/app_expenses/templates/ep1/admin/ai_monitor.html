@@ -25,9 +25,9 @@
   </div>
   <div class="card-body">
     <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
-          <tr>
+      <table class="table align-middle">
+        <thead>
+          <tr class="text-main border-bottom">
             <th>User</th>
             <th class="text-center">Dữ liệu gốc</th>
             <th class="text-center">Trạng thái Model</th>
@@ -37,8 +37,8 @@
         </thead>
         <tbody>
           {% for item in ai_stats %}
-          <tr>
-            <td>
+          <tr class="border-bottom">
+            <td class="text-main">
               <div class="fw-bold">{{ item.user.username }}</div>
               <small class="text-muted">ID: {{ item.user.id }}</small>
             </td>
@@ -59,7 +59,7 @@
               {% endif %}
             </td>
 
-            <td class="text-center">
+            <td class="text-center text-main">
               {% if item.has_model %} {{ item.model_size }} KB {% else %} --
               {%endif %}
             </td>

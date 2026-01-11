@@ -97,13 +97,12 @@
             <tbody>
               {% for cat in top_categories %}
               <tr>
-                <td>
-                  {% if cat.category__name %} {{ cat.category__name }} 
-                  {% else %}
+                <td class="text-main">
+                  {% if cat.category__name %} {{ cat.category__name }} {% else %}
                   <span class="text-muted fst-italic">Không xác định</span>
                   {% endif %}
                 </td>
-                <td class="fw-bold text-center">{{ cat.count }}</td>
+                <td class="fw-bold text-center text-main">{{ cat.count }}</td>
               </tr>
               {% endfor %}
             </tbody>

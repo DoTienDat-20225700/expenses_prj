@@ -334,13 +334,12 @@ widget_tweaks %} {% block content %}
               class="p-3 rounded-4 border border-warning bg-warning bg-opacity-10 d-flex justify-content-between align-items-center"
             >
               <div>
-                <h6 class="fw-bold mb-1 text-dark">{{ recurring.name }}</h6>
+                <h6 class="fw-bold mb-1 text-main">{{ recurring.name }}</h6>
                 <div class="text-danger fw-bold mb-1">
                   {{ recurring.amount|floatformat:0|intcomma }} ₫
                 </div>
                 <small class="text-muted">
-                  <i class="far fa-clock me-1"></i>{{
-                  recurring.next_due_date|date:"d/m/Y" }}
+                  <i class="far fa-clock me-1"></i>{{ recurring.next_due_date|date:"d/m/Y" }}
                 </small>
               </div>
               <span class="badge bg-warning text-dark shadow-sm">

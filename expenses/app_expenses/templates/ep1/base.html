@@ -55,34 +55,52 @@
           <ul class="navbar-nav ms-auto align-items-center gap-2 mt-3 mt-lg-0">
             {% if user.is_authenticated %} {% if user.is_superuser %}
             <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'ep1:admin_dashboard' %}">
+              <a
+                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:admin_dashboard' %}active{% endif %}"
+                href="{% url 'ep1:admin_dashboard' %}"
+              >
                 <i class="fas fa-tachometer-alt me-2"></i>Admin
               </a>
             </li>
             {% endif %}
 
             <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'ep1:dashboard' %}">
+              <a
+                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:dashboard' %}active{% endif %}"
+                href="{% url 'ep1:dashboard' %}"
+              >
                 <i class="fas fa-chart-pie me-2"></i>Tổng quan
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'ep1:ep1_lists' %}">
+              <a
+                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:ep1_lists' %}active{% endif %}"
+                href="{% url 'ep1:ep1_lists' %}"
+              >
                 <i class="fas fa-wallet me-2"></i>Chi Tiêu
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'ep1:income_list' %}">
+              <a
+                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:income_list' %}active{% endif %}"
+                href="{% url 'ep1:income_list' %}"
+              >
                 <i class="fas fa-coins me-2"></i>Thu Nhập
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'ep1:recurring_list' %}">
+              <a
+                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:recurring_list' %}active{% endif %}"
+                href="{% url 'ep1:recurring_list' %}"
+              >
                 <i class="fas fa-sync-alt me-2"></i>Định Kỳ
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link px-3" href="{% url 'ep1:category_list' %}">
+              <a
+                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:category_list' %}active{% endif %}"
+                href="{% url 'ep1:category_list' %}"
+              >
                 <i class="fas fa-folder-open me-2"></i>Danh Mục
               </a>
             </li>

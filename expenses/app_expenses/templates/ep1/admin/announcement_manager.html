@@ -27,7 +27,7 @@
         <form method="post">
           {% csrf_token %}
           <div class="mb-3">
-            <label class="form-label">Tiêu đề</label>
+            <label class="form-label fw-bold text-main">Tiêu đề</label>
             <input
               type="text"
               name="title"
@@ -37,7 +37,7 @@
             />
           </div>
           <div class="mb-3">
-            <label class="form-label">Loại tin</label>
+            <label class="form-label fw-bold text-main">Loại tin</label>
             <select name="priority" class="form-select">
               <option value="info">Thông tin (Xanh dương)</option>
               <option value="success">Thành công (Xanh lá)</option>
@@ -46,7 +46,7 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Nội dung</label>
+            <label class="form-label fw-bold text-main">Nội dung</label>
             <textarea
               name="content"
               class="form-control"
@@ -68,9 +68,9 @@
       </div>
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-light">
-              <tr>
+          <table class="table align-middle">
+            <thead>
+              <tr class="text-main border-bottom">
                 <th>Nội dung</th>
                 <th>Loại</th>
                 <th>Trạng thái</th>
@@ -79,8 +79,8 @@
             </thead>
             <tbody>
               {% for item in announcements %}
-              <tr>
-                <td>
+              <tr class="border-bottom">
+                <td class="text-main">
                   <div class="fw-bold">{{ item.title }}</div>
                   <small class="text-muted"
                     >{{ item.created_at|date:"d/m/Y H:i" }}</small
@@ -89,17 +89,17 @@
                 <td>
                   {% if item.priority == 'info' %}<span
                     class="badge bg-info text-dark"
-                    >Info</span
+                    >Thông tin</span
                   >
                   {% elif item.priority == 'warning' %}<span
                     class="badge bg-warning text-dark"
-                    >Warning</span
+                    >Cảnh báo</span
                   >
                   {% elif item.priority == 'danger' %}<span
                     class="badge bg-danger"
-                    >Danger</span
+                    >Khẩn cấp</span
                   >
-                  {% else %}<span class="badge bg-success">Success</span>
+                  {% else %}<span class="badge bg-success">Thành công</span>
                   {% endif %}
                 </td>
                 <td>

@@ -64,7 +64,7 @@
               >
                 <td class="ps-3">
                   <i class="fas fa-repeat me-2 text-muted"></i>
-                  <strong>{{ recurring.name }}</strong>
+                  <span class="fw-bold text-main">{{ recurring.name }}</span>
                 </td>
                 <td>
                   <span class="fw-bold text-danger"
@@ -85,8 +85,8 @@
                     >{{ recurring.get_frequency_display }}</span
                   >
                 </td>
-                <td>
-                  <i class="far fa-calendar-alt me-1 text-muted"></i>
+                <td class="text-muted">
+                  <i class="far fa-calendar-alt me-1"></i>
                   {{ recurring.next_due_date|date:"d/m/Y" }} {% if recurring.next_due_date <= today %}
                   <span class="badge bg-danger ms-1">Đến hạn!</span>
                   {% endif %}
