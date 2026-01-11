@@ -21,8 +21,16 @@
       <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
           <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Sắp xếp tiền</label>
+            <select name="sort_amount" class="form-select" onchange="this.form.submit()">
+                <option value="">Mặc định</option>
+                <option value="asc" {% if sort_amount == 'asc' %}selected{% endif %}>Thấp đến Cao</option>
+                <option value="desc" {% if sort_amount == 'desc' %}selected{% endif %}>Cao đến Thấp</option>
+            </select>
+          </div>
+          <div class="col-md-3">
             <label class="form-label small fw-bold text-muted">Nguồn Thu</label>
-            <select name="source" class="form-select">
+            <select name="source" class="form-select" onchange="this.form.submit()">
               <option value="">Tất cả nguồn thu</option>
               {% for source in sources %}
               <option value="{{ source.id }}" {% if selected_source == source.id %}selected{% endif %}>
@@ -31,18 +39,20 @@
               {% endfor %}
             </select>
           </div>
-          <div class="col-md-3">
-            <label class="form-label small fw-bold text-muted">Từ ngày</label>
-            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+          <div class="col-md-5">
+            <label class="form-label small fw-bold text-muted">Khoảng thời gian</label>
+            <div class="input-group">
+                <input type="date" name="date_from" class="form-control" 
+                       value="{{ date_from }}" onchange="this.form.submit()" />
+                <span class="input-group-text">-</span>
+                <input type="date" name="date_to" class="form-control" 
+                       value="{{ date_to }}" onchange="this.form.submit()" />
+            </div>
           </div>
-          <div class="col-md-3">
-            <label class="form-label small fw-bold text-muted">Đến ngày</label>
-            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
-          </div>
-          <div class="col-md-3">
-            <button type="submit" class="btn btn-primary w-100">
-              <i class="fas fa-filter me-2"></i>Lọc
-            </button>
+          <div class="col-md-1">
+            <a href="{% url 'ep1:income_list' %}" class="btn btn-secondary w-100" title="Đặt lại bộ lọc">
+                <i class="fas fa-sync-alt"></i>
+            </a>
           </div>
         </form>
       </div>
@@ -69,10 +79,10 @@
   <!-- Income List -->
   <div class="col-12">
     <div class="card border-0 shadow-sm">
-      <div class="card-header bg-white border-0 pt-4 pb-3">
+      <div class="card-header border-0 pt-4 pb-3">
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="fw-bold mb-0">Danh Sách Thu Nhập</h5>
-          <a href="{% url 'ep1:income_source_manage' %}" class="btn btn-sm btn-outline-primary">
+          <a href="{% url 'ep1:income_source_manage' %}" class="btn btn-sm btn-outline-primary ms-3">
             <i class="fas fa-cog me-1"></i>Quản lý nguồn thu
           </a>
         </div>
@@ -83,27 +93,26 @@
           <table class="table table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th class="py-3 ps-3" style="width: 15%;">Ngày</th>
-                <th class="py-3" style="width: 20%;">Nguồn Thu</th>
+                <th class="py-3 ps-3" style="width: 20%;">Số Tiền</th>
                 <th class="py-3" style="width: 30%;">Mô Tả</th>
-                <th class="py-3" style="width: 20%;">Số Tiền</th>
+                <th class="py-3" style="width: 20%;">Nguồn Thu</th>
+                <th class="py-3" style="width: 15%;">Ngày</th>
                 <th class="py-3 text-center" style="width: 15%;">Hành Động</th>
               </tr>
             </thead>
             <tbody>
               {% for income in incomes %}
               <tr>
-                <td class="ps-3">
-                  <i class="far fa-calendar-alt me-2 text-muted"></i>
-                  {{ income.date|date:"d/m/Y" }}
-                </td>
+                <td class="ps-3 fw-bold text-success">+{{ income.amount|floatformat:0|intcomma }} ₫</td>
+                <td class="text-muted">{{ income.description|truncatewords:10|default:"—" }}</td>
                 <td>
                   <span class="badge px-3 py-2 rounded-pill category-badge">
                     {{ income.source.name|default:"Khác" }}
                   </span>
                 </td>
-                <td class="text-muted">{{ income.description|truncatewords:10|default:"—" }}</td>
-                <td class="fw-bold text-success">+{{ income.amount|floatformat:0|intcomma }} ₫</td>
+                <td class="text-muted">
+                  <i class="far fa-calendar-alt me-2"></i>{{ income.date|date:"d/m/Y" }}
+                </td>
                 <td class="text-center">
                   <div class="btn-group">
                     <a href="{% url 'ep1:edit_income' income.pk %}" 
@@ -128,7 +137,7 @@
 
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
-        <div class="card-footer bg-white border-0 py-3">
+        <div class="card-footer border-0 py-3">
           <nav>
             <ul class="pagination pagination-sm justify-content-center mb-0">
               {% if page_obj.has_previous %}

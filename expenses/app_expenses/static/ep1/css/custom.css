@@ -1,324 +1,422 @@
-/* --- 1. CẤU HÌNH BIẾN MÀU (THEMING VARIABLES) --- */
+/* =========================================================
+   MONEYMANAGER - MODERN GLASSMORPHISM THEME
+   Style: Clean, Modern, Finance-focused
+   ========================================================= */
+
+/* 1. IMPORT FONT (Hiện đại & Sắc nét hơn) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* 2. CẤU HÌNH BIẾN MÀU & HIỆU ỨNG (VARIABLES) */
 :root {
-    /* CHẾ ĐỘ SÁNG (LIGHT MODE) */
+    --font-main: 'Plus Jakarta Sans', sans-serif;
+
+    /* --- CHẾ ĐỘ SÁNG (LIGHT MODE) --- */
     --primary: #10b981;
-    /* Xanh Emerald */
+    /* Emerald 500 */
     --primary-hover: #059669;
-    --bg-body: #f8fafc;
-    /* Nền trang sáng */
-    --bg-card: #ffffff;
-    /* Nền thẻ trắng */
-    --text-main: #1e293b;
-    /* Chữ đen xám */
-    --text-muted: #64748b;
-    /* Chữ mờ */
-    --border-color: #e2e8f0;
-    /* Viền nhạt */
-    --input-bg: #f1f5f9;
-    /* Nền ô nhập liệu */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --navbar-bg: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    --navbar-text: #ffffff;
+    /* Emerald 600 */
+
+    /* Nền trang: Xanh mint cực nhạt tạo cảm giác tươi mới */
+    --bg-body: #f0fdf4;
+
+    /* Glassmorphism Variables (Quan trọng) */
+    --bg-card: rgba(255, 255, 255, 0.85); /* Tăng từ 0.75 lên 0.85 */
+    /* Nền kính trong suốt */
+    --bg-glass-heavy: rgba(255, 255, 255, 0.95);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.7);
+    --blur-strength: 20px;
+
+    --text-main: #0f172a;
+    /* Slate 900 */
+    --text-muted: #475569; /* Đậm hơn chút so với 64748b */
+    /* Slate 500 */
+    --border-color: rgba(226, 232, 240, 0.8);
+    --input-bg: rgba(255, 255, 255, 0.8); /* Tăng opacity input */
+
+    /* Colored Shadows (Bóng đổ màu) - Bí quyết của giao diện xịn */
+    --shadow-sm: 0 4px 6px -1px rgba(16, 185, 129, 0.05), 0 2px 4px -1px rgba(16, 185, 129, 0.03);
+    --shadow-md: 0 10px 15px -3px rgba(16, 185, 129, 0.08), 0 4px 6px -2px rgba(16, 185, 129, 0.04);
+    --shadow-lg: 0 20px 25px -5px rgba(16, 185, 129, 0.1), 0 10px 10px -5px rgba(16, 185, 129, 0.04);
+    --shadow-hover: 0 20px 40px -5px rgba(16, 185, 129, 0.2);
+
+    /* Navbar Gradient */
+    --navbar-bg: rgba(255, 255, 255, 0.9); /* Tăng opacity navbar */
+    --navbar-text: #0f172a;
 }
 
-/* --- HÌNH NỀN TOÀN TRANG: CHỦ ĐỀ TÀI CHÍNH --- */
-
-/* --- HÌNH NỀN TOÀN TRANG (SỬA LẠI) --- */
-body {
-    background-image:
-        linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.55)),
-        /* Giảm xuống 0.75 để thấy rõ ảnh */
-        url('../img/bg.png');
-
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    /* Quan trọng: Giữ ảnh đứng yên */
-}
-
-/* Dark Mode: Phủ đen mờ 85% */
+/* --- CHẾ ĐỘ TỐI (DARK MODE) --- */
 body.dark-mode {
-    background-image:
-        linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.65)),
-        url('../img/bg.png');
+    /* Đảm bảo nền tối phủ lên ảnh đủ tốt */
+    --primary: #34d399;
+    /* Emerald 400 (Sáng hơn để nổi trên nền tối) */
+    --primary-hover: #10b981;
+
+    /* Nền trang: Xanh đen sâu thẳm (Deep Slate/Navy) */
+    --bg-body: #0f172a; 
+
+    /* Dark Glass */
+    --bg-card: rgba(15, 23, 42, 0.8); /* Tăng từ 0.6 lên 0.8 */
+    --bg-glass-heavy: rgba(15, 23, 42, 0.9);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+
+    --text-main: #f8fafc;
+    /* Slate 50 */
+    --text-muted: #94a3b8;
+    /* Slate 400 */
+    --border-color: rgba(51, 65, 85, 0.5);
+    --input-bg: rgba(15, 23, 42, 0.5);
+
+    /* Dark Shadows */
+    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 25px 50px rgba(0, 0, 0, 0.5);
+
+    --navbar-bg: rgba(15, 23, 42, 0.7);
+    --navbar-text: #f8fafc;
 }
 
 /* =========================================
-   CHẾ ĐỘ TỐI (DARK MODE) - PHIÊN BẢN FINAL
+   3. BASE STYLES & BACKGROUND
    ========================================= */
-body.dark-mode {
-    /* --- 1. Bộ biến màu Dark Mode --- */
-    --primary: #34d399;
-    /* Xanh sáng (Emerald 400) */
-    --primary-hover: #10b981;
-    --bg-body: #0f172a;
-    /* Nền trang tối thẫm */
-    --bg-card: #1e293b;
-    /* Nền thẻ tối */
-
-    --text-main: #f1f5f9;
-    /* Chữ trắng */
-    --text-muted: #cbd5e1;
-    /* Chữ xám sáng */
-
-    --input-bg: #334155;
-    /* Nền ô nhập liệu */
-    --input-text: #f1f5f9;
-    --border-color: #475569;
-    /* Viền xám xanh */
-
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.7);
-    --navbar-bg: #1e293b;
-    --navbar-text: #f1f5f9;
-}
-
-/* --- 2. Ép nền Thẻ & Form --- */
-body.dark-mode .card,
-body.dark-mode .auth-card,
-body.dark-mode .table-responsive {
-    background-color: var(--bg-card) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-main);
-}
-
-/* --- 3. Xử lý Input & Select --- */
-body.dark-mode .form-control,
-body.dark-mode .form-select,
-body.dark-mode .input-group-text {
-    background-color: var(--input-bg) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-main) !important;
-}
-
-body.dark-mode .form-control:focus,
-body.dark-mode .form-select:focus {
-    background-color: var(--input-bg) !important;
-    border-color: var(--primary) !important;
-    color: var(--text-main) !important;
-    box-shadow: 0 0 0 0.25rem rgba(52, 211, 153, 0.25);
-}
-
-/* Icon lịch trong ô chọn ngày */
-body.dark-mode input[type="date"] {
-    color-scheme: dark;
-}
-
-/* Nền menu xổ xuống */
-body.dark-mode select option {
-    background-color: var(--bg-card);
-    color: var(--text-main);
-}
-
-/* --- 4. XỬ LÝ BẢNG (TABLE) - KHẮC PHỤC LỖI CHỮ ĐEN --- */
-body.dark-mode .table {
-    --bs-table-bg: transparent !important;
-    --bs-table-color: var(--text-main) !important;
-    /* Biến đè màu chữ của Bootstrap */
-    color: var(--text-main) !important;
-}
-
-/* Ép màu trực tiếp vào từng ô (td, th) để chắc chắn 100% */
-body.dark-mode .table td,
-body.dark-mode .table th {
-    color: var(--text-main) !important;
-    border-color: var(--border-color) !important;
-    background-color: transparent !important;
-    /* Tránh bị nền trắng đè lên */
-}
-
-/* --- 5. Chữ mờ & Nút bấm --- */
-body.dark-mode .text-muted {
-    color: var(--text-muted) !important;
-}
-
-body.dark-mode .btn-outline-primary {
-    color: var(--primary) !important;
-    border-color: var(--primary) !important;
-}
-
-body.dark-mode .btn-outline-primary:hover {
-    background-color: var(--primary) !important;
-    color: #fff !important;
-}
-
-body.dark-mode .btn-outline-danger {
-    color: #f87171 !important;
-    border-color: #f87171 !important;
-}
-
-body.dark-mode .btn-outline-danger:hover {
-    background-color: #ef4444 !important;
-    color: #fff !important;
-}
-
-/* --- XỬ LÝ MENU ADMIN (DROPDOWN) DARK MODE --- */
-
-/* 1. Đổi nền và viền của menu thả xuống */
-body.dark-mode .dropdown-menu {
-    background-color: var(--bg-card);
-    /* Dùng nền tối của thẻ Card */
-    border-color: var(--border-color);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.5);
-    /* Bóng đổ đậm hơn */
-}
-
-/* 2. Đổi màu chữ trong menu */
-body.dark-mode .dropdown-item {
-    color: var(--text-main);
-}
-
-/* 3. Hiệu ứng khi di chuột vào từng mục (Hover) */
-body.dark-mode .dropdown-item:hover,
-body.dark-mode .dropdown-item:focus {
-    background-color: rgba(255, 255, 255, 0.1);
-    /* Nền sáng nhẹ */
-    color: var(--primary);
-    /* Chữ chuyển màu xanh chủ đạo */
-}
-
-/* 4. Đổi màu đường gạch ngang phân cách */
-body.dark-mode .dropdown-divider {
-    border-top-color: var(--border-color);
-}
-
-/* 5. (Tùy chọn) Đổi màu icon nhỏ bên trong menu */
-body.dark-mode .dropdown-item i {
-    color: var(--text-muted);
-}
-
-/* --- 2. CẤU TRÚC CHUNG (BASE) --- */
 body {
-    font-family: 'Nunito', sans-serif;
+    font-family: var(--font-main);
     background-color: var(--bg-body);
+    /* Tạo hình nền Gradient Mesh hiện đại thay vì ảnh tĩnh */
+    /* background-image:
+        radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%); */
+    background-image: url('../img/bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     color: var(--text-main);
-    transition: background-color 0.3s ease, color 0.3s ease;
-    /* Hiệu ứng chuyển màu mượt */
+    transition: background 0.3s ease, color 0.3s ease;
+    padding-bottom: 3rem;
+    -webkit-font-smoothing: antialiased;
+    /* Chữ sắc nét hơn trên Mac */
+    position: relative;
+    min-height: 100vh;
 }
 
-/* --- 3. NAVBAR --- */
+/* Add overlay to improve text readability against busy background */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Lớp phủ màu nền (sáng hoặc tối tùy mode) để làm dịu ảnh nền */
+    background: var(--bg-body);
+    opacity: 0.85; /* Tăng độ che phủ để dễ đọc chữ hơn */
+    z-index: -1;
+}
+
+/* Thanh cuộn (Scrollbar) đẹp */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* =========================================
+   4. GLASSMORPHISM NAVBAR
+   ========================================= */
 .navbar {
-    background: var(--navbar-bg);
-    box-shadow: var(--shadow-md);
+    background: var(--navbar-bg) !important;
+    backdrop-filter: blur(var(--blur-strength));
+    -webkit-backdrop-filter: blur(var(--blur-strength));
+    border-bottom: var(--glass-border);
     padding: 0.8rem 0;
+    transition: all 0.3s ease;
+    /* Sticky effect nếu cần */
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: var(--shadow-sm); /* Thêm bóng nhẹ để tách biệt */
 }
 
-.navbar-brand,
-.nav-link,
-.navbar-toggler-icon {
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--primary) !important;
+    font-size: 1.5rem;
+}
+
+.nav-link {
     color: var(--navbar-text) !important;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 0.6rem 1rem !important;
+    margin: 0 2px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-link:hover {
-    opacity: 0.8;
+.nav-link:hover,
+.nav-link.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary) !important;
+    transform: translateY(-1px);
 }
 
-/* Nút user dropdown đẹp hơn */
+/* Nút User Profile trên Navbar */
 .btn-user-profile {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 5px 15px !important;
-    backdrop-filter: blur(5px);
-}
-
-/* --- 4. CARDS (THẺ) --- */
-.card {
-    background-color: var(--bg-card);
+    background: var(--input-bg) !important;
     border: 1px solid var(--border-color);
-    border-radius: 1rem;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 6px 14px !important;
+    border-radius: 50px !important;
+    /* Bo tròn viên thuốc */
 }
 
-.card:hover {
-    transform: translateY(-3px);
+/* Dropdown Menu "Kính" */
+.dropdown-menu {
+    background: var(--bg-glass-heavy);
+    backdrop-filter: blur(20px);
+    border: var(--glass-border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    padding: 0.5rem;
+    margin-top: 10px !important;
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-weight: 500;
+    color: var(--text-main);
+    transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--primary);
+    transform: translateX(3px);
+}
+
+/* =========================================
+   5. MODERN CARDS (THẺ KÍNH)
+   ========================================= */
+.card {
+    background: var(--bg-card);
+    /* Tăng độ mờ nền kính để chữ dễ đọc hơn trên nền ảnh phức tạp */
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    border: var(--glass-border);
+    border-radius: 20px;
+    /* Bo góc mạnh hơn cho mềm mại */
     box-shadow: var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    /* Để bo góc ảnh bên trong */
+}
+
+/* Hiệu ứng bay lên khi hover vào thẻ */
+.card:hover {
+    transform: translateY(-5px) scale(1.005);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(16, 185, 129, 0.3);
+    /* Viền sáng xanh nhẹ */
 }
 
 .card-header {
-    background-color: var(--bg-card);
+    background: transparent;
+    /* Header trong suốt */
     border-bottom: 1px solid var(--border-color);
-    color: var(--primary);
+    padding: 1.25rem 1.5rem;
     font-weight: 700;
-    border-top-left-radius: 1rem !important;
-    border-top-right-radius: 1rem !important;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
 }
 
-/* --- 5. BẢNG DỮ LIỆU (TABLES) --- */
+.card-body {
+    padding: 1.5rem;
+    color: var(--text-main);
+}
+
+/* =========================================
+   6. FORMS & INPUTS
+   ========================================= */
+.form-control,
+.form-select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    /* Input bo tròn */
+    padding: 0.75rem 1rem;
+    color: var(--text-main);
+    transition: all 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--bg-body);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    /* Glow xanh khi focus */
+    color: var(--text-main);
+}
+
+/* Input Group Text (Icon trong ô nhập) */
+.input-group-text {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+    border-radius: 12px;
+}
+
+/* =========================================
+   7. BUTTONS (NÚT BẤM)
+   ========================================= */
+.btn {
+    border-radius: 12px;
+    /* Nút bo tròn */
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    letter-spacing: 0.3px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 8px 15px rgba(16, 185, 129, 0.35);
+    transform: translateY(-2px);
+}
+
+.btn-secondary,
+.btn-light {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.btn-secondary:hover {
+    background: var(--border-color);
+    transform: translateY(-1px);
+}
+
+/* Nút xóa/Danger */
+.btn-danger,
+.btn-outline-danger:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    box-shadow: 0 4px 6px rgba(239, 68, 68, 0.25);
+    border: none !important;
+}
+
+/* Override Bootstrap Primary Button to match Theme (Emerald) */
+.btn-primary {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+.btn-primary:hover {
+    background-color: var(--primary-hover) !important;
+    border-color: var(--primary-hover) !important;
+}
+
+.btn-outline-primary {
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+.btn-outline-primary:hover {
+    background-color: var(--primary) !important;
+    border-color: var(--primary) !important;
+    color: #fff !important;
+}
+
+/* =========================================
+   8. TABLES (BẢNG DỮ LIỆU)
+   ========================================= */
 .table {
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border-color); /* Fix viền trắng table trong darkmode */
     color: var(--text-main);
     margin-bottom: 0;
 }
 
 .table thead th {
-    background-color: var(--bg-body);
-    /* Header bảng đổi màu theo nền */
-    color: var(--text-muted);
-    border-bottom: 2px solid var(--border-color);
+    background: rgba(16, 185, 129, 0.08);
+    /* Nền xanh rất nhạt cho header bảng */
+    color: var(--primary);
+    font-weight: 700;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid rgba(16, 185, 129, 0.2);
+    padding: 1rem;
+    border-top: none;
 }
 
-.table tbody td {
+.table td {
+    padding: 1rem;
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(16, 185, 129, 0.05);
+    background-color: rgba(16, 185, 129, 0.1);
+    /* Hover xanh nhẹ */
 }
 
-/* --- 6. FORM & INPUTS --- */
-.form-control,
-.form-select {
-    background-color: var(--input-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-main);
-    border-radius: 0.5rem;
+.table tbody tr {
+    /* Thêm nền nhẹ cho các hàng trong bảng để dễ đọc text hơn */
+    background-color: rgba(255, 255, 255, 0.4); 
+    transition: background-color 0.2s;
 }
 
-.form-control:focus,
-.form-select:focus {
-    background-color: var(--input-bg);
-    border-color: var(--primary);
-    color: var(--text-main);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+body.dark-mode .table tbody tr {
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
-/* Placeholder màu cho dark mode */
-.form-control::placeholder {
-    color: var(--text-muted);
-    opacity: 0.6;
+/* Loại bỏ nền trắng cứng của table-responsive để lộ hiệu ứng kính */
+.table-responsive {
+    border-radius: 20px;
+    background: transparent !important;
 }
 
-/* --- 7. BUTTONS --- */
-.btn-primary {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-    color: #fff;
-    box-shadow: 0 2px 5px rgba(16, 185, 129, 0.4);
+/* =========================================
+   9. TIỆN ÍCH KHÁC
+   ========================================= */
+/* Text Colors */
+.text-main {
+    color: var(--text-main) !important;
 }
 
-.btn-primary:hover {
-    background-color: var(--primary-hover) !important;
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background-color: var(--input-bg);
-    border-color: var(--border-color);
-    color: var(--text-main);
-}
-
-.btn-secondary:hover {
-    background-color: var(--border-color);
-    color: var(--text-main);
-}
-
-/* --- 8. TEXT UTILS --- */
 .text-muted {
     color: var(--text-muted) !important;
 }
@@ -327,739 +425,92 @@ body {
     color: var(--primary) !important;
 }
 
-h2,
-h3,
-h4,
-h5,
-h6 {
+/* Badges (Nhãn) */
+.badge {
+    padding: 0.5em 0.8em;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.badge.bg-primary {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: var(--primary) !important;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.category-badge {
+    background-color: rgba(226, 232, 240, 0.5); /* Nền xám nhạt */
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+body.dark-mode .category-badge {
+    background-color: rgba(30, 41, 59, 0.5); /* Nền tối hơn cho dark mode */
     color: var(--text-main);
 }
 
-/* --- 9. LOGIN / REGISTER SPECIFIC --- */
-.auth-wrapper {
-    min-height: 85vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.auth-card {
-    border: none;
-    border-radius: 1.5rem;
-    background-color: var(--bg-card);
+/* Avatar trên Profile */
+.avatar-wrapper img {
+    border: 4px solid var(--bg-card);
+    /* Viền tiệp màu nền */
     box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease;
 }
 
-.auth-header-icon {
-    width: 80px;
-    height: 80px;
-    background: rgba(16, 185, 129, 0.1);
-    color: var(--primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    margin: 0 auto 1.5rem auto;
+.avatar-wrapper:hover img {
+    transform: scale(1.05) rotate(2deg);
+    /* Hiệu ứng vui nhộn khi hover */
 }
 
-/* --- SỬA LỖI NÚT 3 GẠCH (MENU MOBILE) - PHIÊN BẢN CHUẨN --- */
-
-/* 1. Định dạng chung cho nút (Áp dụng cho cả Sáng & Tối) */
-.navbar-toggler {
-    /* Đổi viền thành màu TRẮNG mờ thay vì đen */
-    border: 1px solid rgba(255, 255, 255, 0.4) !important;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-}
-
-/* 2. Ép icon 3 gạch luôn là màu TRẮNG (cho cả Sáng & Tối) */
-.navbar-toggler-icon {
-    /* Bộ lọc biến icon đen thành trắng */
-    filter: invert(1) grayscale(100%) brightness(200%);
-}
-
-/* 3. Hiệu ứng khi bấm vào (Focus/Hover) */
-.navbar-toggler:focus,
-.navbar-toggler:hover {
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.25);
-    /* Viền sáng trắng */
-    background-color: rgba(255, 255, 255, 0.1);
-    /* Nền trắng mờ */
-    outline: none;
-}
-
-/* --- THANH PHÂN TRANG (PAGINATION) --- */
+/* Pagination (Phân trang) */
 .page-link {
-    color: var(--primary);
-    border: none;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 8px; /* Bo góc từng ô */
     margin: 0 3px;
-    border-radius: 8px !important;
-    /* Bo tròn nút */
-    transition: all 0.2s;
+    font-weight: 500;
 }
 
 .page-link:hover {
-    background-color: #e6fffa;
-    color: var(--primary-hover);
+    background-color: rgba(16, 185, 129, 0.2); /* Hover xanh nhẹ */
+    color: var(--primary);
+    border-color: var(--primary);
+    z-index: 2;
 }
 
 .page-item.active .page-link {
     background-color: var(--primary) !important;
     border-color: var(--primary) !important;
     color: #fff !important;
+    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
 }
 
-/* Dark Mode cho Pagination */
-body.dark-mode .page-link {
-    background-color: var(--bg-card);
-    color: var(--text-main);
-    box-shadow: var(--shadow-sm);
-}
-
-body.dark-mode .page-link:hover {
-    background-color: var(--input-bg);
-    color: var(--primary);
+.page-item.disabled .page-link {
+    background-color: rgba(226, 232, 240, 0.3);
+    color: var(--text-muted);
+    border-color: var(--border-color);
 }
 
 body.dark-mode .page-item.disabled .page-link {
-    background-color: transparent;
+    background-color: rgba(30, 41, 59, 0.5);
     color: var(--text-muted);
-    box-shadow: none;
-}
-
-/* --- TÙY CHỈNH NÚT EXCEL VÀ NGÂN SÁCH (HOVER EFFECTS) --- */
-
-/* 1. Nút Xuất Excel & Nút Lưu Ngân sách (Class .btn-success) */
-.btn-success {
-    background-color: var(--primary) !important;
-    /* Màu xanh chủ đạo */
-    border-color: var(--primary) !important;
-    color: #ffffff !important;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* Bóng nhẹ */
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Chuyển động mượt */
-}
-
-/* HIỆU ỨNG KHI DI CHUỘT (HOVER) */
-.btn-success:hover {
-    background-color: var(--primary-hover) !important;
-    /* Xanh đậm hơn */
-    border-color: var(--primary-hover) !important;
-    transform: translateY(-2px);
-    /* Nút "bay" lên nhẹ 2px */
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-    /* Đổ bóng xanh phát sáng */
-}
-
-/* Hiệu ứng khi bấm (Active) */
-.btn-success:active {
-    transform: translateY(0);
-    /* Nút lún xuống lại */
-    box-shadow: none;
-}
-
-/* 2. Tinh chỉnh ô nhập Ngân sách cho liền mạch */
-.input-group .input-group-text {
-    background-color: var(--input-bg);
     border-color: var(--border-color);
-    color: var(--text-muted);
 }
 
-/* Ô nhập tiền */
-input[name="total"] {
-    border-right: none !important;
-    /* Xóa viền phải để dính liền nút tick */
-    font-weight: bold;
-    color: var(--primary);
-    /* Số tiền màu xanh cho nổi */
+/* --- FIX RIÊNG CHO DARK MODE --- */
+body.dark-mode .dropdown-divider {
+    border-color: var(--border-color);
 }
 
-/* Nút Tick (V) dính liền */
-button[name="budget_submit"] {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    padding-left: 15px;
-    padding-right: 15px;
-}
-
-/* --- DARK MODE FIX (Sửa lỗi màu ô nhập bị tối quá trong Dark Mode) --- */
-body.dark-mode input[name="total"] {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    /* Nền trong suốt nhẹ */
-    color: #fff !important;
-    /* Chữ trắng */
-    border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-body.dark-mode .input-group-text {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    color: #fff !important;
-}
-
-/* --- ÉP MÀU THEME EMERALD CHO CÁC CLASS BOOTSTRAP --- */
-.bg-primary,
-.btn-primary {
-    background-color: var(--primary) !important;
-    border-color: var(--primary) !important;
-}
-
-.text-primary {
-    color: var(--primary) !important;
-}
-
-/* --- STYLE RIÊNG CHO TRANG PROFILE --- */
-.profile-card {
-    overflow: hidden;
-}
-
-.avatar-wrapper {
-    position: relative;
-    display: inline-block;
-}
-
-/* Ảnh đại diện: Thêm con trỏ tay và hiệu ứng mượt */
-.avatar-wrapper img {
-    cursor: pointer;
-    /* Quan trọng: Hiện bàn tay để biết là bấm được */
-    transition: all 0.3s ease;
-    /* Hiệu ứng mượt mà */
-    border: 3px solid #fff;
-    /* Viền trắng cho nổi bật (tùy chọn) */
-}
-
-/* Hiệu ứng khi di chuột vào ảnh: Tối đi chút + Phóng to nhẹ */
-.avatar-wrapper:hover img {
-    filter: brightness(0.9);
-    transform: scale(1.02);
-    /* Phóng to 2% tạo cảm giác tương tác */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* Nút camera nổi bật trên nền Emerald */
-.btn-camera {
-    width: 42px;
-    height: 42px;
-    background-color: var(--primary);
-    color: white;
-    border: 3px solid white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    cursor: pointer;
-    box-shadow: var(--shadow-md);
-    transition: transform 0.2s ease;
-    z-index: 10;
-}
-
-.btn-camera:hover {
-    transform: scale(1.1);
-    background-color: var(--primary-hover);
-}
-
-/* Input file ẩn theo cách an toàn cho macOS */
-.hidden-file-input {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-}
-
-/* ======================================================
-   PHẦN BỔ SUNG CHO TRANG PROFILE (Fix giao diện Avatar)
-   ====================================================== */
-
-/* 1. Căn giữa toàn bộ cột bên trái */
-.profile-left-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    height: 100%;
-}
-
-/* 2. Hộp hiển thị thông tin file (Thay thế cho style inline cũ) */
-.file-info-box {
-    background-color: var(--input-bg);
-    /* Dùng biến màu của bạn -> Hợp tông với form */
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    /* Bo góc mềm mại hơn */
-    padding: 12px 15px;
-    margin-top: 20px;
-    margin-bottom: 15px;
-    width: 100%;
-    max-width: 260px;
-    /* Giới hạn chiều rộng để hộp không bị bè ra quá to */
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
-    text-align: left;
-    /* Căn trái nội dung bên trong hộp */
-}
-
-/* Hiệu ứng khi di chuột vào hộp file */
-.file-info-box:hover {
-    border-color: var(--primary);
-    /* Viền sáng màu xanh chủ đạo */
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-/* 3. Tinh chỉnh Link tên file */
-.file-name-text {
-    color: var(--text-main);
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
-
-    /* Kỹ thuật cắt chữ nếu tên file quá dài */
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
-    /* Độ dài tối đa trước khi hiện dấu ... */
-}
-
-.file-name-text:hover {
-    color: var(--primary);
-    /* Hover vào đổi màu xanh */
-}
-
-/* 4. Tinh chỉnh Label "Xóa ảnh" */
-.delete-label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #ef4444;
-    /* Màu đỏ đẹp hơn (Red-500) */
-    cursor: pointer;
-    margin-left: 8px;
-    user-select: none;
-}
-
-/* Fix căn chỉnh icon hình ảnh */
-.file-icon {
-    font-size: 1.2rem;
-    color: var(--primary);
-    margin-right: 10px;
-}
-
-/* =========================================================
-   STYLE CHO TRANG PROFILE MỚI (CẬP NHẬT)
-   ========================================================= */
-
-/* 1. Tiện ích khoảng cách chữ (Letter Spacing) */
-.ls-1 {
-    letter-spacing: 1px;
-}
-
-/* 2. Hiệu ứng Focus cho ô nhập liệu (Mềm mại hơn) */
-/* Ghi đè bootstrap mặc định để dùng màu xanh chủ đạo */
-.form-control:focus,
-.form-select:focus {
-    border-color: var(--primary) !important;
-    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.15) !important;
-}
-
-/* 3. Nút Camera (Tinh chỉnh lại kích thước nhỏ hơn cho layout mới) */
-/* CSS này sẽ ghi đè class .btn-camera cũ nếu bạn dán nó ở cuối file */
-.btn-camera {
-    width: 38px;
-    height: 38px;
-    background: var(--primary);
-    color: #fff;
-    border: 2px solid #fff;
-    border-radius: 50%;
-
-    /* Căn vị trí góc phải dưới của avatar */
-    position: absolute;
-    bottom: 5px;
-    right: 10px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    z-index: 10;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.btn-camera:hover {
-    transform: scale(1.1);
-    background: var(--primary-hover);
-}
-
-/* 4. Switch xóa ảnh (Tùy chỉnh con trỏ chuột) */
-.form-check-input {
-    cursor: pointer;
-}
-
-/* =========================================================
-   FIX LỖI DARK MODE CHO TRANG PROFILE
-   ========================================================= */
-
-/* 1. Cột trái (Avatar) */
-.profile-left-col {
-    background-color: var(--bg-card);
-    /* Sáng: Xám nhạt | Tối: Xám xanh tối */
-    transition: background-color 0.3s ease;
-    color: var(--text-main);
-}
-
-/* 2. Cột phải (Form nhập liệu) */
-.profile-right-col {
-    background-color: var(--bg-card);
-    /* Sáng: Trắng | Tối: Xám đậm */
-    transition: background-color 0.3s ease;
-    color: var(--text-main);
-}
-
-/* 3. Sửa nền cho input group icon (icon phong bì thư) */
-.input-group-text {
-    background-color: var(--input-bg) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-muted);
-}
-
-/* 4. Fix màu tên User */
-.user-name-text {
-    color: var(--text-main) !important;
-}
-
-/* 5. Fix cái hộp nút Switch xóa ảnh */
-.switch-box {
-    background-color: var(--bg-card) !important;
-    /* Đổi màu nền hộp switch theo theme */
-    border-color: var(--border-color) !important;
-}
-
-/* 6. Fix viền giữa 2 cột trong Dark Mode */
-.border-end {
-    border-right-color: var(--border-color) !important;
-}
-
-/* =========================================================
-   PASSWORD TOGGLE BUTTON
-   ========================================================= */
-.password-toggle {
-    padding: 0.5rem;
-    text-decoration: none;
-    border: none;
-    background: transparent;
-    outline: none;
-    box-shadow: none !important;
-    z-index: 10;
-}
-
-.password-toggle:hover,
-.password-toggle:focus {
-    color: var(--primary) !important;
-    background: transparent !important;
-    outline: none;
-}
-
-.password-toggle i {
-    font-size: 1.1rem;
-    transition: color 0.2s ease;
-}
-
-/* =========================================================
-   CATEGORY BADGE
-   ========================================================= */
-.category-badge {
-    background-color: var(--primary) !important;
-    color: #ffffff !important;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.category-badge:hover {
-    background-color: var(--primary-hover) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
-/* =========================================================
-   COMPREHENSIVE DARK MODE FIXES FOR ALL PAGES
-   ========================================================= */
-
-/* Fix all card bodies and headers */
-body.dark-mode .card-body,
-body.dark-mode .card-header,
-body.dark-mode .card-footer {
-    background-color: var(--bg-card) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border-color) !important;
-}
-
-/* Fix alert boxes (like on Recurring page) */
-body.dark-mode .alert {
-    background-color: rgba(52, 211, 153, 0.1) !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-main) !important;
-}
-
-body.dark-mode .alert-info {
-    background-color: rgba(59, 130, 246, 0.1) !important;
-    border-color: rgba(59, 130, 246, 0.3) !important;
-    color: var(--text-main) !important;
-}
-
-body.dark-mode .alert-warning {
-    background-color: rgba(245, 158, 11, 0.1) !important;
-    border-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-body.dark-mode .alert-danger {
-    background-color: rgba(239, 68, 68, 0.1) !important;
-    border-color: rgba(239, 68, 68, 0.3) !important;
-}
-
-/* Fix table-responsive containers */
-body.dark-mode .table-responsive {
-    background-color: transparent !important;
-}
-
-/* Fix list groups (Recent Transactions, Top Categories) */
-body.dark-mode .list-group-item {
-    background-color: transparent !important;
-    border-color: var(--border-color) !important;
-    color: var(--text-main) !important;
-}
-
-body.dark-mode .list-group-flush .list-group-item {
-    background-color: transparent !important;
-}
-
-/* Fix badges */
-body.dark-mode .badge {
-    color: #ffffff !important;
-}
-
-body.dark-mode .badge.bg-primary {
-    background-color: var(--primary) !important;
-}
-
-/* Fix small text elements */
-body.dark-mode small,
-body.dark-mode .small {
-    color: var(--text-muted) !important;
-}
-
-/* Fix search and filter sections */
-body.dark-mode .search-section,
-body.dark-mode .filter-section {
-    background-color: var(--bg-card) !important;
-    color: var(--text-main) !important;
-}
-
-/* Fix input groups */
-body.dark-mode .input-group {
-    background-color: transparent !important;
-}
-
-/* Fix readonly inputs */
-body.dark-mode .form-control:disabled,
-body.dark-mode .form-control[readonly] {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: var(--text-muted) !important;
-    border-color: var(--border-color) !important;
-}
-
-/* Fix labels */
-body.dark-mode label {
-    color: var(--text-main) !important;
-}
-
-/* Fix all white backgrounds */
-body.dark-mode .bg-white {
-    background-color: var(--bg-card) !important;
-}
-
-/* Fix opacity classes for better visibility */
-body.dark-mode .opacity-75 {
-    opacity: 0.9 !important;
-}
-
-/* Fix hoverable rows in tables */
-body.dark-mode .table-hover tbody tr:hover {
-    background-color: rgba(52, 211, 153, 0.1) !important;
-}
-
-/* Fix bordered elements */
-body.dark-mode .border,
-body.dark-mode .border-top,
-body.dark-mode .border-bottom,
-body.dark-mode .border-start,
-body.dark-mode .border-end {
-    border-color: var(--border-color) !important;
-}
-
-/* Fix hr elements */
-body.dark-mode hr {
-    border-color: var(--border-color) !important;
-    opacity: 0.3;
-}
-
-/* Fix all paragraph text */
-body.dark-mode p {
-    color: var(--text-main);
-}
-
-/* Fix strong/bold text */
-body.dark-mode strong,
-body.dark-mode .fw-bold,
-body.dark-mode .fw-semibold {
-    color: var(--text-main) !important;
-}
-
-/* Fix canvas containers for charts */
-body.dark-mode canvas {
-    background-color: transparent !important;
-}
-
-/* Fix placeholders in dark mode */
-body.dark-mode ::placeholder {
-    color: var(--text-muted) !important;
-    opacity: 0.6;
-}
-
-body.dark-mode ::-webkit-input-placeholder {
-    color: var(--text-muted) !important;
-    opacity: 0.6;
-}
-
-body.dark-mode :-ms-input-placeholder {
-    color: var(--text-muted) !important;
-    opacity: 0.6;
-}
-
-/* Fix text color classes */
-body.dark-mode .text-dark {
-    color: var(--text-main) !important;
-}
-
-body.dark-mode .text-secondary {
-    color: var(--text-muted) !important;
-}
-
-/* Fix any remaining Bootstrap default backgrounds */
-body.dark-mode .bg-light {
-    background-color: var(--input-bg) !important;
-}
-
-/* Fix modal dialogs if any */
-body.dark-mode .modal-content {
-    background-color: var(--bg-card) !important;
-    color: var(--text-main) !important;
-    border-color: var(--border-color) !important;
-}
-
-body.dark-mode .modal-header,
-body.dark-mode .modal-footer {
-    border-color: var(--border-color) !important;
-}
-
-/* Fix close buttons */
 body.dark-mode .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
+    filter: invert(1);
 }
 
-/* =========================================================
-   GLASSMORPHISM - TRANSPARENT TABLE CARDS
-   ========================================================= */
-
-/* Light mode - transparent cards with blur */
-.table-responsive.card,
-.card.shadow-sm:not(.bg-success):not(.bg-danger):not(.bg-primary):not(.bg-warning):not(.bg-info) {
-    background: rgba(255, 255, 255, 0.7) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+/* Đảo màu icon lịch trong input date khi ở Dark Mode */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
 }
 
-/* Dark mode - transparent cards with blur */
-body.dark-mode .table-responsive.card,
-body.dark-mode .card.shadow-sm:not(.bg-success):not(.bg-danger):not(.bg-primary):not(.bg-warning):not(.bg-info) {
-    background: rgba(30, 41, 59, 0.7) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-/* Keep colored cards opaque */
-.card.bg-success,
-.card.bg-danger,
-.card.bg-primary,
-.card.bg-warning,
-.card.bg-info {
-    background: var(--bs-success) !important;
-    backdrop-filter: none !important;
-}
-
-body.dark-mode .card.bg-success { background: var(--bs-success) !important; }
-body.dark-mode .card.bg-danger { background: var(--bs-danger) !important; }
-body.dark-mode .card.bg-primary { background: var(--bs-primary) !important; }
-body.dark-mode .card.bg-warning { background: var(--bs-warning) !important; }
-body.dark-mode .card.bg-info { background: var(--bs-info) !important; }
-
-/* Keep table rows background transparent */
-body.dark-mode .table tbody tr,
-.table tbody tr {
-    background-color: transparent !important;
-}
-
-/* Optional: Add subtle hover effect on transparent tables */
-.table-hover tbody tr:hover {
-    background-color: rgba(16, 185, 129, 0.08) !important;
-}
-
-body.dark-mode .table-hover tbody tr:hover {
-    background-color: rgba(52, 211, 153, 0.15) !important;
-}
-
-/* =========================================================
-   FIX LIGHT MODE VISIBILITY FOR LISTS AND TEXT
-   ========================================================= */
-
-/* Ensure list group items have proper background in light mode */
-.list-group-item {
-    background-color: transparent !important;
-}
-
-/* Make sure text is dark enough in light mode */
-body:not(.dark-mode) .list-group-item {
-    color: var(--text-main) !important;
-}
-
-body:not(.dark-mode) .list-group-item .text-muted {
-    color: var(--text-muted) !important;
-}
-
-/* Ensure badges in light mode have proper backgrounds */
-body:not(.dark-mode) .badge.bg-primary {
-    background-color: var(--primary) !important;
-    color: white !important;
-}
-
-body:not(.dark-mode) .badge.rounded-pill {
-    background-color: var(--primary) !important;
-    color: white !important;
-}
-
-/* Fix category badge specifically */
-body:not(.dark-mode) .category-badge {
-    background-color: var(--primary) !important;
-    color: white !important;
-}
+/* Nút đóng modal màu trắng */

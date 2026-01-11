@@ -145,7 +145,7 @@
                             {{ expense.category }}
                         </span>
                     </td>
-                    <td>{{ expense.date|date:"d/m/Y" }}</td>
+                    <td class="text-muted">{{ expense.date|date:"d/m/Y" }}</td>
                     <td class="text-center">
                         <div class="btn-group">
                             <a href="{% url 'ep1:edit_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
@@ -217,7 +217,7 @@
 <div class="row mt-5 mb-4">
     <div class="col-md-6 mb-4 mb-md-0">
         <div class="card h-100 shadow-sm">
-            <div class="card-header bg-white border-0 pt-4">
+            <div class="card-header border-0 pt-4">
                 <h5 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Chi Tiêu Theo Danh Mục</h5>
             </div>
             <div class="card-body">
@@ -230,7 +230,7 @@
 
     <div class="col-md-6">
         <div class="card h-100 shadow-sm">
-            <div class="card-header bg-white border-0 pt-4">
+            <div class="card-header border-0 pt-4">
                 <h5 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Chi Tiêu Theo Ngày</h5>
             </div>
             <div class="card-body">
@@ -252,14 +252,25 @@ document.addEventListener('DOMContentLoaded', function () {
             labels: {{ chart_labels|safe }},
             datasets: [{
                 data: {{ chart_data|safe }},
-                backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
-                borderWidth: 0,
-                hoverOffset: 4
+                backgroundColor: [
+                  "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", 
+                  "#ec4899", "#6366f1", "#14b8a6", "#f97316", "#64748b"
+                ],
+                borderWidth: 2,
+                borderColor: "transparent",
+                hoverOffset: 10
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' }, cutout: '50%' }
+            plugins: { 
+                legend: { 
+                    position: 'bottom',
+                    labels: { usePointStyle: true, padding: 20 }
+                } 
+            }, 
+            cutout: '65%',
+            layout: { padding: 10 }
         }
     });
 

@@ -729,7 +729,13 @@ def income_list(request):
         base_income = base_income.filter(date__lte=date_to)
     
     # Sắp xếp
-    incomes = base_income.order_by('-date')
+    sort_amount = request.GET.get('sort_amount')
+    if sort_amount == 'asc':
+        incomes = base_income.order_by('amount')
+    elif sort_amount == 'desc':
+        incomes = base_income.order_by('-amount')
+    else:
+        incomes = base_income.order_by('-date')
     
     # Phân trang
     paginator = Paginator(incomes, 10)
@@ -750,6 +756,7 @@ def income_list(request):
         'selected_source': int(source_id) if source_id else None,
         'date_from': date_from,
         'date_to': date_to,
+        'sort_amount': sort_amount,
     }
     
     return render(request, 'ep1/income_list.html', context)
