@@ -34,8 +34,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                        <p class="text-muted mb-1 small">Tổng Chi Tiêu</p>
-                        <h3 class="fw-bold mb-0 text-danger">{{ total_spent|floatformat:0|intcomma }} ₫</h3>
+                        <p class="text-muted mb-1 small">Chi Tiêu Tháng Này</p>
+                        <h3 class="fw-bold mb-0 text-danger">{{ this_month_expenses|floatformat:0|intcomma }} ₫</h3>
+                        <small class="text-muted" style="font-size: 0.75rem;">Đang hiển thị: {{ total_spent|floatformat:0|intcomma }} ₫</small>
                     </div>
                     <div class="bg-danger bg-opacity-10 p-3 rounded-3">
                         <i class="fas fa-coins text-danger fs-4"></i>
@@ -66,7 +67,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                        <p class="text-muted mb-1 small">Ngân Sách Còn Lại</p>
+                        <p class="text-muted mb-1 small">Ngân Sách Còn Lại (Tháng này)</p>
                         <h3 class="fw-bold mb-0 {% if remaining >= 0 %}text-success{% else %}text-danger{% endif %}">{{ remaining|floatformat:0|intcomma }} ₫</h3>
                     </div>
                     <div class="{% if remaining >= 0 %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 p-3 rounded-3">

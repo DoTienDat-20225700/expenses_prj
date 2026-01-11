@@ -1,7 +1,4 @@
-{% extends 'ep1/base.html' %}
-{% load static %} 
-{% load humanize %} 
-{% block content %}
+{% extends 'ep1/base.html' %} {% load static %} {% load humanize %} {% block content %}
 
 <div class="row g-4">
   <!-- Announcements -->
@@ -20,10 +17,25 @@
   </div>
   {% endif %}
 
-  <div class="col-12">
+  <div class="col-12 d-flex justify-content-between align-items-center">
     <h2 class="fw-bold mb-4">
       <i class="fas fa-chart-line me-2 text-primary"></i>Dashboard Tổng Quan
     </h2>
+    <form method="post" class="d-inline-block mb-4">
+      {% csrf_token %}
+      <div class="input-group input-group-sm">
+        <span class="input-group-text fw-bold">₫</span>
+        {{ b_form.total }}
+        <button
+          name="budget_submit"
+          class="btn btn-success"
+          type="submit"
+          title="Lưu ngân sách"
+        >
+          <i class="fas fa-check"></i>
+        </button>
+      </div>
+    </form>
   </div>
 
   <!-- Summary Cards -->
@@ -32,9 +44,9 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <p class="text-muted mb-1 small">Tổng Chi Tiêu</p>
+            <p class="text-muted mb-1 small">Chi Tiêu Tháng Này</p>
             <h3 class="fw-bold mb-0 text-danger">
-              {{ total_expenses|floatformat:0|intcomma }} ₫
+              {{ this_month_expenses|floatformat:0|intcomma }} ₫
             </h3>
           </div>
           <div class="bg-danger bg-opacity-10 p-3 rounded-3">
@@ -42,9 +54,9 @@
           </div>
         </div>
         <p class="small text-muted mb-0">
-          Tháng này:
+          Tổng toàn bộ:
           <span class="fw-semibold"
-            >{{ this_month_expenses|floatformat:0|intcomma }} ₫</span
+            >{{ total_expenses|floatformat:0|intcomma }} ₫</span
           >
         </p>
       </div>
@@ -56,9 +68,9 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <p class="text-muted mb-1 small">Tổng Thu Nhập</p>
+            <p class="text-muted mb-1 small">Thu Nhập Tháng Này</p>
             <h3 class="fw-bold mb-0 text-success">
-              {{ total_income|floatformat:0|intcomma }} ₫
+              {{ this_month_income|floatformat:0|intcomma }} ₫
             </h3>
           </div>
           <div class="bg-success bg-opacity-10 p-3 rounded-3">
@@ -66,9 +78,9 @@
           </div>
         </div>
         <p class="small text-muted mb-0">
-          Tháng này:
+          Tổng toàn bộ:
           <span class="fw-semibold"
-            >{{ this_month_income|floatformat:0|intcomma }} ₫</span
+            >{{ total_income|floatformat:0|intcomma }} ₫</span
           >
         </p>
       </div>
@@ -103,7 +115,7 @@
   <div class="col-md-6 col-lg-3">
     <div class="card border-0 shadow-sm h-100 card-hover">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start mb-3">
+        <div class="d-flex justify-content-between align-items-start mb-2">
           <div>
             <p class="text-muted mb-1 small">Ngân Sách Tháng</p>
             <h3 class="fw-bold mb-0 text-primary">
@@ -115,20 +127,31 @@
           </div>
         </div>
         {% if budget.total > 0 %}
-        <p class="small mb-1">
-          <span class="text-muted">Đã chi:</span>
-          <span class="fw-semibold text-danger"
-            >{{ this_month_expenses|floatformat:0|intcomma }} ₫</span
+        <div class="progress mb-2" style="height: 6px">
+          <div
+            class="progress-bar {% if budget_percentage > 100 %}bg-danger{% elif budget_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}"
+            role="progressbar"
+            style="width: {{ budget_percentage|floatformat:0 }}%"
+            aria-valuenow="{{ budget_percentage|floatformat:0 }}"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        <div class="d-flex justify-content-between small">
+          <span class="text-muted"
+            >Đã chi:
+            <span class="text-danger fw-semibold"
+              >{{ this_month_expenses|floatformat:0|intcomma }}</span
+            ></span
           >
-        </p>
-        <p class="small mb-0">
-          <span class="text-muted">Còn lại:</span>
-          <span
-            class="fw-bold {% if budget_remaining >= 0 %}text-success{% else %}text-danger{% endif %}"
+          <span class="text-muted"
+            >Còn:
+            <span
+              class="fw-bold {% if budget_remaining >= 0 %}text-success{% else %}text-danger{% endif %}"
+              >{{ budget_remaining|floatformat:0|intcomma }}</span
+            ></span
           >
-            {{ budget_remaining|floatformat:0|intcomma }} ₫
-          </span>
-        </p>
+        </div>
         {% else %}
         <p class="small text-muted mb-0">Chưa đặt ngân sách</p>
         {% endif %}
@@ -326,6 +349,21 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // Format input ngân sách (copy từ ep1_lists)
+    const input = document.querySelector('input[name="total"]');
+    function formatNumber(value) {
+      value = value.replace(/[^\d]/g, "");
+      return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    if (input) {
+      input.addEventListener("input", function () {
+        this.value = formatNumber(this.value);
+      });
+      input.closest("form").addEventListener("submit", function () {
+        input.value = input.value.replace(/,/g, "");
+      });
+    }
+
     // Fetch and render category pie chart
     fetch("{% url 'ep1:chart_category' %}")
       .then((res) => res.json())

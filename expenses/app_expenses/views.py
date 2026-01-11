@@ -277,14 +277,23 @@ def ep1_lists(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # --- TÍNH TOÁN (XỬ LÝ RIÊNG 2 PHẦN) ---
+    # --- TÍNH TOÁN MONTHLY (Để đồng bộ Dashboard) ---
+    today = timezone.now().date()
+    first_day_this_month = today.replace(day=1)
+    # Xử lý next month an toàn
+    from dateutil.relativedelta import relativedelta
+    first_day_next_month = (first_day_this_month + relativedelta(months=1))
+
+    this_month_expenses = Expense.objects.filter(
+        user=request.user, 
+        date__gte=first_day_this_month,
+        date__lt=first_day_next_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
 
     # A. Tính số liệu THEO BỘ LỌC (Để hiển thị ở ô "Tổng chi tiêu")
-    # Giúp bạn biết: "Tháng này tiêu bao nhiêu?" hoặc "Ăn uống hết bao nhiêu?"
     filtered_total = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
 
-    # B. Tính số liệu TOÀN BỘ (Để tính "Ngân sách còn lại" và "Chi nhiều nhất")
-    # Giúp số dư ví không bị sai khi bạn lọc dữ liệu
+    # B. Tính số liệu TOÀN BỘ (Để tính "Chi nhiều nhất")
     global_total = base_expenses.aggregate(sum=Sum('amount'))['sum'] or 0
     
     global_category_data = base_expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
@@ -306,6 +315,7 @@ def ep1_lists(request):
         b_form = BudgetForm(request.POST, instance=budget_obj)
         if b_form.is_valid():
             b_form.save()
+            messages.success(request, 'Cập nhật ngân sách thành công!')
             return redirect('ep1:ep1_lists')
     else:
         b_form = BudgetForm(instance=budget_obj)
@@ -318,8 +328,9 @@ def ep1_lists(request):
         'page_obj': page_obj,
         
         # --- CÁC BIẾN QUAN TRỌNG ĐÃ CHỈNH SỬA ---
-        'total_spent': filtered_total,                 # Hiển thị số tiền ĐÃ LỌC
-        'remaining': budget_obj.total - global_total,  # Hiển thị ngân sách THỰC TẾ (Toàn bộ)
+        'total_spent': filtered_total,                 # Hiển thị số tiền ĐÃ LỌC (vẫn giữ để hiện ở bảng)
+        'this_month_expenses': this_month_expenses,    # Chi tiêu tháng này (cho Card)
+        'remaining': budget_obj.total - this_month_expenses,  # Ngân sách còn lại (Thực tế tháng này)
         'top_category': top_category,                  # Hiển thị Top danh mục TOÀN BỘ
         # ------------------------------------------
 
@@ -542,6 +553,16 @@ def dashboard(request):
     # Budget
     budget_obj, _ = Budget.objects.get_or_create(user=user)
     
+    # Xử lý Budget form (như bên ep1_lists)
+    if 'budget_submit' in request.POST:
+        b_form = BudgetForm(request.POST, instance=budget_obj)
+        if b_form.is_valid():
+            b_form.save()
+            messages.success(request, 'Cập nhật ngân sách thành công!')
+            return redirect('ep1:dashboard')
+    else:
+        b_form = BudgetForm(instance=budget_obj)
+    
     # Tính toán ngân sách còn lại
     budget_remaining = budget_obj.total - this_month_expenses
     
@@ -563,6 +584,12 @@ def dashboard(request):
     
     # Lấy các thông báo đang Active
     active_announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
+
+    # Tính phần trăm ngân sách đã dùng
+    if budget_obj.total > 0:
+        budget_percentage = (this_month_expenses / budget_obj.total) * 100
+    else:
+        budget_percentage = 0
     
     context = {
         'total_expenses': total_expenses,
@@ -572,7 +599,9 @@ def dashboard(request):
         'this_month_income': this_month_income,
         'balance': balance,
         'budget': budget_obj,
-        'budget_remaining': budget_remaining,  # Thêm budget remaining
+        'b_form': b_form, # Thêm form vào context
+        'budget_remaining': budget_remaining,
+        'budget_percentage': budget_percentage, # Thêm phần trăm
         'top_categories': top_categories,
         'recent_expenses': recent_expenses,
         'recent_income': recent_income,
