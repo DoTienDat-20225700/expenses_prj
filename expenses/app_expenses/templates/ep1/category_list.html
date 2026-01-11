@@ -14,34 +14,43 @@
           <table class="table table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th class="p-3 w-75">Tên danh mục</th>
-                <th class="p-3 text-end">Hành động</th>
+                <th class="py-3 ps-3" style="width: 75%">Tên danh mục</th>
+                <th class="py-3 text-center" style="width: 25%">Hành động</th>
               </tr>
             </thead>
             <tbody>
               {% for cat in categories %}
               <tr>
-                <td class="p-3 fw-bold">{{ cat.name }}</td>
-                <td class="p-3 text-end">
-                  <a
-                    href="{% url 'ep1:edit_category' cat.id %}"
-                    class="btn btn-sm btn-outline-primary border-0"
-                  >
-                    <i class="fas fa-pen"></i>
-                  </a>
-                  <a
-                    href="{% url 'ep1:delete_category' cat.id %}"
-                    class="btn btn-sm btn-outline-danger border-0"
-                    onclick="return confirm('Bạn có chắc muốn xóa danh mục này?');"
-                  >
-                    <i class="fas fa-trash"></i>
-                  </a>
+                <td class="ps-3 fw-bold">{{ cat.name }}</td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <a
+                      href="{% url 'ep1:edit_category' cat.id %}"
+                      class="btn btn-sm btn-outline-primary border-0"
+                      data-bs-toggle="tooltip"
+                      title="Sửa"
+                    >
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <a
+                      href="{% url 'ep1:delete_category' cat.id %}"
+                      class="btn btn-sm btn-outline-danger border-0"
+                      data-bs-toggle="tooltip"
+                      title="Xóa"
+                      onclick="return confirm('Bạn có chắc muốn xóa danh mục này?');"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </a>
+                  </div>
                 </td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="2" class="text-center p-4 text-muted">
-                  Chưa có danh mục nào.
+                <td colspan="2" class="text-center py-5 text-muted">
+                  <div class="mb-3">
+                    <i class="fas fa-folder-open fa-3x opacity-25"></i>
+                  </div>
+                  <p class="mb-0">Chưa có danh mục nào.</p>
                 </td>
               </tr>
               {% endfor %}

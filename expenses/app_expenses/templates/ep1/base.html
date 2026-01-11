@@ -28,7 +28,7 @@
       <div class="container">
         <a
           class="navbar-brand d-flex align-items-center"
-          href="{% url 'ep1:ep1_lists' %}"
+          href="{% url 'ep1:dashboard' %}"
         >
           <img
             src="{% static 'ep1/img/logo.png' %}"
@@ -54,6 +54,58 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto align-items-center gap-2 mt-3 mt-lg-0">
+            {% if user.is_authenticated %} {% if user.is_superuser %}
+            <li class="nav-item">
+              <a
+                class="nav-link px-3 fw-semibold"
+                href="{% url 'ep1:admin_dashboard' %}"
+              >
+                <i class="fas fa-tachometer-alt me-2"></i>Admin
+              </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a
+                class="nav-link px-3 fw-semibold"
+                href="{% url 'ep1:dashboard' %}"
+              >
+                <i class="fas fa-chart-line me-2"></i>Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link px-3 fw-semibold"
+                href="{% url 'ep1:ep1_lists' %}"
+              >
+                <i class="fas fa-credit-card me-2"></i>Chi Tiêu
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link px-3 fw-semibold"
+                href="{% url 'ep1:income_list' %}"
+              >
+                <i class="fas fa-money-bill-wave me-2"></i>Thu Nhập
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link px-3 fw-semibold"
+                href="{% url 'ep1:recurring_list' %}"
+              >
+                <i class="fas fa-redo me-2"></i>Định Kỳ
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link px-3 fw-semibold"
+                href="{% url 'ep1:category_list' %}"
+              >
+                <i class="fas fa-tags me-2"></i>Danh Mục
+              </a>
+            </li>
+            {% endif %}
+
             <li class="nav-item">
               <button
                 class="btn nav-link px-2"
@@ -90,27 +142,6 @@
               <ul
                 class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2"
               >
-                {% if user.is_superuser %}
-                <li>
-                  <a
-                    class="dropdown-item py-2 text-primary fw-bold"
-                    href="{% url 'ep1:admin_dashboard' %}"
-                  >
-                    <i class="fas fa-tachometer-alt me-2 w-20"></i>Admin
-                    Dashboard
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                {% endif %}
-                <li>
-                  <a
-                    class="dropdown-item py-2"
-                    href="{% url 'ep1:category_list' %}"
-                  >
-                    <i class="fas fa-tags me-2 opacity-75 w-20"></i>Quản lý Danh
-                    mục
-                  </a>
-                </li>
                 <li>
                   <a class="dropdown-item py-2" href="{% url 'ep1:profile' %}">
                     <i class="fas fa-id-card me-2 opacity-75 w-20"></i>Hồ sơ
@@ -202,11 +233,13 @@
         });
 
         // Password visibility toggle function
-        window.togglePassword = function(button) {
-          const wrapper = button.closest('.position-relative');
-          const input = wrapper.querySelector('input[type="password"], input[type="text"]');
-          const icon = button.querySelector('i');
-          
+        window.togglePassword = function (button) {
+          const wrapper = button.closest(".position-relative");
+          const input = wrapper.querySelector(
+            'input[type="password"], input[type="text"]'
+          );
+          const icon = button.querySelector("i");
+
           if (input.type === "password") {
             input.type = "text";
             icon.classList.remove("fa-eye");

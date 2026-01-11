@@ -789,3 +789,277 @@ body.dark-mode .input-group-text {
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
+
+/* =========================================================
+   COMPREHENSIVE DARK MODE FIXES FOR ALL PAGES
+   ========================================================= */
+
+/* Fix all card bodies and headers */
+body.dark-mode .card-body,
+body.dark-mode .card-header,
+body.dark-mode .card-footer {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Fix alert boxes (like on Recurring page) */
+body.dark-mode .alert {
+    background-color: rgba(52, 211, 153, 0.1) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .alert-info {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .alert-warning {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+    border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+body.dark-mode .alert-danger {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Fix table-responsive containers */
+body.dark-mode .table-responsive {
+    background-color: transparent !important;
+}
+
+/* Fix list groups (Recent Transactions, Top Categories) */
+body.dark-mode .list-group-item {
+    background-color: transparent !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .list-group-flush .list-group-item {
+    background-color: transparent !important;
+}
+
+/* Fix badges */
+body.dark-mode .badge {
+    color: #ffffff !important;
+}
+
+body.dark-mode .badge.bg-primary {
+    background-color: var(--primary) !important;
+}
+
+/* Fix small text elements */
+body.dark-mode small,
+body.dark-mode .small {
+    color: var(--text-muted) !important;
+}
+
+/* Fix search and filter sections */
+body.dark-mode .search-section,
+body.dark-mode .filter-section {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+}
+
+/* Fix input groups */
+body.dark-mode .input-group {
+    background-color: transparent !important;
+}
+
+/* Fix readonly inputs */
+body.dark-mode .form-control:disabled,
+body.dark-mode .form-control[readonly] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Fix labels */
+body.dark-mode label {
+    color: var(--text-main) !important;
+}
+
+/* Fix all white backgrounds */
+body.dark-mode .bg-white {
+    background-color: var(--bg-card) !important;
+}
+
+/* Fix opacity classes for better visibility */
+body.dark-mode .opacity-75 {
+    opacity: 0.9 !important;
+}
+
+/* Fix hoverable rows in tables */
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(52, 211, 153, 0.1) !important;
+}
+
+/* Fix bordered elements */
+body.dark-mode .border,
+body.dark-mode .border-top,
+body.dark-mode .border-bottom,
+body.dark-mode .border-start,
+body.dark-mode .border-end {
+    border-color: var(--border-color) !important;
+}
+
+/* Fix hr elements */
+body.dark-mode hr {
+    border-color: var(--border-color) !important;
+    opacity: 0.3;
+}
+
+/* Fix all paragraph text */
+body.dark-mode p {
+    color: var(--text-main);
+}
+
+/* Fix strong/bold text */
+body.dark-mode strong,
+body.dark-mode .fw-bold,
+body.dark-mode .fw-semibold {
+    color: var(--text-main) !important;
+}
+
+/* Fix canvas containers for charts */
+body.dark-mode canvas {
+    background-color: transparent !important;
+}
+
+/* Fix placeholders in dark mode */
+body.dark-mode ::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+}
+
+body.dark-mode ::-webkit-input-placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+}
+
+body.dark-mode :-ms-input-placeholder {
+    color: var(--text-muted) !important;
+    opacity: 0.6;
+}
+
+/* Fix text color classes */
+body.dark-mode .text-dark {
+    color: var(--text-main) !important;
+}
+
+body.dark-mode .text-secondary {
+    color: var(--text-muted) !important;
+}
+
+/* Fix any remaining Bootstrap default backgrounds */
+body.dark-mode .bg-light {
+    background-color: var(--input-bg) !important;
+}
+
+/* Fix modal dialogs if any */
+body.dark-mode .modal-content {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+    border-color: var(--border-color) !important;
+}
+
+/* Fix close buttons */
+body.dark-mode .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* =========================================================
+   GLASSMORPHISM - TRANSPARENT TABLE CARDS
+   ========================================================= */
+
+/* Light mode - transparent cards with blur */
+.table-responsive.card,
+.card.shadow-sm:not(.bg-success):not(.bg-danger):not(.bg-primary):not(.bg-warning):not(.bg-info) {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Dark mode - transparent cards with blur */
+body.dark-mode .table-responsive.card,
+body.dark-mode .card.shadow-sm:not(.bg-success):not(.bg-danger):not(.bg-primary):not(.bg-warning):not(.bg-info) {
+    background: rgba(30, 41, 59, 0.7) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Keep colored cards opaque */
+.card.bg-success,
+.card.bg-danger,
+.card.bg-primary,
+.card.bg-warning,
+.card.bg-info {
+    background: var(--bs-success) !important;
+    backdrop-filter: none !important;
+}
+
+body.dark-mode .card.bg-success { background: var(--bs-success) !important; }
+body.dark-mode .card.bg-danger { background: var(--bs-danger) !important; }
+body.dark-mode .card.bg-primary { background: var(--bs-primary) !important; }
+body.dark-mode .card.bg-warning { background: var(--bs-warning) !important; }
+body.dark-mode .card.bg-info { background: var(--bs-info) !important; }
+
+/* Keep table rows background transparent */
+body.dark-mode .table tbody tr,
+.table tbody tr {
+    background-color: transparent !important;
+}
+
+/* Optional: Add subtle hover effect on transparent tables */
+.table-hover tbody tr:hover {
+    background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(52, 211, 153, 0.15) !important;
+}
+
+/* =========================================================
+   FIX LIGHT MODE VISIBILITY FOR LISTS AND TEXT
+   ========================================================= */
+
+/* Ensure list group items have proper background in light mode */
+.list-group-item {
+    background-color: transparent !important;
+}
+
+/* Make sure text is dark enough in light mode */
+body:not(.dark-mode) .list-group-item {
+    color: var(--text-main) !important;
+}
+
+body:not(.dark-mode) .list-group-item .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Ensure badges in light mode have proper backgrounds */
+body:not(.dark-mode) .badge.bg-primary {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+body:not(.dark-mode) .badge.rounded-pill {
+    background-color: var(--primary) !important;
+    color: white !important;
+}
+
+/* Fix category badge specifically */
+body:not(.dark-mode) .category-badge {
+    background-color: var(--primary) !important;
+    color: white !important;
+}

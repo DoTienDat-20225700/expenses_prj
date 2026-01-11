@@ -1,0 +1,37 @@
+{% extends 'ep1/base.html' %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-exclamation-triangle me-2"></i>Xác Nhận Xóa
+        </h4>
+      </div>
+      <div class="card-body p-4 text-center">
+        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+        <h5>Bạn có chắc muốn xóa khoản thu nhập này?</h5>
+        <div class="alert alert-light mt-3">
+          <p class="mb-1">
+            <strong>Nguồn thu:</strong> {{ income.source.name|default:"Khác" }}
+          </p>
+          <p class="mb-1">
+            <strong>Số tiền:</strong> {{ income.amount|floatformat:0 }} ₫
+          </p>
+          <p class="mb-0">
+            <strong>Ngày:</strong> {{ income.date|date:"d/m/Y" }}
+          </p>
+        </div>
+        <form method="post" class="mt-4">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger me-2">
+            <i class="fas fa-check me-2"></i>Xác Nhận Xóa
+          </button>
+          <a href="{% url 'ep1:income_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i>Hủy
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

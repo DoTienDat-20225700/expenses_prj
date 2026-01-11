@@ -1,0 +1,39 @@
+{% extends 'ep1/base.html' %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-exclamation-triangle me-2"></i>Xác Nhận Xóa
+        </h4>
+      </div>
+      <div class="card-body p-4 text-center">
+        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+        <h5>Bạn có chắc muốn xóa chi tiêu định kỳ này?</h5>
+        <div class="alert alert-light mt-3">
+          <p class="mb-1"><strong>Tên:</strong> {{ recurring.name }}</p>
+          <p class="mb-1">
+            <strong>Số tiền:</strong> {{ recurring.amount|floatformat:0 }} ₫
+          </p>
+          <p class="mb-0">
+            <strong>Tần suất:</strong> {{ recurring.get_frequency_display }}
+          </p>
+        </div>
+        <p class="text-muted small">
+          <i class="fas fa-info-circle me-1"></i>
+          Các chi tiêu đã tạo từ template này sẽ không bị xóa.
+        </p>
+        <form method="post" class="mt-4">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger me-2">
+            <i class="fas fa-check me-2"></i>Xác Nhận Xóa
+          </button>
+          <a href="{% url 'ep1:recurring_list' %}" class="btn btn-secondary">
+            <i class="fas fa-times me-2"></i>Hủy
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

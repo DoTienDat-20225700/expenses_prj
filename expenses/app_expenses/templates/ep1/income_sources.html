@@ -1,0 +1,89 @@
+{% extends 'ep1/base.html' %} {% block content %}
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="fw-bold mb-0">
+        <i class="fas fa-sitemap me-2 text-primary"></i>Quản Lý Nguồn Thu Nhập
+      </h2>
+      <a href="{% url 'ep1:income_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Quay Lại
+      </a>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  <div class="col-md-5 mb-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-plus me-2"></i>Thêm Nguồn Thu Mới</h5>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.name.label }}</label>
+            {{ form.name }} {% if form.name.errors %}
+            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+            {% endif %}
+          </div>
+          <button type="submit" class="btn btn-success w-100">
+            <i class="fas fa-save me-2"></i>Thêm Nguồn Thu
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4">
+        <h5 class="fw-bold mb-0">Danh Sách Nguồn Thu</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if sources %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="px-4" width="70%">Tên Nguồn Thu</th>
+                <th class="text-center">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for source in sources %}
+              <tr>
+                <td class="px-4">
+                  <i class="fas fa-dollar-sign me-2 text-success"></i>
+                  {{ source.name }}
+                </td>
+                <td class="text-center">
+                  <a
+                    href="{% url 'ep1:edit_income_source' source.pk %}"
+                    class="btn btn-sm btn-outline-primary me-1"
+                  >
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a
+                    href="{% url 'ep1:delete_income_source' source.pk %}"
+                    class="btn btn-sm btn-outline-danger"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <p class="text-muted">Chưa có nguồn thu nào</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -4,7 +4,7 @@
 
 <div class="row mb-4">
   <div class="col-md-6">
-    <h2><i class="fas fa-list me-2"></i>Danh sách chi tiêu</h2>
+    <h2 class="fw-bold mb-4"><i class="fas fa-list me-2 text-primary"></i>Danh Sách Chi Tiêu</h2>
   </div>
   <div class="col-md-6 text-end">
     <form method="post" class="d-inline-block me-2">
@@ -28,44 +28,50 @@
   </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-4 mb-4 mb-md-0">
-        <div class="card border-left-primary h-100 shadow-sm">
+<div class="row mb-4 g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 card-hover">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                        <h6 class="text-primary fw-bold text-uppercase small">Tổng chi tiêu</h6> 
-                        <h3 class="mb-0 fw-bold">{{ total_spent|floatformat:0|intcomma:0 }} ₫</h3>
+                        <p class="text-muted mb-1 small">Tổng Chi Tiêu</p>
+                        <h3 class="fw-bold mb-0 text-danger">{{ total_spent|floatformat:0|intcomma }} ₫</h3>
                     </div>
-                    <i class="fas fa-coins fa-2x text-muted opacity-25"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4 mb-4 mb-md-0">
-        <div class="card border-left-success h-100 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-success fw-bold text-uppercase small">Chi nhiều nhất</h6>
-                        <h3 class="mb-0 fw-bold">{{ top_category }}</h3>
+                    <div class="bg-danger bg-opacity-10 p-3 rounded-3">
+                        <i class="fas fa-coins text-danger fs-4"></i>
                     </div>
-                    <i class="fas fa-chart-line fa-2x text-muted opacity-25"></i>
                 </div>
             </div>
         </div>
     </div>
     
     <div class="col-md-4">
-        <div class="card border-left-info h-100 shadow-sm">
+        <div class="card border-0 shadow-sm h-100 card-hover">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                        <h6 class="text-info fw-bold text-uppercase small">Ngân sách còn lại</h6>
-                        <h3 class="mb-0 fw-bold">{{ remaining|floatformat:0|intcomma:0}} ₫</h3>
+                        <p class="text-muted mb-1 small">Chi Nhiều Nhất</p>
+                        <h3 class="fw-bold mb-0">{{ top_category }}</h3>
                     </div>
-                    <i class="fas fa-wallet fa-2x text-muted opacity-25"></i>
+                    <div class="bg-success bg-opacity-10 p-3 rounded-3">
+                        <i class="fas fa-chart-line text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 card-hover">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <p class="text-muted mb-1 small">Ngân Sách Còn Lại</p>
+                        <h3 class="fw-bold mb-0 {% if remaining >= 0 %}text-success{% else %}text-danger{% endif %}">{{ remaining|floatformat:0|intcomma }} ₫</h3>
+                    </div>
+                    <div class="{% if remaining >= 0 %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 p-3 rounded-3">
+                        <i class="fas fa-wallet {% if remaining >= 0 %}text-success{% else %}text-danger{% endif %} fs-4"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -210,8 +216,8 @@
 <div class="row mt-5 mb-4">
     <div class="col-md-6 mb-4 mb-md-0">
         <div class="card h-100 shadow-sm">
-            <div class="card-header py-3">
-                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-pie me-1"></i> Tỉ lệ chi tiêu</h6>
+            <div class="card-header bg-white border-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-chart-pie me-2 text-primary"></i>Chi Tiêu Theo Danh Mục</h5>
             </div>
             <div class="card-body">
                 <div style="height: 300px;">
@@ -223,8 +229,8 @@
 
     <div class="col-md-6">
         <div class="card h-100 shadow-sm">
-            <div class="card-header py-3">
-                <h6 class="m-0 fw-bold text-primary"><i class="fas fa-chart-bar me-1"></i> Chi tiêu theo ngày</h6>
+            <div class="card-header bg-white border-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-chart-bar me-2 text-primary"></i>Chi Tiêu Theo Ngày</h5>
             </div>
             <div class="card-body">
                 <div style="height: 300px;">
@@ -252,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' }, cutout: '70%' }
+            plugins: { legend: { position: 'bottom' }, cutout: '50%' }
         }
     });
 

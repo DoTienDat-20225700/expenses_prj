@@ -1,0 +1,172 @@
+{% extends 'ep1/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="fw-bold mb-4">
+        <i class="fas fa-money-bill-wave me-2 text-primary"></i>Quản Lý Thu Nhập
+      </h2>
+      <a href="{% url 'ep1:add_income' %}" class="btn btn-success">
+        <i class="fas fa-plus me-2"></i>Thêm Thu Nhập
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="col-12 mb-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Nguồn Thu</label>
+            <select name="source" class="form-select">
+              <option value="">Tất cả nguồn thu</option>
+              {% for source in sources %}
+              <option value="{{ source.id }}" {% if selected_source == source.id %}selected{% endif %}>
+                {{ source.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Từ ngày</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Đến ngày</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-filter me-2"></i>Lọc
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Card -->
+  <div class="col-12 mb-4">
+    <div class="card border-0 shadow-sm bg-success text-white">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="text-white-50 mb-1">Tổng Thu Nhập</h6>
+            <h2 class="fw-bold mb-0">{{ total_income|floatformat:0|intcomma }} ₫</h2>
+          </div>
+          <div class="bg-white bg-opacity-25 p-3 rounded-circle">
+            <i class="fas fa-hand-holding-usd fs-2"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Income List -->
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 pb-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="fw-bold mb-0">Danh Sách Thu Nhập</h5>
+          <a href="{% url 'ep1:income_source_manage' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-cog me-1"></i>Quản lý nguồn thu
+          </a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        {% if incomes %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="py-3 ps-3" style="width: 15%;">Ngày</th>
+                <th class="py-3" style="width: 20%;">Nguồn Thu</th>
+                <th class="py-3" style="width: 30%;">Mô Tả</th>
+                <th class="py-3" style="width: 20%;">Số Tiền</th>
+                <th class="py-3 text-center" style="width: 15%;">Hành Động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for income in incomes %}
+              <tr>
+                <td class="ps-3">
+                  <i class="far fa-calendar-alt me-2 text-muted"></i>
+                  {{ income.date|date:"d/m/Y" }}
+                </td>
+                <td>
+                  <span class="badge px-3 py-2 rounded-pill category-badge">
+                    {{ income.source.name|default:"Khác" }}
+                  </span>
+                </td>
+                <td class="text-muted">{{ income.description|truncatewords:10|default:"—" }}</td>
+                <td class="fw-bold text-success">+{{ income.amount|floatformat:0|intcomma }} ₫</td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <a href="{% url 'ep1:edit_income' income.pk %}" 
+                       class="btn btn-sm btn-outline-primary border-0"
+                       data-bs-toggle="tooltip"
+                       title="Sửa">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <a href="{% url 'ep1:delete_income' income.pk %}" 
+                       class="btn btn-sm btn-outline-danger border-0"
+                       data-bs-toggle="tooltip"
+                       title="Xóa">
+                      <i class="fas fa-trash"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-white border-0 py-3">
+          <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% if selected_source %}&source={{ selected_source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Đầu</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_source %}&source={{ selected_source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">‹</a>
+              </li>
+              {% endif %}
+              
+              <li class="page-item active">
+                <span class="page-link">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+              </li>
+              
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_source %}&source={{ selected_source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">›</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_source %}&source={{ selected_source }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Cuối</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <p class="text-muted">Chưa có thu nhập nào</p>
+          <a href="{% url 'ep1:add_income' %}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>Thêm thu nhập đầu tiên
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

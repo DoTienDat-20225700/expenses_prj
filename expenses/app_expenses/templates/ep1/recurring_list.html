@@ -1,0 +1,204 @@
+{% extends 'ep1/base.html' %} {% block content %}
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <h2 class="fw-bold mb-4">
+        <i class="fas fa-redo me-2 text-primary"></i>Chi Tiêu Định Kỳ
+      </h2>
+      <div>
+        <a
+          href="{% url 'ep1:generate_recurring' %}"
+          class="btn btn-info me-2"
+          onclick="return confirm('Tạo chi tiêu từ các template định kỳ đã đến hạn?')"
+        >
+          <i class="fas fa-sync me-2"></i>Tạo Chi Tiêu
+        </a>
+        <a href="{% url 'ep1:add_recurring' %}" class="btn btn-warning">
+          <i class="fas fa-plus me-2"></i>Thêm Định Kỳ
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 mb-3">
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      <strong>Hướng dẫn:</strong> Tạo các khoản chi tiêu lặp lại như tiền điện,
+      nước, Netflix... Hệ thống sẽ tự động nhắc nhở khi đến hạn. Nhấn nút
+      <strong>"Tạo Chi Tiêu"</strong> để chuyển các khoản định kỳ đã đến hạn
+      thành chi tiêu thực tế.
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4">
+        <h5 class="fw-bold mb-0">Danh Sách Chi Tiêu Định Kỳ</h5>
+      </div>
+      <div class="card-body p-0">
+        {% if recurrings %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead>
+              <tr>
+                <th class="py-3 ps-3" style="width: 20%">Tên</th>
+                <th class="py-3" style="width: 15%">Số Tiền</th>
+                <th class="py-3" style="width: 15%">Danh Mục</th>
+                <th class="py-3" style="width: 12%">Tần Suất</th>
+                <th class="py-3" style="width: 18%">Ngày Đến Hạn</th>
+                <th class="py-3" style="width: 10%">Trạng Thái</th>
+                <th class="py-3 text-center" style="width: 10%">Hành Động</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for recurring in recurrings %}
+              <tr
+                {%
+                if
+                not
+                recurring.is_active
+                %}class="table-secondary"
+                {%
+                endif
+                %}
+              >
+                <td class="ps-3">
+                  <i class="fas fa-repeat me-2 text-muted"></i>
+                  <strong>{{ recurring.name }}</strong>
+                </td>
+                <td>
+                  <span class="fw-bold text-danger"
+                    >{{ recurring.amount|floatformat:0 }} ₫</span
+                  >
+                </td>
+                <td>
+                  {% if recurring.category %}
+                  <span class="badge px-3 py-2 rounded-pill category-badge">
+                    {{ recurring.category.name }}
+                  </span>
+                  {% else %}
+                  <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge bg-info"
+                    >{{ recurring.get_frequency_display }}</span
+                  >
+                </td>
+                <td>
+                  <i class="far fa-calendar-alt me-1 text-muted"></i>
+                  {{ recurring.next_due_date|date:"d/m/Y" }} {% if recurring.next_due_date <= today %}
+                  <span class="badge bg-danger ms-1">Đến hạn!</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if recurring.is_active %}
+                  <span class="badge bg-success">
+                    <i class="fas fa-check me-1"></i>Hoạt động
+                  </span>
+                  {% else %}
+                  <span class="badge bg-secondary">
+                    <i class="fas fa-pause me-1"></i>Tạm dừng
+                  </span>
+                  {% endif %}
+                </td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <a
+                      href="{% url 'ep1:toggle_recurring' recurring.pk %}"
+                      class="btn btn-sm {% if recurring.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} border-0"
+                      data-bs-toggle="tooltip"
+                      title="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %}"
+                      onclick="return confirm('{% if recurring.is_active %}Vô hiệu hóa{% else %}Kích hoạt{% endif %} chi tiêu định kỳ này?')"
+                    >
+                      <i
+                        class="fas {% if recurring.is_active %}fa-pause{% else %}fa-play{% endif %}"
+                      ></i>
+                    </a>
+                    <a
+                      href="{% url 'ep1:edit_recurring' recurring.pk %}"
+                      class="btn btn-sm btn-outline-primary border-0"
+                      data-bs-toggle="tooltip"
+                      title="Sửa"
+                    >
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <a
+                      href="{% url 'ep1:delete_recurring' recurring.pk %}"
+                      class="btn btn-sm btn-outline-danger border-0"
+                      data-bs-toggle="tooltip"
+                      title="Xóa"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer bg-white border-0 py-3">
+          <nav>
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1">Đầu</a>
+              </li>
+              <li class="page-item">
+                <a
+                  class="page-link"
+                  href="?page={{ page_obj.previous_page_number }}"
+                  >‹</a
+                >
+              </li>
+              {% endif %}
+
+              <li class="page-item active">
+                <span class="page-link"
+                  >Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages
+                  }}</span
+                >
+              </li>
+
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a
+                  class="page-link"
+                  href="?page={{ page_obj.next_page_number }}"
+                  >›</a
+                >
+              </li>
+              <li class="page-item">
+                <a
+                  class="page-link"
+                  href="?page={{ page_obj.paginator.num_pages }}"
+                  >Cuối</a
+                >
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %} {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+          <p class="text-muted">Chưa có chi tiêu định kỳ nào</p>
+          <a href="{% url 'ep1:add_recurring' %}" class="btn btn-warning">
+            <i class="fas fa-plus me-2"></i>Thêm chi tiêu định kỳ đầu tiên
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Add today's date for comparison in template
+  var today = new Date('{{ today|date:"Y-m-d" }}');
+</script>
+{% endblock %}

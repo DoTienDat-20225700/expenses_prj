@@ -121,3 +121,59 @@ class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model  = Profile
         fields = ['avatar', 'full_name', 'date_of_birth', 'gender', 'hometown', 'ethnicity', 'occupation']
+
+
+class RecurringExpenseForm(forms.ModelForm):
+    class Meta:
+        model = RecurringExpense
+        fields = ['name', 'amount', 'category', 'frequency', 'start_date', 'end_date', 'description', 'is_active']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VD: Tiền điện hàng tháng'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '1000'}),
+            'frequency': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.fields['category'].queryset = Category.objects.filter(user=user)
+        
+        # Make end_date optional
+        self.fields['end_date'].required = False
+
+
+class IncomeForm(forms.ModelForm):
+    class Meta:
+        model = Income
+        fields = ['amount', 'source', 'description', 'date']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '1000'}),
+            'source': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Mô tả nguồn thu...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            self.fields['source'].queryset = IncomeSource.objects.filter(user=user)
+
+
+class IncomeSourceForm(forms.ModelForm):
+    class Meta:
+        model = IncomeSource
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Nhập tên nguồn thu (VD: Lương, Freelance...)'
+            }),
+        }

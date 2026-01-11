@@ -23,7 +23,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)  
-            return redirect('ep1:ep1_lists')  
+            return redirect('ep1:dashboard')  # Redirect to dashboard
     else:
         form = RegisterForm()
     return render(request, 'ep1/register.html', {'form': form})
@@ -487,3 +487,475 @@ def predict_category_api(request):
     cat_id = predict_category(description, request.user)
     
     return JsonResponse({'category_id': cat_id})
+
+
+# ============================================
+# DASHBOARD & CHARTS
+# ============================================
+
+@login_required
+def dashboard(request):
+    """Dashboard tổng quan với biểu đồ và thống kê"""
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    
+    user = request.user
+    today = timezone.now().date()
+    
+    # Tháng hiện tại
+    first_day_this_month = today.replace(day=1)
+    first_day_next_month = (first_day_this_month + relativedelta(months=1))
+    
+    # Tháng trước
+    first_day_last_month = (first_day_this_month - relativedelta(months=1))
+    
+    # Tổng chi tiêu
+    total_expenses = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Chi tiêu tháng này
+    this_month_expenses = Expense.objects.filter(
+        user=user, 
+        date__gte=first_day_this_month,
+        date__lt=first_day_next_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Chi tiêu tháng trước
+    last_month_expenses = Expense.objects.filter(
+        user=user,
+        date__gte=first_day_last_month,
+        date__lt=first_day_this_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Tổng thu nhập
+    total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Thu nhập tháng này
+    this_month_income = Income.objects.filter(
+        user=user,
+        date__gte=first_day_this_month,
+        date__lt=first_day_next_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Số dư
+    balance = total_income - total_expenses
+    
+    # Budget
+    budget_obj, _ = Budget.objects.get_or_create(user=user)
+    
+    # Tính toán ngân sách còn lại
+    budget_remaining = budget_obj.total - this_month_expenses
+    
+    # Top 5 danh mục chi tiêu
+    top_categories = Expense.objects.filter(user=user).values('category__name').annotate(
+        total=Sum('amount')
+    ).order_by('-total')[:5]
+    
+    # Giao dịch gần đây
+    recent_expenses = Expense.objects.filter(user=user).order_by('-date')[:5]
+    recent_income = Income.objects.filter(user=user).order_by('-date')[:5]
+    
+    # Chi tiêu định kỳ sắp đến hạn
+    upcoming_recurring = RecurringExpense.objects.filter(
+        user=user,
+        is_active=True,
+        next_due_date__gte=today
+    ).order_by('next_due_date')[:5]
+    
+    # Lấy các thông báo đang Active
+    active_announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
+    
+    context = {
+        'total_expenses': total_expenses,
+        'this_month_expenses': this_month_expenses,
+        'last_month_expenses': last_month_expenses,
+        'total_income': total_income,
+        'this_month_income': this_month_income,
+        'balance': balance,
+        'budget': budget_obj,
+        'budget_remaining': budget_remaining,  # Thêm budget remaining
+        'top_categories': top_categories,
+        'recent_expenses': recent_expenses,
+        'recent_income': recent_income,
+        'upcoming_recurring': upcoming_recurring,
+        'active_announcements': active_announcements,
+    }
+    
+    return render(request, 'ep1/dashboard.html', context)
+
+
+@login_required
+def chart_category_data(request):
+    """API endpoint for category pie chart data"""
+    user = request.user
+    
+    category_data = Expense.objects.filter(user=user).values('category__name').annotate(
+        total=Sum('amount')
+    ).order_by('-total')[:10]
+    
+    labels = [item['category__name'] or 'Không xác định' for item in category_data]
+    data = [float(item['total']) for item in category_data]
+    
+    return JsonResponse({
+        'labels': labels,
+        'data': data
+    })
+
+
+@login_required
+def chart_monthly_trend(request):
+    """API endpoint for monthly trend chart (last 6 months)"""
+    from dateutil.relativedelta import relativedelta
+    user = request.user
+    today = timezone.now().date()
+    
+    # Lấy 6 tháng trước
+    months_data = []
+    for i in range(5, -1, -1):
+        month_start = (today.replace(day=1) - relativedelta(months=i))
+        month_end = (month_start + relativedelta(months=1))
+        
+        month_expenses = Expense.objects.filter(
+            user=user,
+            date__gte=month_start,
+            date__lt=month_end
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        months_data.append({
+            'label': month_start.strftime('%m/%Y'),
+            'value': float(month_expenses)
+        })
+    
+    labels = [item['label'] for item in months_data]
+    data = [item['value'] for item in months_data]
+    
+    return JsonResponse({
+        'labels': labels,
+        'data': data
+    })
+
+
+@login_required
+def chart_expense_vs_income(request):
+    """API endpoint for income vs expense comparison (last 6 months)"""
+    from dateutil.relativedelta import relativedelta
+    user = request.user
+    today = timezone.now().date()
+    
+    months_data = []
+    for i in range(5, -1, -1):
+        month_start = (today.replace(day=1) - relativedelta(months=i))
+        month_end = (month_start + relativedelta(months=1))
+        
+        month_expenses = Expense.objects.filter(
+            user=user,
+            date__gte=month_start,
+            date__lt=month_end
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        month_income = Income.objects.filter(
+            user=user,
+            date__gte=month_start,
+            date__lt=month_end
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        months_data.append({
+            'label': month_start.strftime('%m/%Y'),
+            'expenses': float(month_expenses),
+            'income': float(month_income)
+        })
+    
+    labels = [item['label'] for item in months_data]
+    expense_data = [item['expenses'] for item in months_data]
+    income_data = [item['income'] for item in months_data]
+    
+    return JsonResponse({
+        'labels': labels,
+        'expenses': expense_data,
+        'income': income_data
+    })
+
+
+# ============================================
+# INCOME MANAGEMENT
+# ============================================
+
+@login_required
+def income_list(request):
+    """Danh sách thu nhập"""
+    base_income = Income.objects.filter(user=request.user)
+    
+    # Lọc theo nguồn thu
+    source_id = request.GET.get('source')
+    if source_id:
+        base_income = base_income.filter(source_id=source_id)
+    
+    # Lọc theo ngày
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from and date_to:
+        base_income = base_income.filter(date__range=[date_from, date_to])
+    elif date_from:
+        base_income = base_income.filter(date__gte=date_from)
+    elif date_to:
+        base_income = base_income.filter(date__lte=date_to)
+    
+    # Sắp xếp
+    incomes = base_income.order_by('-date')
+    
+    # Phân trang
+    paginator = Paginator(incomes, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Tính tổng
+    total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Danh sách nguồn thu
+    sources = IncomeSource.objects.filter(user=request.user)
+    
+    context = {
+        'incomes': page_obj,
+        'page_obj': page_obj,
+        'total_income': total_income,
+        'sources': sources,
+        'selected_source': int(source_id) if source_id else None,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    
+    return render(request, 'ep1/income_list.html', context)
+
+
+@login_required
+def add_income(request):
+    """Thêm thu nhập mới"""
+    if request.method == 'POST':
+        form = IncomeForm(request.POST, user=request.user)
+        if form.is_valid():
+            income = form.save(commit=False)
+            income.user = request.user
+            income.save()
+            messages.success(request, 'Thêm thu nhập thành công!')
+            return redirect('ep1:income_list')
+    else:
+        form = IncomeForm(user=request.user)
+    
+    return render(request, 'ep1/add_income.html', {'form': form})
+
+
+@login_required
+def edit_income(request, pk):
+    """Sửa thu nhập"""
+    income = get_object_or_404(Income, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = IncomeForm(request.POST, instance=income, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Cập nhật thu nhập thành công!')
+            return redirect('ep1:income_list')
+    else:
+        form = IncomeForm(instance=income, user=request.user)
+    
+    return render(request, 'ep1/edit_income.html', {'form': form, 'income': income})
+
+
+@login_required
+def delete_income(request, pk):
+    """Xóa thu nhập"""
+    income = get_object_or_404(Income, pk=pk, user=request.user)
+    if request.method == 'POST':
+        income.delete()
+        messages.success(request, 'Đã xóa thu nhập.')
+        return redirect('ep1:income_list')
+    
+    return render(request, 'ep1/delete_income.html', {'income': income})
+
+
+@login_required
+def income_source_manage(request):
+    """Quản lý nguồn thu nhập"""
+    if request.method == 'POST':
+        form = IncomeSourceForm(request.POST)
+        if form.is_valid():
+            source = form.save(commit=False)
+            source.user = request.user
+            source.save()
+            messages.success(request, 'Thêm nguồn thu nhập thành công!')
+            return redirect('ep1:income_source_manage')
+    else:
+        form = IncomeSourceForm()
+    
+    sources = IncomeSource.objects.filter(user=request.user)
+    return render(request, 'ep1/income_sources.html', {'sources': sources, 'form': form})
+
+
+@login_required
+def edit_income_source(request, pk):
+    """Sửa nguồn thu nhập"""
+    source = get_object_or_404(IncomeSource, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = IncomeSourceForm(request.POST, instance=source)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Cập nhật nguồn thu thành công!')
+            return redirect('ep1:income_source_manage')
+    else:
+        form = IncomeSourceForm(instance=source)
+    
+    return render(request, 'ep1/edit_income_source.html', {'form': form, 'source': source})
+
+
+@login_required
+def delete_income_source(request, pk):
+    """Xóa nguồn thu nhập"""
+    source = get_object_or_404(IncomeSource, pk=pk, user=request.user)
+    if source.income_set.exists():
+        messages.error(request, 'Không thể xóa nguồn thu đang có dữ liệu!')
+        return redirect('ep1:income_source_manage')
+    
+    if request.method == 'POST':
+        source.delete()
+        messages.success(request, 'Đã xóa nguồn thu.')
+        return redirect('ep1:income_source_manage')
+    
+    return render(request, 'ep1/delete_income_source.html', {'source': source})
+
+
+# ============================================
+# RECURRING EXPENSES
+# ============================================
+
+@login_required
+def recurring_list(request):
+    """Danh sách chi tiêu định kỳ"""
+    recurrings = RecurringExpense.objects.filter(user=request.user)
+    
+    # Phân trang
+    paginator = Paginator(recurrings, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'recurrings': page_obj,
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'ep1/recurring_list.html', context)
+
+
+@login_required
+def add_recurring(request):
+    """Thêm chi tiêu định kỳ mới"""
+    if request.method == 'POST':
+        form = RecurringExpenseForm(request.POST, user=request.user)
+        if form.is_valid():
+            recurring = form.save(commit=False)
+            recurring.user = request.user
+            
+            # Tự động set next_due_date = start_date nếu chưa có
+            if not recurring.next_due_date:
+                recurring.next_due_date = recurring.start_date
+            
+            recurring.save()
+            messages.success(request, 'Thêm chi tiêu định kỳ thành công!')
+            return redirect('ep1:recurring_list')
+    else:
+        form = RecurringExpenseForm(user=request.user)
+    
+    return render(request, 'ep1/add_recurring.html', {'form': form})
+
+
+@login_required
+def edit_recurring(request, pk):
+    """Sửa chi tiêu định kỳ"""
+    recurring = get_object_or_404(RecurringExpense, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = RecurringExpenseForm(request.POST, instance=recurring, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Cập nhật chi tiêu định kỳ thành công!')
+            return redirect('ep1:recurring_list')
+    else:
+        form = RecurringExpenseForm(instance=recurring, user=request.user)
+    
+    return render(request, 'ep1/edit_recurring.html', {'form': form, 'recurring': recurring})
+
+
+@login_required
+def delete_recurring(request, pk):
+    """Xóa chi tiêu định kỳ"""
+    recurring = get_object_or_404(RecurringExpense, pk=pk, user=request.user)
+    if request.method == 'POST':
+        recurring.delete()
+        messages.success(request, 'Đã xóa chi tiêu định kỳ.')
+        return redirect('ep1:recurring_list')
+    
+    return render(request, 'ep1/delete_recurring.html', {'recurring': recurring})
+
+
+@login_required
+def toggle_recurring_status(request, pk):
+    """Bật/tắt trạng thái chi tiêu định kỳ"""
+    recurring = get_object_or_404(RecurringExpense, pk=pk, user=request.user)
+    recurring.is_active = not recurring.is_active
+    recurring.save()
+    
+    status = "kích hoạt" if recurring.is_active else "vô hiệu hóa"
+    messages.success(request, f'Đã {status} chi tiêu định kỳ "{recurring.name}".')
+    
+    return redirect('ep1:recurring_list')
+
+
+@login_required
+def generate_recurring_expenses(request):
+    """Tạo chi tiêu từ các template định kỳ đã đến hạn"""
+    from dateutil.relativedelta import relativedelta
+    
+    user = request.user
+    today = timezone.now().date()
+    
+    # Lấy tất cả recurring đang active và đã đến hạn
+    due_recurrings = RecurringExpense.objects.filter(
+        user=user,
+        is_active=True,
+        next_due_date__lte=today
+    )
+    
+    generated_count = 0
+    
+    for recurring in due_recurrings:
+        # Kiểm tra end_date nếu có
+        if recurring.end_date and today > recurring.end_date:
+            recurring.is_active = False
+            recurring.save()
+            continue
+        
+        # Tạo expense mới
+        Expense.objects.create(
+            user=user,
+            amount=recurring.amount,
+            description=f"[Định kỳ] {recurring.description or recurring.name}",
+            category=recurring.category,
+            date=recurring.next_due_date
+        )
+        
+        generated_count += 1
+        
+        # Cập nhật next_due_date
+        if recurring.frequency == 'daily':
+            recurring.next_due_date += timedelta(days=1)
+        elif recurring.frequency == 'weekly':
+            recurring.next_due_date += timedelta(weeks=1)
+        elif recurring.frequency == 'monthly':
+            recurring.next_due_date += relativedelta(months=1)
+        elif recurring.frequency == 'yearly':
+            recurring.next_due_date += relativedelta(years=1)
+        
+        recurring.save()
+    
+    if generated_count > 0:
+        messages.success(request, f'Đã tạo {generated_count} chi tiêu từ các template định kỳ.')
+    else:
+        messages.info(request, 'Không có chi tiêu định kỳ nào đến hạn.')
+    
+    return redirect('ep1:recurring_list')

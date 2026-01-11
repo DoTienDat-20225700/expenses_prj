@@ -134,12 +134,15 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+USE_L10N = True  # Required for intcomma filter
+
 USE_TZ = True
 
 # Ép sử dụng dấu phẩy cho hàng nghìn
 USE_THOUSAND_SEPARATOR = True
 THOUSAND_SEPARATOR = ','
 DECIMAL_SEPARATOR = '.'
+NUMBER_GROUPING = 3  # Group by 3 digits
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
