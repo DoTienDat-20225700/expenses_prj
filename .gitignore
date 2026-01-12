@@ -126,6 +126,9 @@ logs/
 # ===== Media files (user uploads) =====
 /media/
 media/
+# Allow default avatar
+!media/avatars/default.png
+!expenses/media/avatars/default.png
 
 # ===== Temporary files =====
 *.tmp
