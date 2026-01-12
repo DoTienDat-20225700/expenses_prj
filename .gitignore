@@ -1,31 +1,158 @@
-# General
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Python
+# ===== Byte-compiled / optimized / DLL files =====
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyc
+*.pyo
+*.pyd
 
-# Virtual Environments
+# ===== C extensions =====
+*.so
+
+# ===== Distribution / packaging =====
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===== Virtual Environments =====
 .env
-.venv/
+.env.local
+.venv
 venv/
-env/
 ENV/
+env/
+env.bak/
+venv.bak/
 
-# Django
+# ===== Django specific =====
 *.log
 local_settings.py
 db.sqlite3
-media/
+db.sqlite3-journal
+/media
+/staticfiles
+/static_root
+/collected_static
 
-# IDEs
+# Django migrations (optional - uncomment if you don't want to track migrations)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# ===== Database files =====
+*.sqlite
+*.sqlite3
+*.db
+
+# ===== Environment variables =====
+.env
+.env.*
+!.env.example
+*.env
+
+# ===== IDE and Editor files =====
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
 
-# Project Specific
+# ===== OS files =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ===== Coverage reports =====
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# ===== Machine Learning Models =====
 *.pkl
 *.joblib
+*.h5
+*.hdf5
+*.pb
+*.pt
+*.pth
+*.onnx
+
+# ===== Jupyter Notebook =====
+.ipynb_checkpoints
+
+# ===== Unit test / coverage =====
+.pytest_cache/
+.coverage
+
+# ===== Logs =====
+*.log
+logs/
+*.log.*
+
+# ===== Media files (user uploads) =====
+/media/
+media/
+
+# ===== Temporary files =====
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# ===== Build files =====
+*.pyc
+*.pyo
+*.egg
+*.egg-info
+
+# ===== Secret keys and sensitive data =====
+secrets.json
+credentials.json
+*.pem
+*.key
+*.crt
+
+# ===== npm/node (if using for frontend) =====
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# ===== Backup files =====
+*.backup
+*.old
+*.orig
