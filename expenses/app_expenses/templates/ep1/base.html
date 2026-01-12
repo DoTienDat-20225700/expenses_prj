@@ -292,14 +292,14 @@
           }
         };
 
-        // Tự động tắt thông báo sau 5 giây
+        // Tự động tắt thông báo sau 10 giây
         setTimeout(function () {
           var alerts = document.querySelectorAll(".alert");
           alerts.forEach(function (alert) {
             var bsAlert = new bootstrap.Alert(alert);
             bsAlert.close();
           });
-        }, 5000);
+        }, 10000);
       });
     </script>
 
