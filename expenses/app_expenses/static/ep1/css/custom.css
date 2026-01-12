@@ -19,12 +19,11 @@
     /* Nền trang: Xanh mint cực nhạt tạo cảm giác tươi mới */
     --bg-body: #f0fdf4;
 
-    /* Glassmorphism Variables (Quan trọng) */
-    --bg-card: rgba(255, 255, 255, 0.85); /* Tăng từ 0.75 lên 0.85 */
-    /* Nền kính trong suốt */
-    --bg-glass-heavy: rgba(255, 255, 255, 0.95);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.7);
-    --blur-strength: 20px;
+    /* Solid Backgrounds (Thay thế glassmorphism để tránh crash) */
+    --bg-card: rgba(255, 255, 255, 0.98);
+    --bg-glass-heavy: rgba(255, 255, 255, 1);
+    --glass-border: 1px solid rgba(226, 232, 240, 0.8);
+    --blur-strength: 0px; /* Tắt blur để tránh crash Chrome */
 
     --text-main: #0f172a;
     /* Slate 900 */
@@ -54,10 +53,10 @@ body.dark-mode {
     /* Nền trang: Xanh đen sâu thẳm (Deep Slate/Navy) */
     --bg-body: #0f172a; 
 
-    /* Dark Glass */
-    --bg-card: rgba(15, 23, 42, 0.8); /* Tăng từ 0.6 lên 0.8 */
-    --bg-glass-heavy: rgba(15, 23, 42, 0.9);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Dark Solid */
+    --bg-card: rgba(15, 23, 42, 0.98);
+    --bg-glass-heavy: rgba(15, 23, 42, 1);
+    --glass-border: 1px solid rgba(51, 65, 85, 0.8);
 
     --text-main: #f8fafc;
     /* Slate 50 */
@@ -127,7 +126,7 @@ body::before {
     height: 100%;
     /* Lớp phủ màu nền (sáng hoặc tối tùy mode) để làm dịu ảnh nền */
     background: var(--bg-body);
-    opacity: 0.85; /* Tăng độ che phủ để dễ đọc chữ hơn */
+    opacity: 0.75; /* Giảm xuống để không che khuất nội dung */
     z-index: -1;
 }
 
@@ -159,8 +158,9 @@ body.dark-mode ::-webkit-scrollbar-thumb {
    ========================================= */
 .navbar {
     background: var(--navbar-bg) !important;
-    backdrop-filter: blur(var(--blur-strength));
-    -webkit-backdrop-filter: blur(var(--blur-strength));
+    /* Tắt backdrop-filter */
+    /* backdrop-filter: blur(var(--blur-strength)); */
+    /* -webkit-backdrop-filter: blur(var(--blur-strength)); */
     border-bottom: var(--glass-border);
     padding: 0.8rem 0;
     transition: all 0.3s ease;
@@ -206,7 +206,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 /* Dropdown Menu "Kính" */
 .dropdown-menu {
     background: var(--bg-glass-heavy);
-    backdrop-filter: blur(20px);
+    /* backdrop-filter: blur(20px); */
     border: var(--glass-border);
     border-radius: 16px;
     box-shadow: var(--shadow-lg);
@@ -246,9 +246,9 @@ body.dark-mode ::-webkit-scrollbar-thumb {
    ========================================= */
 .card {
     background: var(--bg-card);
-    /* Tăng độ mờ nền kính để chữ dễ đọc hơn trên nền ảnh phức tạp */
-    backdrop-filter: blur(20px); 
-    -webkit-backdrop-filter: blur(20px);
+    /* Tắt backdrop-filter để tránh crash Chrome */
+    /* backdrop-filter: blur(20px); */
+    /* -webkit-backdrop-filter: blur(20px); */
     border: var(--glass-border);
     border-radius: 20px;
     /* Bo góc mạnh hơn cho mềm mại */
@@ -591,4 +591,77 @@ body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
 /* Ẩn input file thực tế */
 input[type="file"] {
     display: none;
+}
+
+/* Đảm bảo container chính hiển thị trên overlay */
+.main-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* =========================================
+   DASHBOARD PERFORMANCE FIXES
+   ========================================= */
+/* Tắt tất cả animations và effects phức tạp trên dashboard để tránh crash */
+body:has([class*="dashboard"]) .card,
+body:has([href*="dashboard"]) .card {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+body:has([class*="dashboard"]) .card:hover,
+body:has([href*="dashboard"]) .card:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-md) !important; /* Giữ shadow nhẹ, bỏ hover effect */
+}
+
+/* Tắt fade-in animation trên dashboard */
+body:has([class*="dashboard"]) .fade-in,
+body:has([href*="dashboard"]) .fade-in {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* Tắt ảnh nền chỉ trên dashboard */
+body:has([class*="dashboard"])::before,
+body:has([href*="dashboard"])::before {
+    opacity: 0.9 !important; /* Tối đa che nền */
+}
+
+/* =========================================
+   AUTH PAGES (LOGIN/REGISTER)
+   ========================================= */
+.auth-title {
+    color: var(--text-main) !important;
+    font-weight: 700;
+}
+
+.auth-subtitle {
+    color: var(--text-muted) !important;
+}
+
+.auth-header-icon {
+    color: var(--primary) !important;
+    font-size: 3rem;
+}
+
+/* Performance fixes for auth pages */
+.auth-wrapper .card,
+.auth-card {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+.auth-wrapper .card:hover,
+.auth-card:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Tắt fade-in animation trên auth pages */
+.auth-wrapper .fade-in {
+    animation: none !important;
+    opacity: 1 !important;
 }

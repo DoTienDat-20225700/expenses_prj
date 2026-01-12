@@ -571,9 +571,9 @@ def dashboard(request):
         total=Sum('amount')
     ).order_by('-total')[:5]
     
-    # Giao dịch gần đây
-    recent_expenses = Expense.objects.filter(user=user).order_by('-date')[:5]
-    recent_income = Income.objects.filter(user=user).order_by('-date')[:5]
+    # Giao dịch gần đây (3 chi tiêu + 3 thu nhập = 6 dòng)
+    recent_expenses = Expense.objects.filter(user=user).order_by('-date')[:3]
+    recent_income = Income.objects.filter(user=user).order_by('-date')[:3]
     
     # Chi tiêu định kỳ sắp đến hạn
     upcoming_recurring = RecurringExpense.objects.filter(

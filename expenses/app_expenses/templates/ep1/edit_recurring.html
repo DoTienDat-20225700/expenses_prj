@@ -111,4 +111,33 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Format số tiền với dấu phẩy
+  document.addEventListener("DOMContentLoaded", function () {
+    const amountInput = document.querySelector('input[name="amount"]');
+
+    function formatNumber(value) {
+      value = value.replace(/[^\d]/g, "");
+      return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    if (amountInput) {
+      // Format giá trị ban đầu nếu có
+      if (amountInput.value) {
+        amountInput.value = formatNumber(amountInput.value);
+      }
+
+      // Format khi nhập
+      amountInput.addEventListener("input", function () {
+        this.value = formatNumber(this.value);
+      });
+
+      // Loại bỏ dấu phẩy trước khi submit
+      amountInput.closest("form").addEventListener("submit", function () {
+        amountInput.value = amountInput.value.replace(/,/g, "");
+      });
+    }
+  });
+</script>
 {% endblock %}

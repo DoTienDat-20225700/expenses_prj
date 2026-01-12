@@ -131,7 +131,7 @@ class RecurringExpenseForm(forms.ModelForm):
             'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VD: Tiền điện hàng tháng'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '1000'}),
+            'amount': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VD: 1,000,000'}),
             'frequency': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'category': forms.Select(attrs={'class': 'form-control'}),
@@ -154,7 +154,7 @@ class IncomeForm(forms.ModelForm):
         fields = ['amount', 'source', 'description', 'date']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '1000'}),
+            'amount': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VD: 1,000,000'}),
             'source': forms.Select(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Mô tả nguồn thu...'}),
         }
