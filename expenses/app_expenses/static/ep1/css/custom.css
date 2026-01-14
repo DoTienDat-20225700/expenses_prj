@@ -637,3 +637,122 @@ body:has([href*="dashboard"])::before {
   animation: none !important;
   opacity: 1 !important;
 }
+
+/* =========================================
+   11. MOBILE RESPONSIVE STYLES
+   ========================================= */
+/* Mobile optimizations for better UX on small screens */
+@media (max-width: 768px) {
+  /* Page header buttons - stack vertically with proper spacing */
+  .row.mb-4 .col-md-6.text-end,
+  .col-12.mb-4 .d-flex.justify-content-between {
+    text-align: center !important;
+  }
+
+  /* Budget form and action buttons container */
+  .row.mb-4 .col-md-6.text-end {
+    margin-top: 1rem;
+  }
+
+  /* Budget input group - make it smaller and centered on mobile */
+  .row.mb-4 .input-group-sm {
+    max-width: 100%;
+    width: 100% !important;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Action buttons (Xuất Excel, Thêm mới, etc.) */
+  .row.mb-4 .btn,
+  .col-12.mb-4 .btn {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0 !important;
+    /* Consistent vertical spacing */
+  }
+
+  /* Remove inline-block from forms in header */
+  .row.mb-4 form.d-inline-block {
+    display: block !important;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Buttons in d-flex containers */
+  .d-flex.justify-content-between .btn {
+    margin: 0.25rem !important;
+  }
+
+  /* Button groups in d-flex with gap */
+  .d-flex.gap-2 {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .d-flex.gap-2 .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Multiple buttons in header (Tạo Chi Tiêu, Thêm Định Kỳ) */
+  .d-flex.justify-content-between > div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  /* Page title - reduce size on mobile */
+  h2.fw-bold {
+    font-size: 1.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Card body padding - reduce on mobile */
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  /* Table - make text smaller on mobile */
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  /* Button groups in tables */
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .btn-group .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Navbar - reduce padding */
+  .navbar {
+    padding: 0.5rem 0 !important;
+  }
+
+  /* Form filters - ensure full width */
+  .card-body .row.g-3 > div {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Badges - make them smaller */
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.6em;
+  }
+
+  /* Avatar on profile - make smaller */
+  .avatar-wrapper {
+    width: 120px;
+    height: 120px;
+  }
+}

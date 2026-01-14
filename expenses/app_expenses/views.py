@@ -41,8 +41,20 @@ def admin_dashboard(request):
     new_users = User.objects.filter(date_joined__gte=month_ago).count()
 
     # 2. Thống kê Dòng tiền (Toàn hệ thống)
+    # Tổng số giao dịch chi tiêu
     total_expenses_count = Expense.objects.count()
-    total_money = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Tổng CHI TIÊU toàn hệ thống
+    total_expenses = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Tổng THU NHẬP toàn hệ thống
+    total_income = Income.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Số giao dịch thu nhập
+    total_income_count = Income.objects.count()
+    
+    # DÒNG TIỀN THỰC = Thu nhập - Chi tiêu
+    net_cash_flow = total_income - total_expenses
 
     # 3. Top Danh mục phổ biến nhất hệ thống (theo số lượng giao dịch)
     # Lấy tên danh mục và đếm số lần xuất hiện
@@ -54,7 +66,10 @@ def admin_dashboard(request):
         'total_users': total_users,
         'new_users': new_users,
         'total_expenses_count': total_expenses_count,
-        'total_money': total_money,
+        'total_income_count': total_income_count,
+        'total_expenses': total_expenses,
+        'total_income': total_income,
+        'net_cash_flow': net_cash_flow,
         'top_categories': top_categories
     }
     return render(request, 'ep1/admin/dashboard.html', context)
@@ -728,6 +743,7 @@ def income_list(request):
     
     # Sort
     sort_amount = request.GET.get('sort_amount')
+    sort_date = request.GET.get('sort_date')
     if sort_amount == 'asc':
         incomes = base_income.order_by('amount')
     elif sort_amount == 'desc':

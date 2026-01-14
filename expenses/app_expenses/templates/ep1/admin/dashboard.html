@@ -11,42 +11,27 @@
 </div>
 
 <div class="row mb-4">
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-left-primary h-100 py-2">
+  <div class="col-md-6 mb-4">
+    <div class="card shadow h-100" style="border-left: 4px solid #4e73df">
+      <div class="card-header bg-gradient-primary text-white">
+        <h6 class="m-0 fw-bold">
+          <i class="fas fa-users me-2"></i>Quản Lý Người Dùng
+        </h6>
+      </div>
       <div class="card-body">
-        <div class="row no-gutters align-items-center">
-          <div class="col mr-2">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
             <div class="text-xs fw-bold text-primary text-uppercase mb-1">
               Tổng Người Dùng
             </div>
-            <div class="h3 mb-0 fw-bold text-gray-800">{{ total_users }}</div>
+            <div class="h2 mb-2 fw-bold text-primary">{{ total_users }}</div>
+            <small class="text-success fw-bold">
+              <i class="fas fa-arrow-up me-1"></i>{{ new_users }} người mới
+              tháng này
+            </small>
           </div>
-          <div class="col-auto">
-            <i class="fas fa-users fa-2x text-gray-300 opacity-25"></i>
-          </div>
-        </div>
-        <div class="mt-2 small text-muted">
-          <i class="fas fa-arrow-up text-success"></i> {{ new_users }} người mới
-          tháng này
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3 mb-4">
-    <div class="card shadow-sm border-left-success h-100 py-2">
-      <div class="card-body">
-        <div class="row no-gutters align-items-center">
-          <div class="col mr-2">
-            <div class="text-xs fw-bold text-success text-uppercase mb-1">
-              Tổng Giao Dịch
-            </div>
-            <div class="h3 mb-0 fw-bold text-gray-800">
-              {{ total_expenses_count }}
-            </div>
-          </div>
-          <div class="col-auto">
-            <i class="fas fa-receipt fa-2x text-gray-300 opacity-25"></i>
+          <div>
+            <i class="fas fa-users fa-3x text-primary opacity-25"></i>
           </div>
         </div>
       </div>
@@ -54,21 +39,43 @@
   </div>
 
   <div class="col-md-6 mb-4">
-    <div class="card shadow-sm border-left-info h-100 py-2">
+    <div class="card shadow h-100" style="border-left: 4px solid #1cc88a">
+      <div class="card-header bg-gradient-success text-white">
+        <h6 class="m-0 fw-bold">
+          <i class="fas fa-exchange-alt me-2"></i>Giao Dịch Hệ Thống
+        </h6>
+      </div>
       <div class="card-body">
-        <div class="row no-gutters align-items-center">
-          <div class="col mr-2">
-            <div class="text-xs fw-bold text-info text-uppercase mb-1">
-              Dòng Tiền Hệ Thống
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                <i class="fas fa-arrow-down me-1"></i>Chi Tiêu
+              </div>
+              <div class="h2 mb-0 fw-bold text-danger">
+                {{ total_expenses_count }}
+              </div>
+              <small class="text-muted">giao dịch</small>
             </div>
-            <div class="h3 mb-0 fw-bold text-gray-800">
-              {{ total_money|floatformat:0|intcomma:0}} ₫
+            <div>
+              <i class="fas fa-receipt fa-3x text-danger opacity-25"></i>
             </div>
           </div>
-          <div class="col-auto">
-            <i
-              class="fas fa-money-bill-wave fa-2x text-gray-300 opacity-25"
-            ></i>
+        </div>
+        <div>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                <i class="fas fa-arrow-up me-1"></i>Thu Nhập
+              </div>
+              <div class="h2 mb-0 fw-bold text-success">
+                {{ total_income_count }}
+              </div>
+              <small class="text-muted">giao dịch</small>
+            </div>
+            <div>
+              <i class="fas fa-coins fa-3x text-success opacity-25"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -76,72 +83,173 @@
   </div>
 </div>
 
-<div class="row">
-  <div class="col-lg-6">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3">
-        <h6 class="m-0 fw-bold text-primary">
-          Top Danh Mục Phổ Biến (Toàn hệ thống)
+<!-- Row 2: Top Categories + Financial Overview -->
+<div class="row mb-4">
+  <!-- Top Danh Mục -->
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow h-100" style="border-left: 4px solid #e74a3b">
+      <div class="card-header bg-gradient-danger text-white">
+        <h6 class="m-0 fw-bold">
+          <i class="fas fa-chart-pie me-2"></i>Top Danh Mục Phổ Biến
         </h6>
       </div>
       <div class="card-body">
         {% if top_categories %}
         <div class="table-responsive">
-          <table class="table table-bordered" width="100%" cellspacing="0">
-            <thead>
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
               <tr>
-                <th>Tên Danh Mục</th>
-                <th>Số lần dùng</th>
+                <th class="border-0">
+                  <i class="fas fa-tag me-2 text-danger"></i>Tên Danh Mục
+                </th>
+                <th class="border-0 text-center">
+                  <i class="fas fa-chart-bar me-2 text-danger"></i>Số lần sử
+                  dụng
+                </th>
               </tr>
             </thead>
             <tbody>
               {% for cat in top_categories %}
               <tr>
                 <td class="text-main">
-                  {% if cat.category__name %} {{ cat.category__name }} {% else %}
+                  {% if cat.category__name %}
+                  <i class="fas fa-circle fa-xs text-danger me-2"></i>{{ cat.category__name }} {% else %}
+                  <i class="fas fa-circle fa-xs text-muted me-2"></i>
                   <span class="text-muted fst-italic">Không xác định</span>
                   {% endif %}
                 </td>
-                <td class="fw-bold text-center text-main">{{ cat.count }}</td>
+                <td class="fw-bold text-center text-main">
+                  <span class="badge bg-danger">{{ cat.count }}</span>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
         {% else %}
-        <p class="text-center text-muted py-3">Chưa có dữ liệu nào.</p>
+        <p class="text-center text-muted py-3 mb-0">
+          <i class="fas fa-inbox fa-2x mb-2 d-block opacity-25"></i>
+          Chưa có dữ liệu nào.
+        </p>
         {% endif %}
       </div>
     </div>
   </div>
 
-  <div class="col-lg-6">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3">
-        <h6 class="m-0 fw-bold text-warning">Lối tắt quản trị</h6>
+  <!-- Card: Tổng Quan Tài Chính Hệ Thống -->
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow h-100" style="border-left: 4px solid #4e73df">
+      <div class="card-header bg-gradient-primary text-white">
+        <h6 class="m-0 fw-bold">
+          <i class="fas fa-chart-line me-2"></i>Tổng Quan Tài Chính Hệ Thống
+        </h6>
       </div>
       <div class="card-body">
-        <div class="d-grid gap-2">
-          <a
-            href="{% url 'ep1:user_management' %}"
-            class="btn btn-outline-primary text-start"
-          >
-            <i class="fas fa-users me-2"></i>Quản lý User</a
-          >
-          <a
-            href="{% url 'ep1:ai_monitor' %}"
-            class="btn btn-outline-success text-start"
-          >
-            <i class="fas fa-robot me-2"></i>Monitor AI</a
-          >
-          <a
-            href="{% url 'ep1:announcement_manager' %}"
-            class="btn btn-outline-info text-start"
-          >
-            <i class="fas fa-bullhorn me-2"></i>Gửi thông báo</a
-          >
+        <!-- Thu Nhập -->
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                <i class="fas fa-arrow-circle-up me-1"></i>Tổng Thu Nhập
+              </div>
+              <div class="h2 mb-0 fw-bold text-success">
+                {{ total_income|floatformat:0|intcomma }} ₫
+              </div>
+              <small class="text-muted">
+                <i class="fas fa-coins me-1"></i>{{ total_income_count }} giao
+                dịch
+              </small>
+            </div>
+            <div>
+              <i class="fas fa-arrow-up fa-3x text-success opacity-25"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chi Tiêu -->
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                <i class="fas fa-arrow-circle-down me-1"></i>Tổng Chi Tiêu
+              </div>
+              <div class="h2 mb-0 fw-bold text-danger">
+                {{ total_expenses|floatformat:0|intcomma }} ₫
+              </div>
+              <small class="text-muted">
+                <i class="fas fa-receipt me-1"></i>{{ total_expenses_count }}
+                giao dịch
+              </small>
+            </div>
+            <div>
+              <i class="fas fa-arrow-down fa-3x text-danger opacity-25"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Số Dư Thực -->
+        <div>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div
+                class="text-xs fw-bold text-{% if net_cash_flow >= 0 %}info{% else %}warning{% endif %} text-uppercase mb-1"
+              >
+                <i class="fas fa-wallet me-1"></i>Số Dư Thực
+              </div>
+              <div
+                class="h2 mb-0 fw-bold text-{% if net_cash_flow >= 0 %}info{% else %}warning{% endif %}"
+              >
+                {{ net_cash_flow|floatformat:0|intcomma }} ₫
+              </div>
+              <small
+                class="text-{% if net_cash_flow >= 0 %}success{% else %}danger{% endif %} fw-bold"
+              >
+                {% if net_cash_flow >= 0 %}
+                <i class="fas fa-check-circle me-1"></i>Dương (Thu > Chi) {%
+                else %} <i class="fas fa-exclamation-triangle me-1"></i>Âm (Thu
+                < Chi) {% endif %}
+              </small>
+            </div>
+            <div>
+              <i
+                class="fas fa-wallet fa-3x text-{% if net_cash_flow >= 0 %}info{% else %}warning{% endif %} opacity-25"
+              ></i>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lối Tắt Quản Trị (Buttons Only) -->
+<div class="row mb-4">
+  <div class="col-12">
+    <h5 class="text-muted fw-bold mb-3">
+      <i class="fas fa-bolt me-2"></i>Lối Tắt Quản Trị
+    </h5>
+    <div class="d-flex gap-3 flex-wrap">
+      <a
+        href="{% url 'ep1:user_management' %}"
+        class="btn btn-lg btn-primary d-flex align-items-center"
+        style="min-width: 200px"
+      >
+        <i class="fas fa-users me-2"></i>Quản lý User
+      </a>
+      <a
+        href="{% url 'ep1:ai_monitor' %}"
+        class="btn btn-lg btn-success d-flex align-items-center"
+        style="min-width: 200px"
+      >
+        <i class="fas fa-robot me-2"></i>Monitor AI
+      </a>
+      <a
+        href="{% url 'ep1:announcement_manager' %}"
+        class="btn btn-lg btn-info d-flex align-items-center"
+        style="min-width: 200px"
+      >
+        <i class="fas fa-bullhorn me-2"></i>Gửi thông báo
+      </a>
     </div>
   </div>
 </div>
