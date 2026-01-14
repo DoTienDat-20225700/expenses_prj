@@ -7,7 +7,9 @@
       </div>
       <div class="card-body p-4">
         <form method="post">
-          {% csrf_token %}
+          {% csrf_token %} {% if next %}
+          <input type="hidden" name="next" value="{{ next }}" />
+          {% endif %}
 
           <div class="mb-3">
             <label class="form-label fw-semibold"
@@ -49,7 +51,10 @@
             <button type="submit" class="btn btn-primary">
               <i class="fas fa-save me-2"></i>Cập Nhật
             </button>
-            <a href="{% url 'ep1:income_list' %}" class="btn btn-secondary">
+            <a
+              href="{% if next %}{{ next }}{% else %}{% url 'ep1:income_list' %}{% endif %}"
+              class="btn btn-secondary"
+            >
               <i class="fas fa-times me-2"></i>Hủy
             </a>
           </div>

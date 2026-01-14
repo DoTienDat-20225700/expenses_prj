@@ -243,22 +243,15 @@
         const body = document.body;
         const currentTheme = localStorage.getItem("theme");
 
-        // Hàm cập nhật Icon
+        // Function to update icon without animation
         function updateIcon(isDark) {
           if (isDark) {
             icon.classList.remove("fa-moon");
             icon.classList.add("fa-sun");
-            // Thêm hiệu ứng xoay nhẹ khi đổi icon
-            icon.style.transform = "rotate(180deg)";
           } else {
             icon.classList.remove("fa-sun");
             icon.classList.add("fa-moon");
-            icon.style.transform = "rotate(0deg)";
           }
-          // Reset transform sau khi animation
-          setTimeout(() => {
-            icon.style.transition = "transform 0.5s ease";
-          }, 10);
         }
 
         if (currentTheme === "dark") {
@@ -292,9 +285,11 @@
           }
         };
 
-        // Tự động tắt thông báo sau 10 giây
+        // Tự động tắt thông báo sau 10 giây (trừ các alert permanent)
         setTimeout(function () {
-          var alerts = document.querySelectorAll(".alert");
+          var alerts = document.querySelectorAll(
+            ".alert:not(.alert-permanent)"
+          );
           alerts.forEach(function (alert) {
             var bsAlert = new bootstrap.Alert(alert);
             bsAlert.close();
@@ -302,21 +297,5 @@
         }, 10000);
       });
     </script>
-
-    <style>
-      .fade-in {
-        animation: fadeIn 0.6s ease-out forwards;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-    </style>
   </body>
 </html>

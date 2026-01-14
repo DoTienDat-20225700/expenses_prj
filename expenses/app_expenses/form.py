@@ -126,10 +126,11 @@ class ProfileUpdateForm(forms.ModelForm):
 class RecurringExpenseForm(forms.ModelForm):
     class Meta:
         model = RecurringExpense
-        fields = ['name', 'amount', 'category', 'frequency', 'start_date', 'end_date', 'description', 'is_active']
+        fields = ['name', 'amount', 'category', 'frequency', 'start_date', 'end_date', 'next_due_date', 'description', 'is_active']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'next_due_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VD: Tiền điện hàng tháng'}),
             'amount': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VD: 1,000,000'}),
             'frequency': forms.Select(attrs={'class': 'form-control'}),
@@ -144,8 +145,42 @@ class RecurringExpenseForm(forms.ModelForm):
         if user:
             self.fields['category'].queryset = Category.objects.filter(user=user)
         
-        # Make end_date optional
+        # Make end_date and next_due_date optional
         self.fields['end_date'].required = False
+        self.fields['next_due_date'].required = False
+        
+        # next_due_date visual styling (not readonly to allow submission)
+        self.fields['next_due_date'].widget.attrs['class'] = 'form-control bg-light'
+        self.fields['next_due_date'].help_text = 'Tự động tính toán bởi hệ thống'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        
+        # Only validate if both dates are provided
+        if start_date and end_date:
+            # Rule 1: Ngày bắt đầu phải < ngày kết thúc
+            if start_date >= end_date:
+                raise forms.ValidationError(
+                    'Ngày kết thúc phải lớn hơn ngày bắt đầu.'
+                )
+            
+            # Rule 2: Ngày kết thúc phải > ngày đến hạn
+            # For new records, next_due_date will be set to start_date
+            # For existing records, check against current next_due_date
+            if self.instance and self.instance.pk and self.instance.next_due_date:
+                if end_date <= self.instance.next_due_date:
+                    raise forms.ValidationError(
+                        f'Ngày kết thúc phải lớn hơn ngày đến hạn tiếp theo ({self.instance.next_due_date.strftime("%d/%m/%Y")}).'
+                    )
+            else:
+                # For new records, next_due_date will be start_date
+                # So end_date must be > start_date (already checked above)
+                pass
+        
+        return cleaned_data
+
 
 
 class IncomeForm(forms.ModelForm):

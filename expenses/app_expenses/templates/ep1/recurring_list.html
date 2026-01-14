@@ -6,6 +6,7 @@
         <i class="fas fa-redo me-2 text-primary"></i>Chi Tiêu Định Kỳ
       </h2>
       <div>
+        {% if not show_history %}
         <a
           href="{% url 'ep1:generate_recurring' %}"
           class="btn btn-info me-2"
@@ -13,6 +14,7 @@
         >
           <i class="fas fa-sync me-2"></i>Tạo Chi Tiêu
         </a>
+        {% endif %}
         <a href="{% url 'ep1:add_recurring' %}" class="btn btn-warning">
           <i class="fas fa-plus me-2"></i>Thêm Định Kỳ
         </a>
@@ -20,124 +22,244 @@
     </div>
   </div>
 
+  <!-- Tab Navigation -->
   <div class="col-12 mb-3">
-    <div class="alert alert-info">
-      <i class="fas fa-info-circle me-2"></i>
-      <strong>Hướng dẫn:</strong> Tạo các khoản chi tiêu lặp lại như tiền điện,
-      nước, Netflix... Hệ thống sẽ tự động nhắc nhở khi đến hạn. Nhấn nút
-      <strong>"Tạo Chi Tiêu"</strong> để chuyển các khoản định kỳ đã đến hạn
-      thành chi tiêu thực tế.
+    <div class="d-flex gap-2">
+      <a href="?show_history=false" 
+         class="btn {% if not show_history %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <i class="fas fa-list me-1"></i> Đang Hoạt Động
+        <span class="badge bg-light text-dark ms-2">{{ active_count }}</span>
+      </a>
+      
+      <a href="?show_history=true" 
+         class="btn {% if show_history %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <i class="fas fa-history me-1"></i> Lịch Sử
+        <span class="badge bg-light text-dark ms-2">{{ expired_count }}</span>
+      </a>
     </div>
   </div>
 
-  <div class="col-12">
+  <!-- Filter Section -->
+  <div class="col-12 mb-4">
+    <form method="get" id="filter-section">
+      <input type="hidden" name="show_history" value="{{ show_history|yesno:'true,false' }}">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-3 rounded">
+          <!-- Row 1: Main filters -->
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col-md-3">
+              <label class="form-label small fw-bold text-muted">Sắp xếp tiền</label>
+              <select name="sort_amount" class="form-select" onchange="this.form.submit()">
+                <option value="">Mặc định</option>
+                <option value="asc" {% if sort_amount == 'asc' %}selected{% endif %}>Thấp đến Cao</option>
+                <option value="desc" {% if sort_amount == 'desc' %}selected{% endif %}>Cao đến Thấp</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label small fw-bold text-muted">Danh mục</label>
+              <select name="category" class="form-select" onchange="this.form.submit()">
+                <option value="">Tất cả danh mục</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if selected_category == cat.id %}selected{% endif %}>
+                  {{ cat.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label small fw-bold text-muted">Trạng thái</label>
+              <select name="status" class="form-select" onchange="this.form.submit()">
+                <option value="">Tất cả</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Hoạt động</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Tạm dừng</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label small fw-bold text-muted">Tần suất</label>
+              <select name="frequency" class="form-select" onchange="this.form.submit()">
+                <option value="">Tất cả</option>
+                <option value="daily" {% if selected_frequency == 'daily' %}selected{% endif %}>Hàng ngày</option>
+                <option value="weekly" {% if selected_frequency == 'weekly' %}selected{% endif %}>Hàng tuần</option>
+                <option value="monthly" {% if selected_frequency == 'monthly' %}selected{% endif %}>Hàng tháng</option>
+                <option value="yearly" {% if selected_frequency == 'yearly' %}selected{% endif %}>Hàng năm</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 2: Date filters and reset button -->
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label small fw-bold text-muted">Ngày đến hạn từ</label>
+              <input
+                type="date"
+                name="due_date_from"
+                class="form-control"
+                value="{{ request.GET.due_date_from }}"
+                onchange="this.form.submit()"
+              />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label small fw-bold text-muted">Ngày đến hạn đến</label>
+              <input
+                type="date"
+                name="due_date_to"
+                class="form-control"
+                value="{{ request.GET.due_date_to }}"
+                onchange="this.form.submit()"
+              />
+            </div>
+
+            <div class="col-md-4">
+              <a href="{% url 'ep1:recurring_list' %}" class="btn btn-secondary w-100">
+                <i class="fas fa-sync-alt me-1"></i> Đặt lại
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-12" id="list-section">
+    {% if show_history %}
+    <div class="alert alert-info border-0 shadow-sm">
+      <i class="fas fa-info-circle me-2"></i> 
+      Đây là các chi tiêu định kỳ đã kết thúc. Chúng được giữ lại để tham khảo.
+    </div>
+    {% endif %}
+    
     <div class="card border-0 shadow-sm">
       <div class="card-header border-0 pt-4">
         <h5 class="fw-bold mb-0">Danh Sách Chi Tiêu Định Kỳ</h5>
       </div>
-      <div class="card-body p-0">
-        {% if recurrings %}
-        <div class="table-responsive">
-          <table class="table table-hover mb-0 align-middle">
-            <thead>
-              <tr>
-                <th class="py-3 ps-3" style="width: 20%">Tên</th>
-                <th class="py-3" style="width: 15%">Số Tiền</th>
-                <th class="py-3" style="width: 15%">Danh Mục</th>
-                <th class="py-3" style="width: 12%">Tần Suất</th>
-                <th class="py-3" style="width: 18%">Ngày Đến Hạn</th>
-                <th class="py-3" style="width: 10%">Trạng Thái</th>
-                <th class="py-3 text-center" style="width: 10%">Hành Động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for recurring in recurrings %}
-              <tr
-                {%
-                if
-                not
-                recurring.is_active
-                %}class="table-secondary"
-                {%
-                endif
-                %}
-              >
-                <td class="ps-3">
-                  <i class="fas fa-repeat me-2 text-muted"></i>
-                  <span class="fw-bold text-main">{{ recurring.name }}</span>
-                </td>
-                <td>
-                  <span class="fw-bold text-danger"
-                    >{{ recurring.amount|floatformat:0 }} ₫</span
-                  >
-                </td>
-                <td>
-                  {% if recurring.category %}
-                  <span class="badge px-3 py-2 rounded-pill category-badge">
-                    {{ recurring.category.name }}
-                  </span>
-                  {% else %}
-                  <span class="text-muted">—</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <span class="badge bg-info"
-                    >{{ recurring.get_frequency_display }}</span
-                  >
-                </td>
-                <td class="text-muted">
-                  <i class="far fa-calendar-alt me-1"></i>
-                  {{ recurring.next_due_date|date:"d/m/Y" }} {% if recurring.next_due_date <= today %}
-                  <span class="badge bg-danger ms-1">Đến hạn!</span>
-                  {% endif %}
-                </td>
-                <td>
+      {% if recurrings %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="py-3 ps-3" style="width: 15%">Tên</th>
+              <th class="py-3" style="width: 13%">Số Tiền</th>
+              <th class="py-3 text-center" style="width: 10%">Danh Mục</th>
+              <th class="py-3 text-center" style="width: 10%">Tần Suất</th>
+              <th class="py-3 text-center" style="width: 11%">Ngày Bắt Đầu</th>
+              <th class="py-3 text-center" style="width: 11%">Ngày Kết Thúc</th>
+              {% if not show_history %}
+              <th class="py-3 text-center" style="width: 11%">Ngày Đến Hạn</th>
+              {% endif %}
+              <th class="py-3 text-center" style="width: 10%">Trạng Thái</th>
+              <th class="py-3 text-center" style="width: 9%">Hành Động</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for recurring in recurrings %}
+            <tr
+              {% if not recurring.is_active %}
+              class="table-secondary opacity-75"
+              {% endif %}
+            >
+              <td class="ps-3">
+                <span class="text-main">{{ recurring.name }}</span>
+              </td>
+              <td class="fw-bold text-danger">
+                {{ recurring.amount|floatformat:0 }} ₫
+              </td>
+              <td>
+                {% if recurring.category %}
+                <span class="badge px-3 py-2 rounded-pill category-badge">
+                  {{ recurring.category.name }}
+                </span>
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <span class="badge bg-info px-3 py-2">
+                  {{ recurring.get_frequency_display }}
+                </span>
+              </td>
+              <td class="text-center text-muted">
+                <i class="far fa-calendar me-1"></i>
+                {{ recurring.start_date|date:"d/m/Y" }}
+              </td>
+              <td class="text-center text-muted">
+                {% if recurring.end_date %}
+                <i class="far fa-calendar-check me-1"></i>
+                {{ recurring.end_date|date:"d/m/Y" }}
+                {% else %}
+                <span class="fst-italic">Vô hạn</span>
+                {% endif %}
+              </td>
+              {% if not show_history %}
+              <td class="text-center text-muted">
+                <i class="far fa-calendar-alt me-1"></i>
+                {{ recurring.next_due_date|date:"d/m/Y" }}
+                {% if recurring.next_due_date < today %}
+                <span class="badge bg-danger ms-1">Quá hạn</span>
+                {% elif recurring.next_due_date == today %}
+                <span class="badge bg-warning text-dark ms-1">Đến hạn!</span>
+                {% endif %}
+              </td>
+              {% endif %}
+              <td class="text-center">
+                {% if show_history %}
+                <span class="badge bg-secondary px-3 py-2">
+                  <i class="fas fa-check-circle me-1"></i>Đã kết thúc
+                </span>
+                {% else %}
                   {% if recurring.is_active %}
-                  <span class="badge bg-success">
+                  <span class="badge bg-success px-3 py-2">
                     <i class="fas fa-check me-1"></i>Hoạt động
                   </span>
                   {% else %}
-                  <span class="badge bg-secondary">
+                  <span class="badge bg-secondary px-3 py-2">
                     <i class="fas fa-pause me-1"></i>Tạm dừng
                   </span>
                   {% endif %}
-                </td>
-                <td class="text-center">
-                  <div class="btn-group">
-                    <a
-                      href="{% url 'ep1:toggle_recurring' recurring.pk %}"
-                      class="btn btn-sm {% if recurring.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} border-0"
-                      data-bs-toggle="tooltip"
-                      title="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %}"
-                      onclick="return confirm('{% if recurring.is_active %}Vô hiệu hóa{% else %}Kích hoạt{% endif %} chi tiêu định kỳ này?')"
-                    >
-                      <i
-                        class="fas {% if recurring.is_active %}fa-pause{% else %}fa-play{% endif %}"
-                      ></i>
-                    </a>
-                    <a
-                      href="{% url 'ep1:edit_recurring' recurring.pk %}"
-                      class="btn btn-sm btn-outline-primary border-0"
-                      data-bs-toggle="tooltip"
-                      title="Sửa"
-                    >
-                      <i class="fas fa-pen"></i>
-                    </a>
-                    <a
-                      href="{% url 'ep1:delete_recurring' recurring.pk %}"
-                      class="btn btn-sm btn-outline-danger border-0"
-                      data-bs-toggle="tooltip"
-                      title="Xóa"
-                    >
-                      <i class="fas fa-trash"></i>
-                    </a>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <div class="btn-group">
+                  {% if not show_history %}
+                  <a
+                    href="{% url 'ep1:toggle_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
+                    class="btn btn-sm {% if recurring.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} border-0"
+                    data-bs-toggle="tooltip"
+                    title="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %}"
+                    onclick="return confirm('{% if recurring.is_active %}Vô hiệu hóa{% else %}Kích hoạt{% endif %} chi tiêu định kỳ này?')"
+                  >
+                    <i
+                      class="fas {% if recurring.is_active %}fa-pause{% else %}fa-play{% endif %}"
+                    ></i>
+                  </a>
+                  {% endif %}
+                  <a
+                    href="{% url 'ep1:edit_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
+                    class="btn btn-sm btn-outline-primary border-0"
+                    data-bs-toggle="tooltip"
+                    title="Sửa"
+                  >
+                    <i class="fas fa-pen"></i>
+                  </a>
+                  <a
+                    href="{% url 'ep1:delete_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
+                    class="btn btn-sm btn-outline-danger border-0"
+                    data-bs-toggle="tooltip"
+                    title="Xóa"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
 
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
@@ -146,38 +268,23 @@
             <ul class="pagination pagination-sm justify-content-center mb-0">
               {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page=1">Đầu</a>
+                <a class="page-link" href="?page=1&category={{ selected_category|default:'' }}&status={{ selected_status|default:'' }}&frequency={{ selected_frequency|default:'' }}&sort_amount={{ sort_amount|default:'' }}&show_history={{ show_history|yesno:'true,false' }}#list-section">Đầu</a>
               </li>
               <li class="page-item">
-                <a
-                  class="page-link"
-                  href="?page={{ page_obj.previous_page_number }}"
-                  >‹</a
-                >
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ selected_category|default:'' }}&status={{ selected_status|default:'' }}&frequency={{ selected_frequency|default:'' }}&sort_amount={{ sort_amount|default:'' }}&show_history={{ show_history|yesno:'true,false' }}#list-section">‹</a>
               </li>
               {% endif %}
 
               <li class="page-item active">
-                <span class="page-link"
-                  >Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages
-                  }}</span
-                >
+                <span class="page-link">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
               </li>
 
               {% if page_obj.has_next %}
               <li class="page-item">
-                <a
-                  class="page-link"
-                  href="?page={{ page_obj.next_page_number }}"
-                  >›</a
-                >
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ selected_category|default:'' }}&status={{ selected_status|default:'' }}&frequency={{ selected_frequency|default:'' }}&sort_amount={{ sort_amount|default:'' }}&show_history={{ show_history|yesno:'true,false' }}#list-section">›</a>
               </li>
               <li class="page-item">
-                <a
-                  class="page-link"
-                  href="?page={{ page_obj.paginator.num_pages }}"
-                  >Cuối</a
-                >
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&category={{ selected_category|default:'' }}&status={{ selected_status|default:'' }}&frequency={{ selected_frequency|default:'' }}&sort_amount={{ sort_amount|default:'' }}&show_history={{ show_history|yesno:'true,false' }}#list-section">Cuối</a>
               </li>
               {% endif %}
             </ul>
@@ -195,10 +302,21 @@
       </div>
     </div>
   </div>
+  </div>
 </div>
 
 <script>
   // Add today's date for comparison in template
   var today = new Date('{{ today|date:"Y-m-d" }}');
+
+  // Initialize Bootstrap tooltips
+  document.addEventListener("DOMContentLoaded", function () {
+    var tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
 </script>
 {% endblock %}

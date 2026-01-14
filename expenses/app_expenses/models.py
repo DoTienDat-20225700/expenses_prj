@@ -103,6 +103,25 @@ class Announcement(models.Model):
         ordering = ['-created_at']
 
 class RecurringExpense(models.Model):
+    """
+    Mẫu định kỳ để tự động tạo chi tiêu lặp lại.
+    
+    Cách hoạt động:
+    1. Tạo mẫu với start_date và frequency
+    2. Hệ thống tự động tính next_due_date (ngày tạo chi tiêu lần sau)
+    3. Khi next_due_date <= hôm nay, nhấn "Tạo Chi Tiêu" để tạo expense thực
+    4. Sau khi tạo, next_due_date tự động tăng lên 1 khoảng (theo frequency)
+    5. Lặp lại bước 3-4
+    
+    Ví dụ:
+        Tiền điện hàng tháng:
+        - start_date = 15/01/2026
+        - frequency = 'monthly'
+        - next_due_date = 15/01/2026 (lần đầu)
+        
+        Sau khi tạo chi tiêu:
+        - next_due_date = 15/02/2026 (tự động tăng)
+    """
     FREQUENCY_CHOICES = [
         ('daily', 'Hàng ngày'),
         ('weekly', 'Hàng tuần'),
@@ -115,9 +134,20 @@ class RecurringExpense(models.Model):
     amount = models.DecimalField("Số tiền", max_digits=15, decimal_places=2)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Danh mục")
     frequency = models.CharField("Tần suất", max_length=10, choices=FREQUENCY_CHOICES, default='monthly')
+    
+    # Ngày bắt đầu: Mốc gốc, xác định ngày nào trong tháng/tuần
+    # VD: start_date = 15/01 → Tạo vào ngày 15 mỗi tháng
     start_date = models.DateField("Ngày bắt đầu")
+    
+    # Ngày kết thúc: Ngày MẪU hết hạn (không bắt buộc)
+    # VD: end_date = 30/06 → Sau 30/06 mẫu tự động tắt
     end_date = models.DateField("Ngày kết thúc", null=True, blank=True)
+    
+    # Ngày đến hạn tiếp theo: Ngày CỤ THỂ sẽ tạo chi tiêu lần sau
+    # VD: next_due_date = 15/02/2026 → Tạo chi tiêu vào 15/02
+    # Field này TỰ ĐỘNG cập nhật, user KHÔNG nhập
     next_due_date = models.DateField("Ngày đến hạn tiếp theo")
+    
     is_active = models.BooleanField("Đang hoạt động", default=True)
     description = models.TextField("Ghi chú", blank=True, null=True)
     created_at = models.DateTimeField("Ngày tạo", auto_now_add=True)
@@ -129,6 +159,77 @@ class RecurringExpense(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.get_frequency_display()}"
+    
+    def calculate_next_occurrence(self, from_date=None):
+        """
+        Tính ngày đến hạn tiếp theo dựa trên start_date và frequency.
+        
+        Args:
+            from_date (date, optional): Ngày tính từ đó (mặc định = hôm nay)
+        
+        Returns:
+            date: Ngày đến hạn tiếp theo (>= from_date)
+        
+        Example:
+            recurring = RecurringExpense(start_date='2026-01-10', frequency='monthly')
+            next_date = recurring.calculate_next_occurrence()  # 2026-02-10 nếu hôm nay > 10/01
+        """
+        from .utils.recurring_utils import calculate_next_due_date
+        from django.utils import timezone
+        
+        if from_date is None:
+            from_date = timezone.now().date()
+        
+        return calculate_next_due_date(self.start_date, self.frequency, from_date)
+    
+    def is_due_today(self):
+        """
+        Kiểm tra xem mẫu này có đến hạn hôm nay không.
+        
+        Returns:
+            bool: True nếu next_due_date <= hôm nay
+        
+        Example:
+            if recurring.is_due_today():
+                print("Đã đến hạn! Có thể tạo chi tiêu.")
+        """
+        from django.utils import timezone
+        today = timezone.now().date()
+        return self.next_due_date <= today
+    
+    def is_expired(self):
+        """
+        Kiểm tra xem mẫu này đã hết hạn chưa (dựa trên end_date).
+        
+        Returns:
+            bool: True nếu đã quá end_date
+        
+        Example:
+            if recurring.is_expired():
+                recurring.is_active = False
+                recurring.save()
+        """
+        if not self.end_date:
+            return False
+        
+        from django.utils import timezone
+        today = timezone.now().date()
+        return today > self.end_date
+    
+    def advance_next_due_date(self):
+        """
+        Tăng next_due_date lên 1 khoảng theo frequency.
+        
+        Hàm này được gọi SAU KHI tạo chi tiêu thực từ mẫu.
+        
+        Example:
+            # Trước: next_due_date = 15/01/2026
+            recurring.advance_next_due_date()
+            # Sau: next_due_date = 15/02/2026 (nếu frequency='monthly')
+        """
+        from .utils.recurring_utils import add_frequency_to_date
+        self.next_due_date = add_frequency_to_date(self.next_due_date, self.frequency)
+
 
 
 class IncomeSource(models.Model):

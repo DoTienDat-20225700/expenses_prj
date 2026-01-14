@@ -83,7 +83,7 @@
     <div class="card mb-4 shadow-sm border-0">
         <div class="card-body p-3 rounded">
             <div class="row g-3 align-items-end">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted">Sắp xếp tiền</label>
                     <select name="sort_amount" class="form-select" onchange="this.form.submit()">
                         <option value="">Mặc định</option>
@@ -92,7 +92,16 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-muted">Sắp xếp ngày</label>
+                    <select name="sort_date" class="form-select" onchange="this.form.submit()">
+                        <option value="">Mặc định</option>
+                        <option value="asc" {% if sort_date == 'asc' %}selected{% endif %}>Cũ đến Mới</option>
+                        <option value="desc" {% if sort_date == 'desc' %}selected{% endif %}>Mới đến Cũ</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
                     <label class="form-label small fw-bold text-muted">Danh mục</label>
                     <select name="category" class="form-select" onchange="this.form.submit()">
                         <option value="">Tất cả danh mục</option>
@@ -124,7 +133,8 @@
         </div>
     </div>
 
-    <div class="table-responsive rounded shadow-sm card">
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead>
                 <tr>
@@ -148,14 +158,14 @@
                     <td class="text-muted">{{ expense.date|date:"d/m/Y" }}</td>
                     <td class="text-center">
                         <div class="btn-group">
-                            <a href="{% url 'ep1:edit_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
+                            <a href="{% url 'ep1:edit_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}#list-section" 
                                class="btn btn-sm btn-outline-primary border-0" 
                                data-bs-toggle="tooltip" 
                                title="Sửa">
                                 <i class="fas fa-pen"></i>
                             </a>
                             
-                            <a href="{% url 'ep1:delete_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}" 
+                            <a href="{% url 'ep1:delete_ep1' expense.id %}?next={{ request.get_full_path|urlencode }}#list-section" 
                                class="btn btn-sm btn-outline-danger border-0" 
                                data-bs-toggle="tooltip" 
                                title="Xóa">
@@ -174,42 +184,37 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+      </div>
 
     {% if page_obj.has_other_pages %}
-    <nav aria-label="Page navigation" class="mt-4">
-      <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
-        <li class="page-item">
-          <a class="page-link shadow-sm" href="?page={{ page_obj.previous_page_number }}&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">
-            <i class="fas fa-chevron-left"></i>
-          </a>
-        </li>
-        {% else %}
-        <li class="page-item disabled"><span class="page-link shadow-sm"><i class="fas fa-chevron-left"></i></span></li>
-        {% endif %}
-
-        {% for i in page_obj.paginator.page_range %}
-          {% if page_obj.number == i %}
-          <li class="page-item active"><span class="page-link shadow-sm fw-bold">{{ i }}</span></li>
-          {% else %}
+    <div class="card-footer border-0 py-3">
+      <nav>
+        <ul class="pagination pagination-sm justify-content-center mb-0">
+          {% if page_obj.has_previous %}
           <li class="page-item">
-            <a class="page-link shadow-sm" href="?page={{ i }}&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">{{ i }}</a>
+            <a class="page-link" href="?page=1&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&sort_date={{ sort_date|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">Đầu</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&sort_date={{ sort_date|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">‹</a>
           </li>
           {% endif %}
-        {% endfor %}
-
-        {% if page_obj.has_next %}
-        <li class="page-item">
-          <a class="page-link shadow-sm" href="?page={{ page_obj.next_page_number }}&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">
-            <i class="fas fa-chevron-right"></i>
-          </a>
-        </li>
-        {% else %}
-        <li class="page-item disabled"><span class="page-link shadow-sm"><i class="fas fa-chevron-right"></i></span></li>
-        {% endif %}
-      </ul>
-    </nav>
+          
+          <li class="page-item active">
+            <span class="page-link">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+          </li>
+          
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&sort_date={{ sort_date|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">›</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&category={{ selected_category|default:'' }}&sort_amount={{ sort_amount|default:'' }}&sort_date={{ sort_date|default:'' }}&date_from={{ date_from|default:'' }}&date_to={{ date_to|default:'' }}#list-section">Cuối</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      </div>
+    </div>
     {% endif %}
 
 </form>

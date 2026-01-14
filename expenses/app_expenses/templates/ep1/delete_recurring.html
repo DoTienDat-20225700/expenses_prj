@@ -24,11 +24,16 @@
           Các chi tiêu đã tạo từ template này sẽ không bị xóa.
         </p>
         <form method="post" class="mt-4">
-          {% csrf_token %}
+          {% csrf_token %} {% if next %}
+          <input type="hidden" name="next" value="{{ next }}" />
+          {% endif %}
           <button type="submit" class="btn btn-danger me-2">
             <i class="fas fa-check me-2"></i>Xác Nhận Xóa
           </button>
-          <a href="{% url 'ep1:recurring_list' %}" class="btn btn-secondary">
+          <a
+            href="{% if next %}{{ next }}{% else %}{% url 'ep1:recurring_list' %}{% endif %}"
+            class="btn btn-secondary"
+          >
             <i class="fas fa-times me-2"></i>Hủy
           </a>
         </form>

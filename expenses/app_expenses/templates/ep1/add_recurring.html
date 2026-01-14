@@ -9,7 +9,16 @@
       </div>
       <div class="card-body p-4">
         <form method="post">
-          {% csrf_token %}
+          {% csrf_token %} {% if form.non_field_errors %}
+          <div class="alert alert-danger border-0 shadow-sm" role="alert">
+            <div class="d-flex align-items-start">
+              <i class="fas fa-exclamation-circle me-2 mt-1"></i>
+              <div>
+                {% for error in form.non_field_errors %} {{ error }} {% endfor %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
 
           <div class="row">
             <div class="col-md-6 mb-3">
@@ -78,6 +87,21 @@
               {% endif %}
             </div>
 
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-semibold"
+                >{{ form.next_due_date.label }} (Tùy chọn)</label
+              >
+              {{ form.next_due_date }} {% if form.next_due_date.help_text %}
+              <small class="text-muted d-block"
+                >{{ form.next_due_date.help_text }}</small
+              >
+              {% endif %} {% if form.next_due_date.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.next_due_date.errors }}
+              </div>
+              {% endif %}
+            </div>
+
             <div class="col-12 mb-3">
               <label class="form-label fw-semibold"
                 >{{ form.description.label }}</label
@@ -124,19 +148,78 @@
 </div>
 
 <script>
-  // Format số tiền với dấu phẩy
+  // Auto-calculate next_due_date based on start_date + frequency
   document.addEventListener("DOMContentLoaded", function () {
+    const startDateInput = document.querySelector('input[name="start_date"]');
+    const nextDueDateInput = document.querySelector(
+      'input[name="next_due_date"]'
+    );
+    const frequencySelect = document.querySelector('select[name="frequency"]');
+
+    function calculateNextDueDate() {
+      if (!startDateInput.value || !frequencySelect.value) {
+        return;
+      }
+
+      const startDate = new Date(startDateInput.value);
+      const frequency = frequencySelect.value;
+      let nextDueDate = new Date(startDate);
+
+      switch (frequency) {
+        case "daily":
+          nextDueDate.setDate(nextDueDate.getDate() + 1);
+          break;
+        case "weekly":
+          nextDueDate.setDate(nextDueDate.getDate() + 7);
+          break;
+        case "monthly":
+          nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+          break;
+        case "yearly":
+          nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+          break;
+        default:
+          nextDueDate = new Date(startDate);
+      }
+
+      // Format to YYYY-MM-DD for input[type="date"]
+      const year = nextDueDate.getFullYear();
+      const month = String(nextDueDate.getMonth() + 1).padStart(2, "0");
+      const day = String(nextDueDate.getDate()).padStart(2, "0");
+      nextDueDateInput.value = `${year}-${month}-${day}`;
+    }
+
+    if (startDateInput && nextDueDateInput && frequencySelect) {
+      // Make field readonly via JS (so value still submits)
+      nextDueDateInput.setAttribute("readonly", "readonly");
+
+      // Calculate on page load if values exist (with delay to ensure values are loaded)
+      setTimeout(function () {
+        calculateNextDueDate();
+      }, 100);
+
+      // Recalculate when start_date or frequency changes
+      startDateInput.addEventListener("change", calculateNextDueDate);
+      frequencySelect.addEventListener("change", calculateNextDueDate);
+    }
+
+    // Format số tiền với dấu phẩy
     const amountInput = document.querySelector('input[name="amount"]');
 
     function formatNumber(value) {
-      value = value.replace(/[^\d]/g, "");
-      return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      // Chuyển thành số, làm tròn thành integer, rồi format
+      const num = parseFloat(value.toString().replace(/,/g, ""));
+      if (isNaN(num)) return "";
+      return Math.round(num)
+        .toString()
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
     if (amountInput) {
       // Format giá trị ban đầu nếu có
-      if (amountInput.value) {
-        amountInput.value = formatNumber(amountInput.value);
+      const initialValue = amountInput.value.trim();
+      if (initialValue) {
+        amountInput.value = formatNumber(initialValue);
       }
 
       // Format khi nhập

@@ -455,6 +455,7 @@ widget_tweaks %} {% block content %}
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             plugins: {
               legend: {
                 position: "bottom",
@@ -475,14 +476,7 @@ widget_tweaks %} {% block content %}
           .getElementById("incomeExpenseChart")
           .getContext("2d");
 
-        // Tạo gradient cho đẹp
-        let gradientIncome = ctx.createLinearGradient(0, 0, 0, 400);
-        gradientIncome.addColorStop(0, "rgba(16, 185, 129, 0.4)");
-        gradientIncome.addColorStop(1, "rgba(16, 185, 129, 0.0)");
-
-        let gradientExpense = ctx.createLinearGradient(0, 0, 0, 400);
-        gradientExpense.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-        gradientExpense.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+        // Simplified solid colors for better performance
 
         new Chart(ctx, {
           type: "line",
@@ -493,10 +487,10 @@ widget_tweaks %} {% block content %}
                 label: "Thu Nhập",
                 data: data.income,
                 borderColor: "#10b981",
-                backgroundColor: gradientIncome,
-                tension: 0.4,
+                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                tension: 0.3,
                 fill: true,
-                pointRadius: 4,
+                pointRadius: 3,
                 pointBackgroundColor: "#fff",
                 pointBorderColor: "#10b981",
                 pointBorderWidth: 2,
@@ -505,10 +499,10 @@ widget_tweaks %} {% block content %}
                 label: "Chi Tiêu",
                 data: data.expenses,
                 borderColor: "#ef4444",
-                backgroundColor: gradientExpense,
-                tension: 0.4,
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                tension: 0.3,
                 fill: true,
-                pointRadius: 4,
+                pointRadius: 3,
                 pointBackgroundColor: "#fff",
                 pointBorderColor: "#ef4444",
                 pointBorderWidth: 2,
@@ -518,6 +512,7 @@ widget_tweaks %} {% block content %}
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             interaction: { mode: "index", intersect: false },
             plugins: {
               legend: {

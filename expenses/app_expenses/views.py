@@ -249,6 +249,8 @@ def _apply_sorting(queryset, params):
     """Áp dụng sắp xếp cho queryset chi tiêu."""
     sort_amount = params.get('sort_amount')
     sort_date = params.get('sort_date')
+    date_from = params.get('date_from')
+    date_to = params.get('date_to')
     
     order_fields = []
     if sort_amount == 'asc':
@@ -260,27 +262,27 @@ def _apply_sorting(queryset, params):
         order_fields.append('date')
     elif sort_date == 'desc':
         order_fields.append('-date')
+    elif date_from or date_to:
+        # Nếu đang lọc theo ngày nhưng chưa chọn sắp xếp ngày, mặc định sắp xếp tăng dần
+        order_fields.append('date')
 
     return queryset.order_by(*order_fields) if order_fields else queryset.order_by('-date')
 
 @login_required
 def ep1_lists(request):
-    # 1. Lấy TOÀN BỘ dữ liệu (Dùng để tính Ngân sách còn lại & Top danh mục)
-    base_expenses = Expense.objects.filter(user=request.user)
-
-    # 2. Tạo dữ liệu ĐÃ LỌC (Dùng để hiển thị Bảng, Biểu đồ & tính Tổng chi tiêu theo lọc)
+    # Get base expenses with optimized query
+    base_expenses = Expense.objects.filter(user=request.user).select_related('category')
+    # Apply filters and sorting
     filtered_expenses = _apply_filters(base_expenses, request.GET)
     expenses = _apply_sorting(filtered_expenses, request.GET)
 
-    # --- PHÂN TRANG ---
+    # Pagination
     paginator = Paginator(expenses, 10) 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-    # --- TÍNH TOÁN MONTHLY (Để đồng bộ Dashboard) ---
+    # Calculate monthly expenses
     today = timezone.now().date()
     first_day_this_month = today.replace(day=1)
-    # Xử lý next month an toàn
     from dateutil.relativedelta import relativedelta
     first_day_next_month = (first_day_this_month + relativedelta(months=1))
 
@@ -290,17 +292,15 @@ def ep1_lists(request):
         date__lt=first_day_next_month
     ).aggregate(Sum('amount'))['amount__sum'] or 0
 
-    # A. Tính số liệu THEO BỘ LỌC (Để hiển thị ở ô "Tổng chi tiêu")
+    # Calculate totals
     filtered_total = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
-
-    # B. Tính số liệu TOÀN BỘ (Để tính "Chi nhiều nhất")
     global_total = base_expenses.aggregate(sum=Sum('amount'))['sum'] or 0
-    
+    # Get top category
     global_category_data = base_expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
     top_category_item = global_category_data.first()
     top_category = top_category_item['category__name'] if top_category_item else '—'
 
-    # --- DỮ LIỆU BIỂU ĐỒ (Dùng dữ liệu đã lọc để biểu đồ khớp với bảng) ---
+    # Chart data
     category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
     daily_data = expenses.annotate(day=TruncDate('date')).values('day').annotate(total=Sum('amount')).order_by('day')
 
@@ -327,12 +327,10 @@ def ep1_lists(request):
         'expenses': page_obj, 
         'page_obj': page_obj,
         
-        # --- CÁC BIẾN QUAN TRỌNG ĐÃ CHỈNH SỬA ---
-        'total_spent': filtered_total,                 # Hiển thị số tiền ĐÃ LỌC (vẫn giữ để hiện ở bảng)
-        'this_month_expenses': this_month_expenses,    # Chi tiêu tháng này (cho Card)
-        'remaining': budget_obj.total - this_month_expenses,  # Ngân sách còn lại (Thực tế tháng này)
-        'top_category': top_category,                  # Hiển thị Top danh mục TOÀN BỘ
-        # ------------------------------------------
+        'total_spent': filtered_total,
+        'this_month_expenses': this_month_expenses,
+        'remaining': budget_obj.total - this_month_expenses,
+        'top_category': top_category,
 
         'b_form': b_form,
         'budget_obj': budget_obj,
@@ -506,7 +504,7 @@ def predict_category_api(request):
 
 @login_required
 def dashboard(request):
-    """Dashboard tổng quan với biểu đồ và thống kê"""
+    """Dashboard with charts and statistics"""
     from datetime import datetime
     from dateutil.relativedelta import relativedelta
     
@@ -571,16 +569,16 @@ def dashboard(request):
         total=Sum('amount')
     ).order_by('-total')[:5]
     
-    # Giao dịch gần đây (3 chi tiêu + 3 thu nhập = 6 dòng)
-    recent_expenses = Expense.objects.filter(user=user).order_by('-date')[:3]
-    recent_income = Income.objects.filter(user=user).order_by('-date')[:3]
+    # Recent transactions with optimized queries
+    recent_expenses = Expense.objects.filter(user=user).select_related('category').order_by('-date')[:3]
+    recent_income = Income.objects.filter(user=user).select_related('source').order_by('-date')[:3]
     
-    # Chi tiêu định kỳ sắp đến hạn
+    # Upcoming recurring expenses
     upcoming_recurring = RecurringExpense.objects.filter(
         user=user,
         is_active=True,
         next_due_date__gte=today
-    ).order_by('next_due_date')[:5]
+    ).select_related('category').order_by('next_due_date')[:5]
     
     # Lấy các thông báo đang Active
     active_announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
@@ -710,15 +708,15 @@ def chart_expense_vs_income(request):
 
 @login_required
 def income_list(request):
-    """Danh sách thu nhập"""
-    base_income = Income.objects.filter(user=request.user)
+    """Income list with filters"""
+    base_income = Income.objects.filter(user=request.user).select_related('source')
     
-    # Lọc theo nguồn thu
+    # Filter by source
     source_id = request.GET.get('source')
     if source_id:
         base_income = base_income.filter(source_id=source_id)
     
-    # Lọc theo ngày
+    # Filter by date
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     if date_from and date_to:
@@ -728,7 +726,7 @@ def income_list(request):
     elif date_to:
         base_income = base_income.filter(date__lte=date_to)
     
-    # Sắp xếp
+    # Sort
     sort_amount = request.GET.get('sort_amount')
     if sort_amount == 'asc':
         incomes = base_income.order_by('amount')
@@ -737,15 +735,15 @@ def income_list(request):
     else:
         incomes = base_income.order_by('-date')
     
-    # Phân trang
-    paginator = Paginator(incomes, 10)
+    # Pagination
+    paginator = Paginator(incomes, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Tính tổng
+    # Calculate total
     total_income = incomes.aggregate(Sum('amount'))['amount__sum'] or 0
     
-    # Danh sách nguồn thu
+    # Income sources
     sources = IncomeSource.objects.filter(user=request.user)
     
     context = {
@@ -757,6 +755,7 @@ def income_list(request):
         'date_from': date_from,
         'date_to': date_to,
         'sort_amount': sort_amount,
+        'sort_date': sort_date,
     }
     
     return render(request, 'ep1/income_list.html', context)
@@ -788,11 +787,21 @@ def edit_income(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Cập nhật thu nhập thành công!')
+            # Redirect to 'next' if provided, otherwise go to income_list
+            next_url = request.GET.get('next') or request.POST.get('next')
+            if next_url:
+                return redirect(next_url)
             return redirect('ep1:income_list')
     else:
         form = IncomeForm(instance=income, user=request.user)
     
-    return render(request, 'ep1/edit_income.html', {'form': form, 'income': income})
+    # Pass next parameter to template
+    next_url = request.GET.get('next', '')
+    return render(request, 'ep1/edit_income.html', {
+        'form': form, 
+        'income': income,
+        'next': next_url
+    })
 
 
 @login_required
@@ -802,9 +811,18 @@ def delete_income(request, pk):
     if request.method == 'POST':
         income.delete()
         messages.success(request, 'Đã xóa thu nhập.')
+        # Redirect to 'next' if provided, otherwise go to income_list
+        next_url = request.GET.get('next') or request.POST.get('next')
+        if next_url:
+            return redirect(next_url)
         return redirect('ep1:income_list')
     
-    return render(request, 'ep1/delete_income.html', {'income': income})
+    # Pass next parameter to template
+    next_url = request.GET.get('next', '')
+    return render(request, 'ep1/delete_income.html', {
+        'income': income,
+        'next': next_url
+    })
 
 
 @login_required
@@ -864,16 +882,88 @@ def delete_income_source(request, pk):
 @login_required
 def recurring_list(request):
     """Danh sách chi tiêu định kỳ"""
-    recurrings = RecurringExpense.objects.filter(user=request.user)
+    from django.utils import timezone
+    
+    # Get show_history parameter
+    show_history = request.GET.get('show_history', 'false') == 'true'
+    today = timezone.now().date()
+    
+    base_recurrings = RecurringExpense.objects.filter(user=request.user).select_related('category')
+    
+    # Filter by expired status based on tab
+    if show_history:
+        # History tab: show only expired items
+        base_recurrings = base_recurrings.filter(end_date__lt=today)
+    else:
+        # Active tab: hide expired items (show only active/future ones)
+        base_recurrings = base_recurrings.filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=today)
+        )
+    
+    # Lọc theo danh mục
+    category_id = request.GET.get('category')
+    if category_id:
+        base_recurrings = base_recurrings.filter(category_id=category_id)
+    
+    # Lọc theo trạng thái
+    status = request.GET.get('status')
+    if status == 'active':
+        base_recurrings = base_recurrings.filter(is_active=True)
+    elif status == 'inactive':
+        base_recurrings = base_recurrings.filter(is_active=False)
+    
+    # Lọc theo tần suất
+    frequency = request.GET.get('frequency')
+    if frequency:
+        base_recurrings = base_recurrings.filter(frequency=frequency)
+    
+    # Lọc theo ngày đến hạn
+    due_date_from = request.GET.get('due_date_from')
+    due_date_to = request.GET.get('due_date_to')
+    if due_date_from:
+        base_recurrings = base_recurrings.filter(next_due_date__gte=due_date_from)
+    if due_date_to:
+        base_recurrings = base_recurrings.filter(next_due_date__lte=due_date_to)
+    
+    # Sắp xếp theo số tiền
+    sort_amount = request.GET.get('sort_amount')
+    if sort_amount == 'asc':
+        recurrings = base_recurrings.order_by('amount')
+    elif sort_amount == 'desc':
+        recurrings = base_recurrings.order_by('-amount')
+    else:
+        recurrings = base_recurrings.order_by('-next_due_date')
     
     # Phân trang
-    paginator = Paginator(recurrings, 10)
+    paginator = Paginator(recurrings, 5)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    
+    
+    # Calculate counts for badges
+    active_count = RecurringExpense.objects.filter(
+        user=request.user
+    ).filter(
+        Q(end_date__isnull=True) | Q(end_date__gte=today)
+    ).count()
+    
+    expired_count = RecurringExpense.objects.filter(
+        user=request.user,
+        end_date__lt=today
+    ).count()
     
     context = {
         'recurrings': page_obj,
         'page_obj': page_obj,
+        'today': today,
+        'show_history': show_history,
+        'active_count': active_count,
+        'expired_count': expired_count,
+        'categories': Category.objects.filter(user=request.user),
+        'selected_category': int(category_id) if category_id else None,
+        'selected_status': status,
+        'selected_frequency': frequency,
+        'sort_amount': sort_amount,
     }
     
     return render(request, 'ep1/recurring_list.html', context)
@@ -881,15 +971,26 @@ def recurring_list(request):
 
 @login_required
 def add_recurring(request):
-    """Thêm chi tiêu định kỳ mới"""
+    """Add new recurring expense"""
     if request.method == 'POST':
         form = RecurringExpenseForm(request.POST, user=request.user)
         if form.is_valid():
             recurring = form.save(commit=False)
             recurring.user = request.user
             
-            # Tự động set next_due_date = start_date nếu chưa có
-            if not recurring.next_due_date:
+            # Auto-calculate next_due_date based on start_date and frequency
+            from datetime import timedelta
+            from dateutil.relativedelta import relativedelta
+            
+            if recurring.frequency == 'daily':
+                recurring.next_due_date = recurring.start_date + timedelta(days=1)
+            elif recurring.frequency == 'weekly':
+                recurring.next_due_date = recurring.start_date + timedelta(weeks=1)
+            elif recurring.frequency == 'monthly':
+                recurring.next_due_date = recurring.start_date + relativedelta(months=1)
+            elif recurring.frequency == 'yearly':
+                recurring.next_due_date = recurring.start_date + relativedelta(years=1)
+            else:
                 recurring.next_due_date = recurring.start_date
             
             recurring.save()
@@ -903,18 +1004,46 @@ def add_recurring(request):
 
 @login_required
 def edit_recurring(request, pk):
-    """Sửa chi tiêu định kỳ"""
+    """Edit recurring expense with auto-recalculation of next_due_date"""
     recurring = get_object_or_404(RecurringExpense, pk=pk, user=request.user)
+    
     if request.method == 'POST':
         form = RecurringExpenseForm(request.POST, instance=recurring, user=request.user)
         if form.is_valid():
-            form.save()
+            recurring = form.save(commit=False)
+            
+            # Always recalculate next_due_date based on start_date and frequency
+            from datetime import timedelta
+            from dateutil.relativedelta import relativedelta
+            
+            if recurring.frequency == 'daily':
+                recurring.next_due_date = recurring.start_date + timedelta(days=1)
+            elif recurring.frequency == 'weekly':
+                recurring.next_due_date = recurring.start_date + timedelta(weeks=1)
+            elif recurring.frequency == 'monthly':
+                recurring.next_due_date = recurring.start_date + relativedelta(months=1)
+            elif recurring.frequency == 'yearly':
+                recurring.next_due_date = recurring.start_date + relativedelta(years=1)
+            else:
+                recurring.next_due_date = recurring.start_date
+            
+            recurring.save()
             messages.success(request, 'Cập nhật chi tiêu định kỳ thành công!')
+            # Redirect to 'next' if provided
+            next_url = request.GET.get('next') or request.POST.get('next')
+            if next_url:
+                return redirect(next_url)
             return redirect('ep1:recurring_list')
     else:
         form = RecurringExpenseForm(instance=recurring, user=request.user)
     
-    return render(request, 'ep1/edit_recurring.html', {'form': form, 'recurring': recurring})
+    # Pass next parameter to template
+    next_url = request.GET.get('next', '')
+    return render(request, 'ep1/edit_recurring.html', {
+        'form': form,
+        'recurring': recurring,
+        'next': next_url
+    })
 
 
 @login_required
@@ -924,9 +1053,18 @@ def delete_recurring(request, pk):
     if request.method == 'POST':
         recurring.delete()
         messages.success(request, 'Đã xóa chi tiêu định kỳ.')
+        # Redirect to 'next' if provided
+        next_url = request.GET.get('next') or request.POST.get('next')
+        if next_url:
+            return redirect(next_url)
         return redirect('ep1:recurring_list')
     
-    return render(request, 'ep1/delete_recurring.html', {'recurring': recurring})
+    # Pass next parameter to template
+    next_url = request.GET.get('next', '')
+    return render(request, 'ep1/delete_recurring.html', {
+        'recurring': recurring,
+        'next': next_url
+    })
 
 
 @login_required
@@ -939,34 +1077,37 @@ def toggle_recurring_status(request, pk):
     status = "kích hoạt" if recurring.is_active else "vô hiệu hóa"
     messages.success(request, f'Đã {status} chi tiêu định kỳ "{recurring.name}".')
     
+    # Redirect to 'next' if provided
+    next_url = request.GET.get('next')
+    if next_url:
+        return redirect(next_url)
     return redirect('ep1:recurring_list')
 
 
 @login_required
 def generate_recurring_expenses(request):
-    """Tạo chi tiêu từ các template định kỳ đã đến hạn"""
-    from dateutil.relativedelta import relativedelta
-    
+    """Generate actual expenses from due recurring templates"""
     user = request.user
     today = timezone.now().date()
     
-    # Lấy tất cả recurring đang active và đã đến hạn
+    # Find all active recurring expenses that are due
     due_recurrings = RecurringExpense.objects.filter(
         user=user,
         is_active=True,
         next_due_date__lte=today
-    )
+    ).select_related('category')
     
     generated_count = 0
     
+    # Process each due recurring expense
     for recurring in due_recurrings:
-        # Kiểm tra end_date nếu có
-        if recurring.end_date and today > recurring.end_date:
+        # Check if expired and deactivate if needed
+        if recurring.is_expired():
             recurring.is_active = False
             recurring.save()
             continue
         
-        # Tạo expense mới
+        # Create actual expense from template
         Expense.objects.create(
             user=user,
             amount=recurring.amount,
@@ -977,20 +1118,13 @@ def generate_recurring_expenses(request):
         
         generated_count += 1
         
-        # Cập nhật next_due_date
-        if recurring.frequency == 'daily':
-            recurring.next_due_date += timedelta(days=1)
-        elif recurring.frequency == 'weekly':
-            recurring.next_due_date += timedelta(weeks=1)
-        elif recurring.frequency == 'monthly':
-            recurring.next_due_date += relativedelta(months=1)
-        elif recurring.frequency == 'yearly':
-            recurring.next_due_date += relativedelta(years=1)
-        
+        # Update next_due_date for next occurrence
+        recurring.advance_next_due_date()
         recurring.save()
     
+    # Notify user of results
     if generated_count > 0:
-        messages.success(request, f'Đã tạo {generated_count} chi tiêu từ các template định kỳ.')
+        messages.success(request, f'Đã tạo {generated_count} chi tiêu từ các mẫu định kỳ.')
     else:
         messages.info(request, 'Không có chi tiêu định kỳ nào đến hạn.')
     
