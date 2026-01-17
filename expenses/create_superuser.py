@@ -2,7 +2,6 @@ import os
 import sys
 import django
 from pathlib import Path
-from django.contrib.auth.models import User
 
 # Lấy đường dẫn thư mục hiện tại (expenses)
 current_dir = Path(__file__).resolve().parent
@@ -14,6 +13,9 @@ sys.path.append(str(repo_root))
 # Thiết lập môi trường Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
+
+# Import SAU khi django.setup() để tránh lỗi "Apps aren't loaded yet"
+from django.contrib.auth.models import User
 
 
 def create_admin():
