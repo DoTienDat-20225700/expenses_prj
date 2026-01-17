@@ -41,13 +41,13 @@ LOGOUT_REDIRECT_URL = '/login/'
 # Application definition
 
 INSTALLED_APPS = [
+    'cloudinary_storage',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.humanize',
-    'cloudinary_storage',
     'cloudinary',
     'django.contrib.staticfiles',
     'app_expenses.apps.AppExpensesConfig',
@@ -162,7 +162,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'app_expenses' / 'static',
 ]
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Sử dụng Cloudinary để lưu trữ static files
+STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
