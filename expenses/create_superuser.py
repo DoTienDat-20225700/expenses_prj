@@ -12,7 +12,7 @@ sys.path.append(str(repo_root))
 # -------------------------------
 
 # Thiết lập môi trường Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expenses.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 

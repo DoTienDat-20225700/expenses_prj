@@ -17,3 +17,7 @@ rm requirements-render.txt
 # Django commands
 python manage.py collectstatic --no-input
 python manage.py migrate
+
+# Tạo superuser tự động
+echo "👤 Creating superuser..."
+python create_superuser.py
