@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.humanize',
+    'cloudinary_storage',
+    'cloudinary',
     'django.contrib.staticfiles',
     'app_expenses.apps.AppExpensesConfig',
     'widget_tweaks',
@@ -161,3 +163,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Cấu hình lưu trữ file media (ảnh upload từ user)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Cloudinary configuration for media files (to persist on Render)
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
+
+# Use Cloudinary for media files in production
+if config('CLOUDINARY_CLOUD_NAME', default=''):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
