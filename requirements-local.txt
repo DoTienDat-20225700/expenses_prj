@@ -13,6 +13,7 @@ gunicorn==23.0.0
 joblib==1.5.3
 jsbeautifier==1.15.4
 json5==0.12.1
+mysqlclient==2.2.7
 numpy==2.2.6
 packaging==25.0
 pandas==2.3.3
