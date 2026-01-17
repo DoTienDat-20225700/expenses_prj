@@ -155,8 +155,11 @@ NUMBER_GROUPING = 3  # Group by 3 digits
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Tell Django where to find static files in apps
-STATICFILES_DIRS = []
+# Explicitly tell Django where to find static files
+# (needed because app has custom label 'ep1' which breaks auto-discovery)
+STATICFILES_DIRS = [
+    BASE_DIR / 'app_expenses' / 'static',
+]
 
 # Use whitenoise for serving static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
