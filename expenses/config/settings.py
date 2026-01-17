@@ -64,7 +64,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'expenses.config.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -81,26 +81,29 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'expenses.config.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
-    }
-}
-
+# Database configuration - supports both MySQL and PostgreSQL
 database_url = config('DATABASE_URL', default=None)
 if database_url:
-    DATABASES['default'] = dj_database_url.parse(database_url)
+    DATABASES = {'default': dj_database_url.parse(database_url)}
+else:
+    # Use environment variables for database config
+    db_engine = config('DATABASE_ENGINE', default='django.db.backends.mysql')
+    DATABASES = {
+        'default': {
+            'ENGINE': db_engine,
+            'NAME': config('DATABASE_NAME', default=config('DB_NAME', default='expenses_db')),
+            'USER': config('DATABASE_USER', default=config('DB_USER', default='root')),
+            'PASSWORD': config('DATABASE_PASSWORD', default=config('DB_PASSWORD', default='')),
+            'HOST': config('DATABASE_HOST', default=config('DB_HOST', default='127.0.0.1')),
+            'PORT': config('DATABASE_PORT', default=config('DB_PORT', default='3306')),
+        }
+    }
 
 
 # Password validation
