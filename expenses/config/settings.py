@@ -41,14 +41,12 @@ LOGOUT_REDIRECT_URL = '/login/'
 # Application definition
 
 INSTALLED_APPS = [
-    'cloudinary_storage',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.humanize',
-    'cloudinary',
     'django.contrib.staticfiles',
     'app_expenses.apps.AppExpensesConfig',
     'widget_tweaks',
@@ -155,12 +153,8 @@ NUMBER_GROUPING = 3  # Group by 3 digits
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Static files configuration
-# Django can't auto-discover static files due to custom app label 'ep1'
-# So we explicitly specify the path
-STATICFILES_DIRS = [
-    BASE_DIR / 'app_expenses' / 'static',
-]
+# Note: STATICFILES_DIRS is not needed here because Django's AppDirectoriesFinder
+# automatically discovers static files in app_expenses/static/
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -171,13 +165,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Cloudinary configuration for media files (to persist on Render)
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
-    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
-    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
-}
-
-# Sử dụng Cloudinary cho cả Media và Static files
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Media files will be stored locally in the media directory
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
