@@ -158,12 +158,6 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Static files configuration
 # Django can't auto-discover static files due to custom app label 'ep1'
 # So we explicitly specify the path
-STATICFILES_DIRS = [
-    BASE_DIR / 'app_expenses' / 'static',
-]
-
-# Sử dụng Cloudinary để lưu trữ static files
-STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -181,6 +175,6 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
 
-# Use Cloudinary for media files in production
-if config('CLOUDINARY_CLOUD_NAME', default=''):
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# Sử dụng Cloudinary cho cả Media và Static files
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+STATICFILES_STORAGE = 'cloudinary_storage.storage.StaticHashedCloudinaryStorage'
