@@ -1,4 +1,4 @@
-{% extends 'ep1/base.html' %} {% load widget_tweaks %} {% block content %}
+{% extends 'ep1/base.html' %} {% load static %} {% load widget_tweaks %} {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-lg-11">
@@ -20,7 +20,7 @@
                 <div class="avatar-wrapper mb-3 position-relative">
                   <img
                     id="avatar-preview"
-                    src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}/media/avatars/default.png{% endif %}"
+                    src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'ep1/images/default.png' %}{% endif %}"
                     class="rounded-circle img-thumbnail border-0 shadow"
                     style="
                       width: 160px;

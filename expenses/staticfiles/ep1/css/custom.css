@@ -1,0 +1,758 @@
+/* =========================================================
+   MONEYMANAGER - MODERN GLASSMORPHISM THEME
+   Style: Clean, Modern, Finance-focused
+   ========================================================= */
+
+/* 1. IMPORT FONT (Hiện đại & Sắc nét hơn) */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+/* 2. CẤU HÌNH BIẾN MÀU & HIỆU ỨNG (VARIABLES) */
+:root {
+  --font-main: "Plus Jakarta Sans", sans-serif;
+
+  /* --- CHẾ ĐỘ SÁNG (LIGHT MODE) --- */
+  --primary: #10b981;
+  /* Emerald 500 */
+  --primary-hover: #059669;
+  /* Emerald 600 */
+
+  /* Nền trang: Xanh mint cực nhạt tạo cảm giác tươi mới */
+  --bg-body: #f0fdf4;
+
+  /* Solid Backgrounds (Optimized for performance) */
+  --bg-card: rgba(255, 255, 255, 0.98);
+  --bg-glass-heavy: rgba(255, 255, 255, 1);
+  --glass-border: 1px solid rgba(226, 232, 240, 0.8);
+
+  --text-main: #0f172a;
+  /* Slate 900 */
+  --text-muted: #475569; /* Đậm hơn chút so với 64748b */
+  /* Slate 500 */
+  --border-color: rgba(226, 232, 240, 0.8);
+  --input-bg: rgba(255, 255, 255, 0.8); /* Tăng opacity input */
+
+  /* Colored Shadows (Bóng đổ màu) - Bí quyết của giao diện xịn */
+  --shadow-sm: 0 4px 6px -1px rgba(16, 185, 129, 0.05),
+    0 2px 4px -1px rgba(16, 185, 129, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(16, 185, 129, 0.08),
+    0 4px 6px -2px rgba(16, 185, 129, 0.04);
+  --shadow-lg: 0 20px 25px -5px rgba(16, 185, 129, 0.1),
+    0 10px 10px -5px rgba(16, 185, 129, 0.04);
+  --shadow-hover: 0 20px 40px -5px rgba(16, 185, 129, 0.2);
+
+  /* Navbar Gradient */
+  --navbar-bg: rgba(255, 255, 255, 0.9); /* Tăng opacity navbar */
+  --navbar-text: #0f172a;
+}
+
+/* --- CHẾ ĐỘ TỐI (DARK MODE) --- */
+body.dark-mode {
+  /* Đảm bảo nền tối phủ lên ảnh đủ tốt */
+  --primary: #34d399;
+  /* Emerald 400 (Sáng hơn để nổi trên nền tối) */
+  --primary-hover: #10b981;
+
+  /* Nền trang: Xanh đen sâu thẳm (Deep Slate/Navy) */
+  --bg-body: #0f172a;
+
+  /* Dark Solid */
+  --bg-card: rgba(15, 23, 42, 0.98);
+  --bg-glass-heavy: rgba(15, 23, 42, 1);
+  --glass-border: 1px solid rgba(51, 65, 85, 0.8);
+
+  --text-main: #f8fafc;
+  /* Slate 50 */
+  --text-muted: #94a3b8;
+  /* Slate 400 */
+  --border-color: rgba(51, 65, 85, 0.5);
+  --input-bg: rgba(15, 23, 42, 0.5);
+
+  /* Dark Shadows */
+  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.4);
+  --shadow-hover: 0 25px 50px rgba(0, 0, 0, 0.5);
+
+  --navbar-bg: rgba(15, 23, 42, 0.7);
+  --navbar-text: #f8fafc;
+}
+
+/* Fix placeholder visibility in Dark Mode */
+body.dark-mode ::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+body.dark-mode :-moz-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+body.dark-mode ::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+body.dark-mode :-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* =========================================
+   3. BASE STYLES & BACKGROUND
+   ========================================= */
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-body);
+  background-image: url("../img/bg.png");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: var(--text-main);
+  transition: background 0.2s ease, color 0.2s ease;
+  padding-bottom: 3rem;
+  -webkit-font-smoothing: antialiased;
+  /* Chữ sắc nét hơn trên Mac */
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Add overlay to improve text readability against busy background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Lớp phủ màu nền (sáng hoặc tối tùy mode) để làm dịu ảnh nền */
+  background: var(--bg-body);
+  opacity: 0.75; /* Giảm xuống để không che khuất nội dung */
+  z-index: -1;
+}
+
+/* Thanh cuộn (Scrollbar) đẹp */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+/* =========================================
+   4. GLASSMORPHISM NAVBAR
+   ========================================= */
+.navbar {
+  background: var(--navbar-bg) !important;
+  border-bottom: var(--glass-border);
+  padding: 0.8rem 0;
+  transition: all 0.2s ease;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: var(--shadow-sm);
+}
+
+.navbar-brand {
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--primary) !important;
+  font-size: 1.5rem;
+}
+
+.nav-link {
+  color: var(--navbar-text) !important;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 0.6rem 1rem !important;
+  margin: 0 2px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link:hover,
+.nav-link.active {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--primary) !important;
+  transform: translateY(-1px);
+}
+
+/* Nút User Profile trên Navbar */
+.btn-user-profile {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--border-color);
+  padding: 6px 14px !important;
+  border-radius: 50px !important;
+  /* Bo tròn viên thuốc */
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  background: var(--bg-glass-heavy);
+  border: var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  margin-top: 10px !important;
+}
+
+.dropdown-item {
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  color: var(--text-main);
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--primary);
+}
+
+/* =========================================
+   5. MODERN CARDS (THẺ KÍNH)
+   ========================================= */
+.card {
+  background: var(--bg-card);
+  border: var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+/* Simplified hover effect */
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.card-header {
+  background: transparent;
+  /* Header trong suốt */
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+}
+
+.card-body {
+  padding: 1.5rem;
+  color: var(--text-main);
+}
+
+/* =========================================
+   6. FORMS & INPUTS
+   ========================================= */
+.form-control,
+.form-select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  /* Input bo tròn */
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  transition: all 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--bg-body);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+  /* Glow xanh khi focus */
+  color: var(--text-main);
+}
+
+/* Input Group Text (Icon trong ô nhập) */
+.input-group-text {
+  background-color: var(--input-bg);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+  border-radius: 12px;
+}
+
+/* =========================================
+   7. BUTTONS (NÚT BẤM)
+   ========================================= */
+.btn {
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  letter-spacing: 0.3px;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-hover) 100%
+  ) !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-secondary,
+.btn-light {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+/* Nút xóa/Danger */
+.btn-danger,
+.btn-outline-danger:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.25);
+  border: none !important;
+}
+
+/* Override Bootstrap Primary Button to match Theme (Emerald) */
+.btn-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+.btn-outline-primary {
+  color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+.btn-outline-primary:hover {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+
+/* =========================================
+   8. TABLES (BẢNG DỮ LIỆU)
+   ========================================= */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(
+    --border-color
+  ); /* Fix viền trắng table trong darkmode */
+  color: var(--text-main);
+  margin-bottom: 0;
+  font-family: var(--font-main);
+}
+
+.table thead th {
+  background: rgba(16, 185, 129, 0.08);
+  /* Nền xanh rất nhạt cho header bảng */
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.8px;
+  border-bottom: 2px solid rgba(16, 185, 129, 0.2);
+  padding: 1rem;
+  border-top: none;
+}
+
+.table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+  /* Hover xanh nhẹ */
+}
+
+.table tbody tr {
+  /* Thêm nền nhẹ cho các hàng trong bảng để dễ đọc text hơn */
+  background-color: rgba(255, 255, 255, 0.4);
+  transition: background-color 0.2s;
+}
+
+body.dark-mode .table tbody tr {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Fix text color for table-secondary (inactive rows) in dark mode */
+body.dark-mode .table-secondary {
+  --bs-table-bg: rgba(51, 65, 85, 0.4);
+  --bs-table-color: var(--text-muted);
+  background-color: var(--bs-table-bg) !important;
+  color: var(--bs-table-color) !important;
+}
+
+/* Loại bỏ nền trắng cứng của table-responsive để lộ hiệu ứng kính */
+.table-responsive {
+  border-radius: 20px;
+  background: transparent !important;
+}
+
+/* =========================================
+   9. TIỆN ÍCH KHÁC
+   ========================================= */
+/* Text Colors */
+.text-main {
+  color: var(--text-main) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+/* Badges (Nhãn) */
+.badge {
+  padding: 0.5em 0.8em;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.badge.bg-primary {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: var(--primary) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.category-badge {
+  background-color: rgba(226, 232, 240, 0.5); /* Nền xám nhạt */
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+body.dark-mode .category-badge {
+  background-color: rgba(30, 41, 59, 0.5); /* Nền tối hơn cho dark mode */
+  color: var(--text-main);
+}
+
+/* Avatar trên Profile */
+.avatar-wrapper img {
+  border: 4px solid var(--bg-card);
+  /* Viền tiệp màu nền */
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s ease;
+}
+
+.avatar-wrapper:hover img {
+  transform: scale(1.05) rotate(2deg);
+  /* Hiệu ứng vui nhộn khi hover */
+}
+
+/* Pagination (Phân trang) */
+.page-link {
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: 8px; /* Bo góc từng ô */
+  margin: 0 3px;
+  font-weight: 500;
+}
+
+.page-link:hover {
+  background-color: rgba(16, 185, 129, 0.2); /* Hover xanh nhẹ */
+  color: var(--primary);
+  border-color: var(--primary);
+  z-index: 2;
+}
+
+.page-item.active .page-link {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+}
+
+.page-item.disabled .page-link {
+  background-color: rgba(226, 232, 240, 0.3);
+  color: var(--text-muted);
+  border-color: var(--border-color);
+}
+
+body.dark-mode .page-item.disabled .page-link {
+  background-color: rgba(30, 41, 59, 0.5);
+  color: var(--text-muted);
+  border-color: var(--border-color);
+}
+
+/* --- FIX RIÊNG CHO DARK MODE --- */
+body.dark-mode .dropdown-divider {
+  border-color: var(--border-color);
+}
+
+body.dark-mode .btn-close {
+  filter: invert(1);
+}
+
+/* Đảo màu icon lịch trong input date khi ở Dark Mode */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.8;
+}
+
+/* Nút đóng modal màu trắng */
+/* =========================================
+   10. PROFILE AVATAR (Hồ sơ)
+   ========================================= */
+.avatar-wrapper {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid var(--bg-card);
+  box-shadow: var(--shadow-lg);
+}
+
+.avatar-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.btn-camera {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.1;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.avatar-wrapper:hover .btn-camera {
+  opacity: 1;
+  background: rgba(16, 185, 129, 0.8); /* Primary color overlay */
+}
+
+/* Ẩn input file thực tế */
+input[type="file"] {
+  display: none;
+}
+
+/* Đảm bảo container chính hiển thị trên overlay */
+.main-container {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================================
+   DASHBOARD PERFORMANCE FIXES
+   ========================================= */
+/* Tắt tất cả animations và effects phức tạp trên dashboard để tránh crash */
+body:has([class*="dashboard"]) .card,
+body:has([href*="dashboard"]) .card {
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+body:has([class*="dashboard"]) .card:hover,
+body:has([href*="dashboard"]) .card:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-md) !important; /* Giữ shadow nhẹ, bỏ hover effect */
+}
+
+/* Tắt fade-in animation trên dashboard */
+body:has([class*="dashboard"]) .fade-in,
+body:has([href*="dashboard"]) .fade-in {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* Tắt ảnh nền chỉ trên dashboard */
+body:has([class*="dashboard"])::before,
+body:has([href*="dashboard"])::before {
+  opacity: 0.9 !important; /* Tối đa che nền */
+}
+
+/* =========================================
+   AUTH PAGES (LOGIN/REGISTER)
+   ========================================= */
+.auth-title {
+  color: var(--text-main) !important;
+  font-weight: 700;
+}
+
+.auth-subtitle {
+  color: var(--text-muted) !important;
+}
+
+.auth-header-icon {
+  color: var(--primary) !important;
+  font-size: 3rem;
+}
+
+/* Performance fixes for auth pages */
+.auth-wrapper .card,
+.auth-card {
+  transition: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+.auth-wrapper .card:hover,
+.auth-card:hover {
+  transform: none !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Tắt fade-in animation trên auth pages */
+.auth-wrapper .fade-in {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* =========================================
+   11. MOBILE RESPONSIVE STYLES
+   ========================================= */
+/* Mobile optimizations for better UX on small screens */
+@media (max-width: 768px) {
+  /* Page header buttons - stack vertically with proper spacing */
+  .row.mb-4 .col-md-6.text-end,
+  .col-12.mb-4 .d-flex.justify-content-between {
+    text-align: center !important;
+  }
+
+  /* Budget form and action buttons container */
+  .row.mb-4 .col-md-6.text-end {
+    margin-top: 1rem;
+  }
+
+  /* Budget input group - make it smaller and centered on mobile */
+  .row.mb-4 .input-group-sm {
+    max-width: 100%;
+    width: 100% !important;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Action buttons (Xuất Excel, Thêm mới, etc.) */
+  .row.mb-4 .btn,
+  .col-12.mb-4 .btn {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0 !important;
+    /* Consistent vertical spacing */
+  }
+
+  /* Remove inline-block from forms in header */
+  .row.mb-4 form.d-inline-block {
+    display: block !important;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Buttons in d-flex containers */
+  .d-flex.justify-content-between .btn {
+    margin: 0.25rem !important;
+  }
+
+  /* Button groups in d-flex with gap */
+  .d-flex.gap-2 {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .d-flex.gap-2 .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Multiple buttons in header (Tạo Chi Tiêu, Thêm Định Kỳ) */
+  .d-flex.justify-content-between > div {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  /* Page title - reduce size on mobile */
+  h2.fw-bold {
+    font-size: 1.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Card body padding - reduce on mobile */
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  /* Table - make text smaller on mobile */
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  /* Button groups in tables */
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .btn-group .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Navbar - reduce padding */
+  .navbar {
+    padding: 0.5rem 0 !important;
+  }
+
+  /* Form filters - ensure full width */
+  .card-body .row.g-3 > div {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Badges - make them smaller */
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.6em;
+  }
+
+  /* Avatar on profile - make smaller */
+  .avatar-wrapper {
+    width: 120px;
+    height: 120px;
+  }
+}
