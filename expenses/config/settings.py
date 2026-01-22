@@ -171,17 +171,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Cloudinary configuration for media files (avatars, etc.)
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-
-cloudinary.config(
-    cloud_name=config('CLOUDINARY_CLOUD_NAME', default=''),
-    api_key=config('CLOUDINARY_API_KEY', default=''),
-    api_secret=config('CLOUDINARY_API_SECRET', default=''),
-    secure=True
-)
-
-# Use Cloudinary for media storage in production
+# Only load in production to save memory
 if not DEBUG:
+    import cloudinary
+    
+    cloudinary.config(
+        cloud_name=config('CLOUDINARY_CLOUD_NAME', default=''),
+        api_key=config('CLOUDINARY_API_KEY', default=''),
+        api_secret=config('CLOUDINARY_API_SECRET', default=''),
+        secure=True
+    )
+    
+    # Use Cloudinary for media storage in production
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
