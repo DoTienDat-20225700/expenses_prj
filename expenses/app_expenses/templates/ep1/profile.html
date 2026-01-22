@@ -260,11 +260,23 @@
     document.getElementById("preview-img").src = src;
     document.getElementById("imagePreviewOverlay").classList.add("active");
     document.body.style.overflow = "hidden";
+
+    // Ẩn navbar
+    var navbar = document.querySelector(".navbar");
+    if (navbar) {
+      navbar.style.display = "none";
+    }
   }
 
   function closeImagePreview() {
     document.getElementById("imagePreviewOverlay").classList.remove("active");
     document.body.style.overflow = "";
+
+    // Hiện lại navbar
+    var navbar = document.querySelector(".navbar");
+    if (navbar) {
+      navbar.style.display = "";
+    }
   }
 
   // Close on ESC key
