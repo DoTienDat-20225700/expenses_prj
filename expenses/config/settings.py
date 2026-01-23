@@ -47,12 +47,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.humanize',
+    'cloudinary_storage',  
     'django.contrib.staticfiles',
-    'cloudinary_storage',
     'cloudinary',
     'app_expenses.apps.AppExpensesConfig',
     'widget_tweaks',
-    'django_cleanup.apps.CleanupConfig'
+    # 'django_cleanup.apps.CleanupConfig' # Đã tắt vì không tương thích với CloudinaryField, dùng signal thay thế
 ]
 
 MIDDLEWARE = [
@@ -174,11 +174,19 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import os
 
+# Ưu tiên dùng CLOUDINARY_URL nếu có (format: cloudinary://api_key:api_secret@cloud_name)
+CLOUDINARY_URL = config('CLOUDINARY_URL', default='')
 CLOUDINARY_CLOUD_NAME = config('CLOUDINARY_CLOUD_NAME', default='')
 CLOUDINARY_API_KEY = config('CLOUDINARY_API_KEY', default='')
 CLOUDINARY_API_SECRET = config('CLOUDINARY_API_SECRET', default='')
 
+# Set environment variable for cloudinary library to auto-load
+if CLOUDINARY_URL:
+    os.environ['CLOUDINARY_URL'] = CLOUDINARY_URL
+
+# Configure cloudinary explicitly
 cloudinary.config(
     cloud_name=CLOUDINARY_CLOUD_NAME,
     api_key=CLOUDINARY_API_KEY,
@@ -186,8 +194,8 @@ cloudinary.config(
     secure=True
 )
 
-# Use Cloudinary for media storage in production
-if not DEBUG and CLOUDINARY_CLOUD_NAME:
+# Use Cloudinary for media storage if configured
+if CLOUDINARY_CLOUD_NAME:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     
     # Cloudinary storage settings

@@ -227,13 +227,92 @@ def profile(request):
     profile_obj, created = Profile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
-        u_form = UserUpdateForm(request.POST,  instance=request.user)
+        # ⚠️ QUAN TRỌNG: Lấy avatar cũ từ DATABASE trước khi form xử lý
+        old_avatar_from_db = Profile.objects.get(pk=profile_obj.pk).avatar
+        
+        u_form = UserUpdateForm(request.POST, instance=request.user)
         p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        
         if u_form.is_valid() and p_form.is_valid():
-            u_form.save()
-            p_form.save()
-            messages.success(request, 'Cập nhật hồ sơ thành công!')
-            return redirect('ep1:profile')
+            # Xử lý THAY ĐỔI ảnh mới (upload ảnh mới)
+            if 'avatar' in request.FILES:
+                # Sử dụng avatar cũ từ database (KHÔNG phải từ form)
+                old_avatar = old_avatar_from_db
+                
+                # Nếu có avatar cũ, xóa nó trên Cloudinary
+                if old_avatar:
+                    try:
+                        import cloudinary.uploader
+                        import cloudinary
+                        from cloudinary import CloudinaryResource
+                        
+                        # Kiểm tra xem avatar cũ có phải CloudinaryResource không
+                        is_cloudinary = isinstance(old_avatar, CloudinaryResource)
+                        avatar_str = str(old_avatar)
+                        
+                        print(f"🔍 Debug - Avatar từ DB: {avatar_str}")
+                        print(f"🔍 Debug - Là CloudinaryResource: {is_cloudinary}")
+                        print(f"🔍 Debug - Type: {type(old_avatar)}")
+                        
+                        # Nếu là CloudinaryResource HOẶC URL chứa cloudinary.com
+                        if is_cloudinary or 'cloudinary.com' in avatar_str or 'res.cloudinary.com' in avatar_str:
+                            old_public_id = None
+                            
+                            # Cách 1: Nếu là CloudinaryResource, lấy public_id trực tiếp
+                            if is_cloudinary:
+                                # CloudinaryResource có thể chứa public_id trực tiếp khi convert sang string
+                                if hasattr(old_avatar, 'public_id') and old_avatar.public_id:
+                                    old_public_id = old_avatar.public_id
+                                else:
+                                    # Nếu không có thuộc tính, string representation chính là public_id
+                                    old_public_id = avatar_str
+                                print(f"✅ CloudinaryResource - public_id: {old_public_id}")
+                            
+                            # Cách 2: Parse từ URL đầy đủ nếu có
+                            elif 'cloudinary.com' in avatar_str:
+                                print(f"⚠️ Parse từ URL đầy đủ...")
+                                parts = avatar_str.split('/upload/')
+                                if len(parts) > 1:
+                                    path_with_version = parts[1]
+                                    path_parts = path_with_version.split('/', 1)
+                                    if len(path_parts) > 1:
+                                        full_path = path_parts[1]
+                                        old_public_id = full_path.split('?')[0].rsplit('.', 1)[0]
+                                        print(f"✅ Parse được public_id từ URL: {old_public_id}")
+                            
+                            # Xóa ảnh cũ nếu tìm được public_id
+                            if old_public_id:
+                                result = cloudinary.uploader.destroy(old_public_id)
+                                print(f"✅ Đã gọi API xóa - public_id: {old_public_id}")
+                                print(f"📊 Kết quả từ Cloudinary: {result}")
+                                
+                                if result.get('result') == 'ok':
+                                    print(f"✅✅✅ ĐÃ XÓA THÀNH CÔNG avatar cũ trên Cloudinary!")
+                                elif result.get('result') == 'not found':
+                                    print(f"⚠️ Cloudinary không tìm thấy ảnh: {old_public_id}")
+                                else:
+                                    print(f"⚠️ Kết quả: {result.get('result', 'unknown')}")
+                            else:
+                                print(f"❌ Không xác định được public_id")
+                        else:
+                            print(f"ℹ️ Avatar cũ là file local: {avatar_str}")
+                            
+                    except Exception as e:
+                        print(f"❌ Lỗi khi xóa avatar: {e}")
+                        import traceback
+                        traceback.print_exc()
+                
+                # Save cả 2 form
+                u_form.save()
+                p_form.save()
+                messages.success(request, 'Cập nhật hồ sơ thành công!')
+                return redirect('ep1:profile')
+            else:
+                # Không có thay đổi avatar, chỉ cập nhật thông tin khác
+                u_form.save()
+                p_form.save()
+                messages.success(request, 'Cập nhật hồ sơ thành công!')
+                return redirect('ep1:profile')
     else:
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)

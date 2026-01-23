@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from cloudinary.models import CloudinaryField
+import cloudinary.uploader
 
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name="Tên danh mục")
@@ -66,7 +68,8 @@ class Budget(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = models.ImageField("Ảnh đại diện", upload_to='avatars/', blank=True, null=True)
+    avatar = CloudinaryField("Ảnh đại diện", folder='avatars', blank=True, null=True, 
+                            transformation={'width': 300, 'height': 300, 'crop': 'fill', 'gravity': 'face'})
     full_name = models.CharField("Họ tên",  max_length=150, null=True, blank=True)
     date_of_birth = models.DateField("Ngày sinh",   null=True, blank=True)
     GENDER_CHOICES = [
@@ -81,7 +84,12 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.user.username
-    
+
+
+# Signal để xóa avatar cũ đã ĐƯỢC CHUYỂN VÀO VIEW profile() để xử lý tốt hơn
+# @receiver(pre_save, sender=Profile) - ĐÃ TẮT
+
+
 class Announcement(models.Model):
     TYPE_CHOICES = [
         ('info', 'Thông tin (Xanh dương)'),

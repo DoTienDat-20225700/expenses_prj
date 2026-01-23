@@ -1,146 +1,170 @@
-{% extends 'ep1/base.html' %} {% load static %} {% load widget_tweaks %} {% block content %}
+{% extends "ep1/base.html" %} 
+{% load static %} 
+{% load widget_tweaks %} 
+
+{% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-lg-11">
-      <div class="card shadow border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-transparent border-bottom py-3">
-          <h5 class="mb-0 fw-bold text-main">
-            <i class="fas fa-user-circle me-2 text-primary"></i>Hồ Sơ Cá Nhân
-          </h5>
+    <div class="col-lg-10 col-xl-9">
+      <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <!-- Card Header -->
+        <div class="card-header bg-gradient-primary text-white py-4">
+          <div class="d-flex align-items-center">
+            <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
+              <i class="fas fa-user-circle fs-2"></i>
+            </div>
+            <div>
+              <h4 class="mb-1 fw-bold">Hồ Sơ Cá Nhân</h4>
+              <p class="mb-0 opacity-90 small">Quản lý thông tin tài khoản của bạn</p>
+            </div>
+          </div>
         </div>
 
+        <!-- Card Body -->
         <div class="card-body p-0">
           <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
             <div class="row g-0">
-              <div
-                class="col-md-4 profile-left-col border-end d-flex flex-column align-items-center py-5"
-              >
-                <div class="avatar-wrapper mb-3 position-relative">
-                  <img
-                    id="avatar-preview"
-                    src="{% if user.profile.avatar %}{{ user.profile.avatar.url }}{% else %}{% static 'ep1/images/default.png' %}{% endif %}"
-                    class="rounded-circle img-thumbnail border-0 shadow"
-                    style="
-                      width: 160px;
-                      height: 160px;
-                      object-fit: cover;
-                      cursor: pointer;
-                    "
-                    alt="Avatar"
-                    onclick="openImagePreview()"
-                  />
-
-                  <label
-                    for="id_avatar_field"
-                    class="btn-camera shadow-sm"
-                    title="Thay đổi ảnh"
-                  >
-                    <i class="fas fa-camera"></i>
-                  </label>
-                </div>
-
-                {% render_field p_form.avatar id="id_avatar_field" accept="image/*" onchange="previewImage(this);" style="display:none;" %}
-
-                <h4 class="fw-bold mb-1 user-name-text">{{ user.username }}</h4>
-                <p class="text-muted small mb-3">
-                  <i class="fas fa-clock me-1"></i>Tham gia: {{ user.date_joined|date:"d/m/Y" }}
-                </p>
-
-                {% if user.profile.avatar %}
-                <div
-                  class="mt-2 px-3 py-2 rounded-pill shadow-sm border d-flex align-items-center switch-box"
-                >
-                  <div
-                    class="form-check form-switch m-0 d-flex align-items-center"
-                  >
-                    <input
-                      class="form-check-input me-2"
-                      type="checkbox"
-                      name="{{ p_form.avatar.html_name }}-clear"
-                      id="deleteAvatarSwitch"
-                      style="width: 35px; height: 20px"
-                    />
-                    <label
-                      class="form-check-label small fw-bold text-danger pt-1"
-                      for="deleteAvatarSwitch"
-                      style="cursor: pointer"
-                    >
-                      Gỡ ảnh hiện tại
-                    </label>
+              <!-- Left Column - Avatar -->
+              <div class="col-lg-4 bg-light-subtle border-end">
+                <div class="p-4 d-flex flex-column align-items-center text-center profile-avatar-section">
+                  <!-- Avatar Section -->
+                  <div class="position-relative mb-4 mt-3">
+                    <div class="avatar-wrapper-large position-relative">
+                      <img
+                        id="avatar-preview"
+                        src="{% if user.profile.avatar and user.profile.avatar.url %}{{ user.profile.avatar.url }}{% else %}{% static "ep1/images/default.png" %}{% endif %}"
+                        class="rounded-circle shadow-lg border border-4 border-white avatar-preview-img"
+                        width="180"
+                        height="180"
+                        alt="Avatar"
+                        onclick="openImagePreview()"
+                        onerror="this.src='{% static "ep1/images/default.png" %}'"
+                      />
+                      
+                      <label
+                        for="id_avatar_field"
+                        class="position-absolute bottom-0 end-0 btn btn-primary btn-sm rounded-circle shadow camera-button"
+                        title="Thay đổi ảnh"
+                      >
+                        <i class="fas fa-camera"></i>
+                      </label>
+                    </div>
                   </div>
+
+                  {% render_field p_form.avatar id="id_avatar_field" accept="image/*" onchange="previewImage(this);" class="d-none" %}
+
+                  <!-- User Info -->
+                  <h4 class="fw-bold mb-1">{{ user.username }}</h4>
+                  <p class="text-muted small mb-3">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    Tham gia: {{ user.date_joined|date:"d/m/Y" }}
+                  </p>
+
+                  {% if p_form.avatar.errors %}
+                  <div class="alert alert-danger small mt-2">
+                    {{ p_form.avatar.errors }}
+                  </div>
+                  {% endif %}
                 </div>
-                {% endif %} {% if p_form.avatar.errors %}
-                <div class="text-danger small mt-2">
-                  {{ p_form.avatar.errors }}
-                </div>
-                {% endif %}
               </div>
 
-              <div class="col-md-8 p-4 p-md-5 profile-right-col">
-                <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
-                  <i class="fas fa-shield-alt me-2 text-primary"></i>Tài khoản
-                </h6>
+              <!-- Right Column - Form Fields -->
+              <div class="col-lg-8">
+                <div class="p-4 p-lg-5">
+                  
+                  <!-- Account Section -->
+                  <div class="mb-5">
+                    <div class="d-flex align-items-center mb-4">
+                      <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                        <i class="fas fa-shield-alt text-primary fs-5"></i>
+                      </div>
+                      <div>
+                        <h5 class="mb-0 fw-bold text-primary">Tài Khoản</h5>
+                        <small class="text-muted">Thông tin đăng nhập</small>
+                      </div>
+                    </div>
 
-                <div class="mb-4">
-                  <label class="form-label fw-bold">Địa chỉ Email</label>
-                  <div class="input-group">
-                    <span class="input-group-text border-end-0 bg-transparent"
-                      ><i class="fas fa-envelope text-muted"></i
-                    ></span>
-                    {{ u_form.email|add_class:"form-control border-start-0 ps-0" }}
-                  </div>
-                  <div class="text-danger small">{{ u_form.email.errors }}</div>
-                </div>
-
-                <hr class="my-4 border-light opacity-25" />
-
-                <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
-                  <i class="fas fa-id-card me-2 text-primary"></i>Thông tin chi
-                  tiết
-                </h6>
-
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Họ và tên</label>
-                    {{ p_form.full_name|add_class:"form-control" }}
+                    <div class="form-group">
+                      <label class="form-label fw-semibold mb-2">
+                        <i class="fas fa-envelope text-muted me-2"></i>Địa chỉ Email
+                      </label>
+                      {{ u_form.email|add_class:"form-control form-control-lg" }}
+                      {% if u_form.email.errors %}
+                      <div class="text-danger small mt-1">{{ u_form.email.errors }}</div>
+                      {% endif %}
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Ngày sinh</label>
-                    {{ p_form.date_of_birth|add_class:"form-control" }}
+                  <hr class="my-4" />
+
+                  <!-- Personal Information Section -->
+                  <div class="mb-4">
+                    <div class="d-flex align-items-center mb-4">
+                      <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                        <i class="fas fa-id-card text-success fs-5"></i>
+                      </div>
+                      <div>
+                        <h5 class="mb-0 fw-bold text-success">Thông Tin Chi Tiết</h5>
+                        <small class="text-muted">Thông tin cá nhân của bạn</small>
+                      </div>
+                    </div>
+
+                    <div class="row g-4">
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold mb-2">
+                          <i class="fas fa-user text-muted me-2"></i>Họ và tên
+                        </label>
+                        {{ p_form.full_name|add_class:"form-control" }}
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold mb-2">
+                          <i class="fas fa-birthday-cake text-muted me-2"></i>Ngày sinh
+                        </label>
+                        {{ p_form.date_of_birth|add_class:"form-control" }}
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold mb-2">
+                          <i class="fas fa-venus-mars text-muted me-2"></i>Giới tính
+                        </label>
+                        {{ p_form.gender|add_class:"form-select" }}
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold mb-2">
+                          <i class="fas fa-flag text-muted me-2"></i>Dân tộc
+                        </label>
+                        {{ p_form.ethnicity|add_class:"form-control" }}
+                      </div>
+
+                      <div class="col-12">
+                        <label class="form-label fw-semibold mb-2">
+                          <i class="fas fa-map-marker-alt text-muted me-2"></i>Quê quán
+                        </label>
+                        {{ p_form.hometown|add_class:"form-control" }}
+                      </div>
+
+                      <div class="col-12">
+                        <label class="form-label fw-semibold mb-2">
+                          <i class="fas fa-briefcase text-muted me-2"></i>Nghề nghiệp
+                        </label>
+                        {{ p_form.occupation|add_class:"form-control" }}
+                      </div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Giới tính</label>
-                    {{ p_form.gender|add_class:"form-select" }}
+                  <!-- Action Buttons -->
+                  <div class="d-flex justify-content-end gap-3 mt-5 pt-4 border-top">
+                    <a href="{% url "ep1:dashboard" %}" class="btn btn-outline-secondary btn-lg px-4">
+                      <i class="fas fa-times me-2"></i>Hủy bỏ
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                      <i class="fas fa-save me-2"></i>Lưu thay đổi
+                    </button>
                   </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-bold small">Dân tộc</label>
-                    {{ p_form.ethnicity|add_class:"form-control" }}
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label fw-bold small">Quê quán</label>
-                    {{ p_form.hometown|add_class:"form-control" }}
-                  </div>
-
-                  <div class="col-12">
-                    <label class="form-label fw-bold small">Nghề nghiệp</label>
-                    {{ p_form.occupation|add_class:"form-control" }}
-                  </div>
-                </div>
-
-                <div class="mt-5 text-end">
-                  <a href="/" class="btn btn-secondary me-2 fw-bold">Hủy bỏ</a>
-                  <button
-                    type="submit"
-                    class="btn btn-primary px-4 py-2 fw-bold shadow-sm rounded-pill"
-                  >
-                    <i class="fas fa-save me-2"></i>Lưu hồ sơ
-                  </button>
                 </div>
               </div>
             </div>
@@ -151,95 +175,151 @@
   </div>
 </div>
 
-<!-- Custom Image Preview Overlay -->
-<div id="imagePreviewOverlay" style="display: none">
-  <div class="preview-backdrop" onclick="closeImagePreview()"></div>
-  <div class="preview-content">
-    <button class="preview-close-btn" onclick="closeImagePreview()">
+<!-- Image Preview Modal -->
+<div id="imagePreviewOverlay" class="image-preview-overlay" onclick="closeImagePreview()">
+  <div class="preview-content" onclick="event.stopPropagation()">
+    <button class="preview-close-btn" onclick="closeImagePreview()" type="button">
       <i class="fas fa-times"></i>
     </button>
     <img
       id="preview-img"
       src=""
       alt="Preview"
-      onclick="event.stopPropagation()"
+      width="800"
+      height="600"
+      class="img-fluid rounded shadow-lg"
     />
   </div>
 </div>
 
 <style>
-  #imagePreviewOverlay {
+  /* Profile Page Specific Styles */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  }
+
+  .bg-light-subtle {
+    background-color: rgba(var(--bs-light-rgb), 0.3) !important;
+  }
+
+  body.dark-mode .bg-light-subtle {
+    background-color: rgba(30, 41, 59, 0.3) !important;
+  }
+
+  .alert-danger-subtle {
+    background-color: rgba(220, 53, 69, 0.1);
+  }
+
+  /* Avatar Hover Effect */
+  #avatar-preview {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  #avatar-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Image Preview Overlay */
+  .image-preview-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 99998;
-    display: none;
-  }
-
-  #imagePreviewOverlay.active {
-    display: block !important;
-  }
-
-  .preview-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: rgba(0, 0, 0, 0.9);
-    cursor: pointer;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .image-preview-overlay.active {
+    display: flex !important;
+  }
+
+  .preview-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90vh;
+    padding: 20px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+
+  .preview-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 12px;
   }
 
   .preview-close-btn {
     position: absolute;
     top: -15px;
     right: -15px;
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     border-radius: 50%;
     background: #dc3545;
-    border: 2px solid #fff;
+    border: 3px solid #fff;
     color: white;
-    font-size: 18px;
+    font-size: 20px;
     cursor: pointer;
-    z-index: 100000;
+    z-index: 10000;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .preview-close-btn:hover {
     background: #c82333;
-    transform: scale(1.1);
+    transform: scale(1.1) rotate(90deg);
   }
 
-  .preview-content {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 99999;
-    background: var(--bs-body-bg, #fff);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    max-width: 600px;
-    max-height: 80vh;
-    overflow: visible;
-    position: relative;
+  /* Form Control Improvements */
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.15);
   }
 
-  .preview-content img {
-    width: 100%;
-    height: auto;
-    max-height: 70vh;
+  /* Responsive Adjustments */
+  @media (max-width: 991px) {
+    .col-lg-4.bg-light-subtle {
+      border-bottom: 1px solid var(--border-color);
+      border-right: none !important;
+    }
+  }
+
+  /* Custom Styles for Avatar Section */
+  .profile-avatar-section {
+    min-height: 500px;
+  }
+
+  .avatar-preview-img {
     object-fit: cover;
-    border-radius: 8px;
-    display: block;
+    cursor: pointer;
+  }
+
+  .camera-button {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .delete-avatar-box {
+    max-width: 250px;
+  }
+
+  .delete-avatar-label {
+    cursor: pointer;
   }
 </style>
 
@@ -260,30 +340,18 @@
     document.getElementById("preview-img").src = src;
     document.getElementById("imagePreviewOverlay").classList.add("active");
     document.body.style.overflow = "hidden";
-
-    // Ẩn navbar
-    var navbar = document.querySelector(".navbar");
-    if (navbar) {
-      navbar.style.display = "none";
-    }
   }
 
   function closeImagePreview() {
     document.getElementById("imagePreviewOverlay").classList.remove("active");
     document.body.style.overflow = "";
-
-    // Hiện lại navbar
-    var navbar = document.querySelector(".navbar");
-    if (navbar) {
-      navbar.style.display = "";
-    }
   }
 
   // Close on ESC key
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") {
+    if (e.key === "Escape" || e.key === "Esc") {
       closeImagePreview();
     }
   });
 </script>
-{% endblock %}
+{% endblock content %}

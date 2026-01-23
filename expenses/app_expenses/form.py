@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django import forms
 from django.contrib.auth.models import User
 from .models import Budget, Profile
+from cloudinary.forms import CloudinaryFileField
 
 class CustomClearableFileInput(forms.ClearableFileInput):
     template_name = 'django/forms/widgets/file.html'
@@ -97,31 +98,37 @@ class UserUpdateForm(forms.ModelForm):
         fields = ['email']
 
 class ProfileUpdateForm(forms.ModelForm):
-    avatar        = forms.ImageField(label="Ảnh đại diện", required=False, widget=CustomClearableFileInput(attrs={'style': 'display:none;'}))
+    # Không định nghĩa lại avatar - để Django tự dùng CloudinaryField từ model
 
-    full_name     = forms.CharField(label="Họ tên",
+    full_name     = forms.CharField(label="Họ tên", required=False,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nhập họ và tên'}))
     
-    date_of_birth = forms.DateField(label="Ngày sinh",
+    date_of_birth = forms.DateField(label="Ngày sinh", required=False,
         widget=forms.DateInput(attrs={'type':'date','class':'form-control'}))
     
-    gender        = forms.ChoiceField(label="Giới tính",
+    gender        = forms.ChoiceField(label="Giới tính", required=False,
         choices=Profile.GENDER_CHOICES,
         widget=forms.Select(attrs={'class':'form-control'}))
     
-    hometown      = forms.CharField(label="Quê quán",
+    hometown      = forms.CharField(label="Quê quán", required=False,
         widget=forms.TextInput(attrs={'class':'form-control'}))
     
-    ethnicity     = forms.CharField(label="Dân tộc",
+    ethnicity     = forms.CharField(label="Dân tộc", required=False,
         widget=forms.TextInput(attrs={'class':'form-control'}))
     
-    occupation    = forms.CharField(label="Nghề nghiệp",
+    occupation    = forms.CharField(label="Nghề nghiệp", required=False,
         widget=forms.TextInput(attrs={'class':'form-control'}))
 
     class Meta:
         model  = Profile
         fields = ['avatar', 'full_name', 'date_of_birth', 'gender', 'hometown', 'ethnicity', 'occupation']
-
+        widgets = {
+            'avatar': forms.FileInput(attrs={
+                'style': 'display:none;',
+                'accept': 'image/*',
+                'id': 'id_avatar_field'
+            })
+        }
 
 class RecurringExpenseForm(forms.ModelForm):
     class Meta:
