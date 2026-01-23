@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: expenses-app
+    env: python
+    region: singapore
+    plan: free
+    branch: main
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application -c gunicorn_config.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: DATABASE_URL
+        fromDatabase:
+          name: expenses-db
+          property: connectionString
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+databases:
+  - name: expenses-db
+    databaseName: expenses_db
+    user: expenses_user
+    region: singapore
+    plan: free
