@@ -1,4 +1,10 @@
-{% extends 'ep1/base.html' %} {% load humanize %} {% block content %}
+{% extends "ep1/base.html" %} {% load humanize %} {% block content %}
+<style>
+  .border-left-primary { border-left: 4px solid #4e73df; }
+  .border-left-success { border-left: 4px solid #1cc88a; }
+  .border-left-danger { border-left: 4px solid #e74a3b; }
+  .btn-shortcut { min-width: 200px; }
+</style>
 <div class="row mb-4">
   <div class="col-12">
     <h2 class="text-primary fw-bold">
@@ -12,9 +18,9 @@
 
 <div class="row mb-4">
   <div class="col-md-6 mb-4">
-    <div class="card shadow h-100" style="border-left: 4px solid #4e73df">
-      <div class="card-header bg-gradient-primary text-white">
-        <h6 class="m-0 fw-bold">
+    <div class="card shadow h-100 border-left-primary">
+      <div class="card-header">
+        <h6 class="m-0 fw-bold text-primary">
           <i class="fas fa-users me-2"></i>Quản Lý Người Dùng
         </h6>
       </div>
@@ -39,9 +45,9 @@
   </div>
 
   <div class="col-md-6 mb-4">
-    <div class="card shadow h-100" style="border-left: 4px solid #1cc88a">
-      <div class="card-header bg-gradient-success text-white">
-        <h6 class="m-0 fw-bold">
+    <div class="card shadow h-100 border-left-success">
+      <div class="card-header">
+        <h6 class="m-0 fw-bold text-success">
           <i class="fas fa-exchange-alt me-2"></i>Giao Dịch Hệ Thống
         </h6>
       </div>
@@ -87,9 +93,9 @@
 <div class="row mb-4">
   <!-- Top Danh Mục -->
   <div class="col-lg-6 mb-4">
-    <div class="card shadow h-100" style="border-left: 4px solid #e74a3b">
-      <div class="card-header bg-gradient-danger text-white">
-        <h6 class="m-0 fw-bold">
+    <div class="card shadow h-100 border-left-danger">
+      <div class="card-header">
+        <h6 class="m-0 fw-bold text-danger">
           <i class="fas fa-chart-pie me-2"></i>Top Danh Mục Phổ Biến
         </h6>
       </div>
@@ -138,9 +144,9 @@
 
   <!-- Card: Tổng Quan Tài Chính Hệ Thống -->
   <div class="col-lg-6 mb-4">
-    <div class="card shadow h-100" style="border-left: 4px solid #4e73df">
-      <div class="card-header bg-gradient-primary text-white">
-        <h6 class="m-0 fw-bold">
+    <div class="card shadow h-100 border-left-primary">
+      <div class="card-header">
+        <h6 class="m-0 fw-bold text-primary">
           <i class="fas fa-chart-line me-2"></i>Tổng Quan Tài Chính Hệ Thống
         </h6>
       </div>
@@ -205,8 +211,7 @@
                 class="text-{% if net_cash_flow >= 0 %}success{% else %}danger{% endif %} fw-bold"
               >
                 {% if net_cash_flow >= 0 %}
-                <i class="fas fa-check-circle me-1"></i>Dương (Thu > Chi) {% else %} <i class="fas fa-exclamation-triangle me-1"></i>Âm (Thu
-                < Chi) {% endif %}
+                <i class="fas fa-check-circle me-1"></i>Dương (Thu > Chi) {% else %} <i class="fas fa-exclamation-triangle me-1"></i>Âm (Thu < Chi) {% endif %}
               </small>
             </div>
             <div>
@@ -229,27 +234,24 @@
     </h5>
     <div class="d-flex gap-3 flex-wrap">
       <a
-        href="{% url 'ep1:user_management' %}"
-        class="btn btn-lg btn-primary d-flex align-items-center"
-        style="min-width: 200px"
+        href="{% url "ep1:user_management" %}"
+        class="btn btn-lg btn-primary d-flex align-items-center btn-shortcut"
       >
         <i class="fas fa-users me-2"></i>Quản lý User
       </a>
       <a
-        href="{% url 'ep1:ai_monitor' %}"
-        class="btn btn-lg btn-success d-flex align-items-center"
-        style="min-width: 200px"
+        href="{% url "ep1:ai_monitor" %}"
+        class="btn btn-lg btn-success d-flex align-items-center btn-shortcut"
       >
         <i class="fas fa-robot me-2"></i>Monitor AI
       </a>
       <a
-        href="{% url 'ep1:announcement_manager' %}"
-        class="btn btn-lg btn-info d-flex align-items-center"
-        style="min-width: 200px"
+        href="{% url "ep1:announcement_manager" %}"
+        class="btn btn-lg btn-info d-flex align-items-center btn-shortcut"
       >
         <i class="fas fa-bullhorn me-2"></i>Gửi thông báo
       </a>
     </div>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}
