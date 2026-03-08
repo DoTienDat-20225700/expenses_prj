@@ -40,5 +40,5 @@ class SavingsGoalAdmin(admin.ModelAdmin):
     
     def progress_percentage(self, obj):
         """Hiển thị phần trăm tiến độ"""
-        return f"{obj.progress_percentage():.1f}%"
+        return f"{obj.progress_percentage:.1f}%"
     progress_percentage.short_description = 'Tiến độ'

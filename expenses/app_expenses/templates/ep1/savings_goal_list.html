@@ -1,5 +1,6 @@
 {% extends "ep1/base.html" %}
 {% load humanize %}
+{% load l10n %}
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-10">
@@ -54,7 +55,7 @@
                 <div
                   class="progress-bar {% if goal.is_completed %}bg-success {% elif goal.progress_percentage >= 75 %}bg-info {% elif goal.progress_percentage >= 50 %}bg-primary {% elif goal.progress_percentage >= 25 %}bg-warning {% else %}bg-danger{% endif %}"
                   role="progressbar"
-                  style="width: {{ goal.progress_percentage }}%"
+                  style="width: {{ goal.progress_percentage|unlocalize }}%;"
                   aria-valuenow="{{ goal.progress_percentage }}"
                   aria-valuemin="0"
                   aria-valuemax="100"

@@ -151,17 +151,22 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 }
 
 /* =========================================
-   4. GLASSMORPHISM NAVBAR
+   4. NAVBAR - OPTIMIZED FOR PERFORMANCE
    ========================================= */
 .navbar {
   background: var(--navbar-bg) !important;
   border-bottom: var(--glass-border);
   padding: 0.8rem 0;
-  transition: all 0.2s ease;
+  transition: box-shadow 0.2s ease;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.06);
+}
+
+/* Shadow khi scroll */
+.navbar.scrolled {
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);
 }
 
 .navbar-brand {
@@ -169,54 +174,206 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   letter-spacing: -0.5px;
   color: var(--primary) !important;
   font-size: 1.5rem;
+  transition: opacity 0.2s ease;
 }
 
+.navbar-brand:hover {
+  opacity: 0.85;
+}
+
+/* Nav Links - Simplified */
 .nav-link {
   color: var(--navbar-text) !important;
   font-weight: 600;
   border-radius: 12px;
-  padding: 0.6rem 1rem !important;
-  margin: 0 2px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.6rem 1.2rem !important;
+  margin: 0 4px;
+  position: relative;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.nav-link:hover {
   background: rgba(16, 185, 129, 0.1);
   color: var(--primary) !important;
-  transform: translateY(-1px);
 }
 
-/* Nút User Profile trên Navbar */
+/* Active state với indicator đơn giản */
+.nav-link.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--primary) !important;
+  position: relative;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+/* Dropdown trong Navbar */
+.navbar .nav-item.dropdown .dropdown-toggle::after {
+  transition: transform 0.2s ease;
+  display: inline-block;
+  margin-left: 0.4em;
+  vertical-align: 0.1em;
+}
+
+.navbar .nav-item.dropdown.show .dropdown-toggle::after {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu trong Navbar - Optimized */
+.navbar .dropdown-menu {
+  min-width: 200px;
+  margin-top: 0.5rem !important;
+  animation: navDropdownFade 0.15s ease;
+}
+
+@keyframes navDropdownFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Dropdown items trong navbar */
+.navbar .dropdown-item {
+  padding: 0.65rem 1.2rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.navbar .dropdown-item.active {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--primary) !important;
+  position: relative;
+}
+
+.navbar .dropdown-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: var(--primary);
+}
+
+.navbar .dropdown-item i {
+  width: 20px;
+  text-align: center;
+}
+
+/* Nút User Profile - Optimized */
 .btn-user-profile {
   background: var(--input-bg) !important;
   border: 1px solid var(--border-color);
   padding: 6px 14px !important;
   border-radius: 50px !important;
-  /* Bo tròn viên thuốc */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Dropdown Menu */
+.btn-user-profile:hover {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Avatar - Simple hover */
+.avatar-img {
+  transition: opacity 0.2s ease;
+}
+
+.btn-user-profile:hover .avatar-img {
+  opacity: 0.9;
+}
+
+/* Theme Toggle Button - Simplified */
+.theme-toggle-btn {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.theme-toggle-btn i {
+  transition: color 0.2s ease;
+}
+
+.theme-toggle-btn:hover i {
+  color: var(--primary) !important;
+}
+
+/* Dropdown Menu - Optimized Performance */
 .dropdown-menu {
   background: var(--bg-glass-heavy);
   border: var(--glass-border);
   border-radius: 16px;
-  box-shadow: var(--shadow-lg);
-  padding: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
   margin-top: 10px !important;
+  animation: dropdownFade 0.15s ease;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .dropdown-item {
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  padding: 0.75rem 1.2rem;
   font-weight: 500;
   color: var(--text-main);
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: relative;
+}
+
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: var(--primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .dropdown-item:hover {
   background: rgba(16, 185, 129, 0.1);
   color: var(--primary);
+}
+
+.dropdown-item:hover::before {
+  opacity: 1;
+}
+
+.dropdown-item.text-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626 !important;
 }
 
 /* =========================================
@@ -841,6 +998,27 @@ body:has([href*="dashboard"])::before {
 /* ============================================
    SAVINGS GOALS - Progress Bars & Styles
    ============================================ */
+
+/* Progress bar styles */
+.progress {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+body.dark-mode .progress {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+  transition: width 0.6s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
 
 /* Progress bar heights */
 .progress-sm {

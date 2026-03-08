@@ -308,6 +308,7 @@ class SavingsGoal(models.Model):
     def __str__(self):
         return f"{self.goal_name} - {self.target_amount:,.0f}đ"
     
+    @property
     def days_remaining(self):
         """Tính số ngày còn lại để đạt mục tiêu"""
         from django.utils import timezone
@@ -316,18 +317,21 @@ class SavingsGoal(models.Model):
             return 0
         return (self.target_date - today).days
     
+    @property
     def amount_remaining(self):
         """Số tiền còn thiếu để đạt mục tiêu"""
         remaining = self.target_amount - self.current_amount
         return max(remaining, 0)
     
+    @property
     def daily_savings_needed(self):
         """Số tiền cần tiết kiệm mỗi ngày"""
-        days = self.days_remaining()
+        days = self.days_remaining
         if days <= 0:
             return 0
-        return self.amount_remaining() / days
+        return self.amount_remaining / days
     
+    @property
     def progress_percentage(self):
         """Phần trăm hoàn thành mục tiêu"""
         if self.target_amount == 0:
@@ -335,6 +339,7 @@ class SavingsGoal(models.Model):
         progress = (self.current_amount / self.target_amount) * 100
         return min(progress, 100)
     
+    @property
     def is_overdue(self):
         """Kiểm tra xem đã quá hạn chưa"""
         from django.utils import timezone

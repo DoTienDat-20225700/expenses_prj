@@ -1365,10 +1365,10 @@ def get_ai_savings_suggestions(user, goal):
     from decimal import Decimal
     
     suggestions = {
-        'daily_needed': goal.daily_savings_needed(),
-        'days_remaining': goal.days_remaining(),
-        'amount_remaining': goal.amount_remaining(),
-        'progress_percentage': goal.progress_percentage(),
+        'daily_needed': goal.daily_savings_needed,
+        'days_remaining': goal.days_remaining,
+        'amount_remaining': goal.amount_remaining,
+        'progress_percentage': goal.progress_percentage,
         'is_achievable': True,
         'category_analysis': [],
         'recommendations': [],
@@ -1384,7 +1384,7 @@ def get_ai_savings_suggestions(user, goal):
         })
         return suggestions
     
-    if goal.is_overdue():
+    if goal.is_overdue:
         suggestions['recommendations'].append({
             'type': 'warning',
             'message': '⚠️ Mục tiêu đã quá hạn. Hãy cân nhắc gia hạn hoặc điều chỉnh mục tiêu.'
@@ -1431,14 +1431,14 @@ def get_ai_savings_suggestions(user, goal):
                 })
         
         # So sánh số tiền cần tiết kiệm với số tiền có thể cắt giảm
-        if total_reducible >= goal.daily_savings_needed():
+        if total_reducible >= goal.daily_savings_needed:
             suggestions['is_achievable'] = True
             suggestions['recommendations'].append({
                 'type': 'success',
                 'message': f'✅ Mục tiêu khả thi! Bạn có thể tiết kiệm {float(total_reducible):,.0f}đ/ngày bằng cách cắt giảm các danh mục đã chọn.'
             })
         else:
-            gap = goal.daily_savings_needed() - total_reducible
+            gap = goal.daily_savings_needed - total_reducible
             suggestions['recommendations'].append({
                 'type': 'warning',
                 'message': f'⚠️ Cắt giảm các danh mục đã chọn chỉ đủ tiết kiệm {float(total_reducible):,.0f}đ/ngày. Bạn còn thiếu {float(gap):,.0f}đ/ngày. Hãy xem xét thêm các danh mục khác.'
@@ -1469,21 +1469,21 @@ def get_ai_savings_suggestions(user, goal):
                 })
     
     # Kế hoạch tuần/tháng
-    days = goal.days_remaining()
+    days = goal.days_remaining
     if days > 0:
         suggestions['weekly_plan'] = {
-            'amount': float(goal.daily_savings_needed() * 7),
-            'description': f'Tiết kiệm {float(goal.daily_savings_needed() * 7):,.0f}đ mỗi tuần'
+            'amount': float(goal.daily_savings_needed * 7),
+            'description': f'Tiết kiệm {float(goal.daily_savings_needed * 7):,.0f}đ mỗi tuần'
         }
         suggestions['monthly_plan'] = {
-            'amount': float(goal.daily_savings_needed() * 30),
-            'description': f'Tiết kiệm {float(goal.daily_savings_needed() * 30):,.0f}đ mỗi tháng'
+            'amount': float(goal.daily_savings_needed * 30),
+            'description': f'Tiết kiệm {float(goal.daily_savings_needed * 30):,.0f}đ mỗi tháng'
         }
     
     # Thêm gợi ý chung
-    if goal.daily_savings_needed() > 0:
+    if goal.daily_savings_needed > 0:
         # Gợi ý cụ thể dựa trên số tiền cần tiết kiệm
-        daily_needed = float(goal.daily_savings_needed())
+        daily_needed = float(goal.daily_savings_needed)
         
         if daily_needed < 50000:  # < 50k/ngày
             suggestions['recommendations'].append({

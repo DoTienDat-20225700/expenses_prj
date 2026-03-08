@@ -19,8 +19,7 @@
           <strong>Tên mục tiêu:</strong> {{ goal.goal_name }}
         </div>
         <div class="mb-3">
-          <strong>Số tiền mục tiêu:</strong> {{
-          goal.target_amount|floatformat:0|intcomma }}đ
+          <strong>Số tiền mục tiêu:</strong> {{ goal.target_amount|floatformat:0|intcomma }}đ
         </div>
         <div class="mb-3">
           <strong>Số tiền đã tiết kiệm:</strong> {{ goal.current_amount|floatformat:0|intcomma }}đ

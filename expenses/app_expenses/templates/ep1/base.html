@@ -81,45 +81,60 @@
                 <i class="fas fa-chart-pie me-2"></i>Tổng quan
               </a>
             </li>
-            <li class="nav-item">
+
+            <!-- Dropdown Thu Chi -->
+            <li class="nav-item dropdown">
               <a
-                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:ep1_lists' %}active{% endif %}"
-                href="{% url 'ep1:ep1_lists' %}"
+                class="nav-link dropdown-toggle px-3 {% if request.resolver_match.view_name in 'ep1:ep1_lists,ep1:income_list,ep1:recurring_list' %}active{% endif %}"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
-                <i class="fas fa-wallet me-2"></i>Chi Tiêu
+                <i class="fas fa-exchange-alt me-2"></i>Thu Chi
               </a>
+              <ul class="dropdown-menu border-0 mt-2">
+                <li>
+                  <a class="dropdown-item {% if request.resolver_match.view_name == 'ep1:ep1_lists' %}active{% endif %}" href="{% url 'ep1:ep1_lists' %}">
+                    <i class="fas fa-wallet me-2 opacity-75"></i>Chi Tiêu
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if request.resolver_match.view_name == 'ep1:income_list' %}active{% endif %}" href="{% url 'ep1:income_list' %}">
+                    <i class="fas fa-coins me-2 opacity-75"></i>Thu Nhập
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if request.resolver_match.view_name == 'ep1:recurring_list' %}active{% endif %}" href="{% url 'ep1:recurring_list' %}">
+                    <i class="fas fa-sync-alt me-2 opacity-75"></i>Định Kỳ
+                  </a>
+                </li>
+              </ul>
             </li>
-            <li class="nav-item">
+
+            <!-- Dropdown Quản Lý -->
+            <li class="nav-item dropdown">
               <a
-                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:income_list' %}active{% endif %}"
-                href="{% url 'ep1:income_list' %}"
+                class="nav-link dropdown-toggle px-3 {% if 'savings_goal' in request.resolver_match.view_name or request.resolver_match.view_name == 'ep1:category_list' %}active{% endif %}"
+                href="#"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
               >
-                <i class="fas fa-coins me-2"></i>Thu Nhập
+                <i class="fas fa-cog me-2"></i>Quản Lý
               </a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:recurring_list' %}active{% endif %}"
-                href="{% url 'ep1:recurring_list' %}"
-              >
-                <i class="fas fa-sync-alt me-2"></i>Định Kỳ
-              </a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link px-3 {% if 'savings_goal' in request.resolver_match.view_name %}active{% endif %}"
-                href="{% url 'ep1:savings_goal_list' %}"
-              >
-                <i class="fas fa-piggy-bank me-2"></i>Tiết Kiệm
-              </a>
-            </li>
-            <li class="nav-item">
-              <a
-                class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:category_list' %}active{% endif %}"
-                href="{% url 'ep1:category_list' %}"
-              >
-                <i class="fas fa-folder-open me-2"></i>Danh Mục
-              </a>
+              <ul class="dropdown-menu border-0 mt-2">
+                <li>
+                  <a class="dropdown-item {% if 'savings_goal' in request.resolver_match.view_name %}active{% endif %}" href="{% url 'ep1:savings_goal_list' %}">
+                    <i class="fas fa-piggy-bank me-2 opacity-75"></i>Tiết Kiệm
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if request.resolver_match.view_name == 'ep1:category_list' %}active{% endif %}" href="{% url 'ep1:category_list' %}">
+                    <i class="fas fa-folder-open me-2 opacity-75"></i>Danh Mục
+                  </a>
+                </li>
+              </ul>
             </li>
             {% endif %}
 
@@ -294,6 +309,22 @@
             bsAlert.close();
           });
         }, 10000);
+
+        // Navbar scroll effect - thêm shadow khi scroll
+        const navbar = document.querySelector('.navbar');
+        let lastScroll = 0;
+        
+        window.addEventListener('scroll', function() {
+          const currentScroll = window.pageYOffset;
+          
+          if (currentScroll > 50) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+          
+          lastScroll = currentScroll;
+        });
       });
     </script>
     
