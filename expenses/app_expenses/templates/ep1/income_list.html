@@ -1,15 +1,22 @@
-{% extends 'ep1/base.html' %}
+{% extends "ep1/base.html" %}
 {% load static %}
 {% load humanize %}
 
 {% block content %}
+<style>
+  .col-amount { width: 20%; }
+  .col-description { width: 30%; }
+  .col-source { width: 20%; }
+  .col-date { width: 15%; }
+  .col-action { width: 15%; }
+</style>
 <div class="row">
   <div class="col-12 mb-4">
     <div class="d-flex justify-content-between align-items-center">
       <h2 class="fw-bold mb-4">
         <i class="fas fa-money-bill-wave me-2 text-primary"></i>Quản Lý Thu Nhập
       </h2>
-      <a href="{% url 'ep1:add_income' %}" class="btn btn-success">
+      <a href="{% url "ep1:add_income" %}" class="btn btn-success">
         <i class="fas fa-plus me-2"></i>Thêm Thu Nhập
       </a>
     </div>
@@ -94,7 +101,7 @@
       <div class="card-header border-0 pt-4 pb-3">
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="fw-bold mb-0">Danh Sách Thu Nhập</h5>
-          <a href="{% url 'ep1:income_source_manage' %}" class="btn btn-sm btn-outline-primary ms-3">
+          <a href="{% url "ep1:income_source_manage" %}" class="btn btn-sm btn-outline-primary ms-3">
             <i class="fas fa-cog me-1"></i>Quản lý nguồn thu
           </a>
         </div>
@@ -105,11 +112,11 @@
           <table class="table table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th class="py-3 ps-3" style="width: 20%;">Số Tiền</th>
-                <th class="py-3" style="width: 30%;">Mô Tả</th>
-                <th class="py-3" style="width: 20%;">Nguồn Thu</th>
-                <th class="py-3" style="width: 15%;">Ngày</th>
-                <th class="py-3 text-center" style="width: 15%;">Hành Động</th>
+                <th class="py-3 ps-3 col-amount">Số Tiền</th>
+                <th class="py-3 col-description">Mô Tả</th>
+                <th class="py-3 col-source">Nguồn Thu</th>
+                <th class="py-3 col-date">Ngày</th>
+                <th class="py-3 text-center col-action">Hành Động</th>
               </tr>
             </thead>
             <tbody>
@@ -127,13 +134,13 @@
                 </td>
                 <td class="text-center">
                   <div class="btn-group">
-                    <a href="{% url 'ep1:edit_income' income.pk %}?next={{ request.get_full_path|urlencode }}#list-section" 
+                    <a href="{% url "ep1:edit_income" income.pk %}?next={{ request.get_full_path|urlencode }}#list-section" 
                        class="btn btn-sm btn-outline-primary border-0"
                        data-bs-toggle="tooltip"
                        title="Sửa">
                       <i class="fas fa-pen"></i>
                     </a>
-                    <a href="{% url 'ep1:delete_income' income.pk %}?next={{ request.get_full_path|urlencode }}#list-section" 
+                    <a href="{% url "ep1:delete_income" income.pk %}?next={{ request.get_full_path|urlencode }}#list-section" 
                        class="btn btn-sm btn-outline-danger border-0"
                        data-bs-toggle="tooltip"
                        title="Xóa">
@@ -181,7 +188,7 @@
         <div class="text-center py-5">
           <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
           <p class="text-muted">Chưa có thu nhập nào</p>
-          <a href="{% url 'ep1:add_income' %}" class="btn btn-success">
+          <a href="{% url "ep1:add_income" %}" class="btn btn-success">
             <i class="fas fa-plus me-2"></i>Thêm thu nhập đầu tiên
           </a>
         </div>
@@ -190,4 +197,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

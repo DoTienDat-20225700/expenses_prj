@@ -212,3 +212,38 @@ if CLOUDINARY_CLOUD_NAME:
 else:
     # Use local storage for development
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+# Email configuration
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='caubengungo1611@gmail.com')
+
+# Force read EMAIL_HOST with explicit config call
+EMAIL_HOST = config('EMAIL_HOST', default='').strip()
+
+# Debug: print to check if EMAIL_HOST is loaded
+import sys
+if 'runserver' in sys.argv or 'shell' in sys.argv:
+    print(f"[DEBUG] EMAIL_HOST loaded: '{EMAIL_HOST}' (length: {len(EMAIL_HOST)})")
+
+if EMAIL_HOST:
+    import ssl
+    import certifi
+    import os
+    
+    # Set SSL cert location for macOS compatibility
+    os.environ['SSL_CERT_FILE'] = certifi.where()
+    
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='caubengungo1611@gmail.com')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default='True') in ['True', 'true', '1', True]
+    EMAIL_USE_SSL = config('EMAIL_USE_SSL', default='False') in ['True', 'true', '1', True]
+    EMAIL_TIMEOUT = 10
+    
+    if 'runserver' in sys.argv or 'shell' in sys.argv:
+        print(f"[DEBUG] Using SMTP backend: {EMAIL_HOST}:{EMAIL_PORT}")
+else:
+    # Development: print emails to console
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    if 'runserver' in sys.argv or 'shell' in sys.argv:
+        print("[DEBUG] Using console backend (EMAIL_HOST is empty)")
