@@ -837,3 +837,148 @@ body:has([href*="dashboard"])::before {
 .ls-1 {
   letter-spacing: 0.05em;
 }
+
+/* ============================================
+   SAVINGS GOALS - Progress Bars & Styles
+   ============================================ */
+
+/* Progress bar heights */
+.progress-sm {
+  height: 20px;
+}
+
+.progress-md {
+  height: 25px;
+}
+
+.progress-lg {
+  height: 30px;
+}
+
+/* AI Suggestions gradient header */
+.bg-ai-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Scrollable category selector */
+.category-selector-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Dark mode overrides for Savings Goals */
+body.dark-mode .card.bg-light {
+  background-color: var(--bg-card) !important;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .card.bg-light .card-title,
+body.dark-mode .card.bg-light .card-text,
+body.dark-mode .card.bg-light h1,
+body.dark-mode .card.bg-light h2,
+body.dark-mode .card.bg-light h3,
+body.dark-mode .card.bg-light h4,
+body.dark-mode .card.bg-light h5,
+body.dark-mode .card.bg-light h6,
+body.dark-mode .card.bg-light label,
+body.dark-mode .card.bg-light p {
+  color: var(--text-main);
+}
+
+body.dark-mode .card.bg-light .text-muted {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .progress {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .table {
+  color: var(--text-main);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .table thead th {
+  border-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+body.dark-mode .table tbody td {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .table-light {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.dark-mode .table-light th {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-main) !important;
+}
+
+body.dark-mode .alert {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .alert-primary {
+  background-color: rgba(13, 110, 253, 0.2);
+  color: #8ab4f8;
+}
+
+body.dark-mode .alert-info {
+  background-color: rgba(13, 202, 240, 0.2);
+  color: #7dd3fc;
+}
+
+body.dark-mode .alert-success {
+  background-color: rgba(25, 135, 84, 0.2);
+  color: #86efac;
+}
+
+body.dark-mode .alert-warning {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #fde047;
+}
+
+body.dark-mode .alert-secondary {
+  background-color: rgba(108, 117, 125, 0.2);
+  color: #cbd5e1;
+}
+
+body.dark-mode .category-selector-scroll {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+}
+
+body.dark-mode .form-check-label {
+  color: var(--text-main);
+}
+
+/* Dark mode - Table text colors */
+body.dark-mode .table tbody td {
+  color: var(--text-main);
+}
+
+body.dark-mode .table tbody td strong {
+  color: var(--text-main);
+}
+
+body.dark-mode .table .text-success {
+  color: #86efac !important;
+}
+
+body.dark-mode .table .text-primary {
+  color: #60a5fa !important;
+}
+
+body.dark-mode .table .text-muted {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode .badge.bg-warning {
+  color: #1e293b !important;
+  background-color: #fbbf24 !important;
+}

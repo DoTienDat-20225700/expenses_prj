@@ -1,4 +1,5 @@
-{% extends 'ep1/base.html' %} {% block content %}
+{% extends "ep1/base.html" %}
+{% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -14,8 +15,8 @@
           <table class="table table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th class="py-3 ps-3" style="width: 75%">Tên danh mục</th>
-                <th class="py-3 text-center" style="width: 25%">Hành động</th>
+                <th class="py-3 ps-3 w-75">Tên danh mục</th>
+                <th class="py-3 text-center w-25">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -66,4 +67,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
+{% endblock content %}

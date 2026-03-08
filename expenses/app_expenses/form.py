@@ -219,3 +219,138 @@ class IncomeSourceForm(forms.ModelForm):
                 'placeholder': 'Nhập tên nguồn thu (VD: Lương, Freelance...)'
             }),
         }
+
+
+class SavingsGoalForm(forms.ModelForm):
+    """Form tạo và chỉnh sửa mục tiêu tiết kiệm"""
+    class Meta:
+        model = SavingsGoal
+        fields = ['goal_name', 'target_amount', 'current_amount', 'start_date', 
+                  'target_date', 'categories_to_reduce', 'notes']
+        widgets = {
+            'goal_name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'VD: Mua Macbook, Du lịch Nhật Bản...'
+            }),
+            'target_amount': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'VD: 30,000,000'
+            }),
+            'current_amount': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'VD: 5,000,000'
+            }),
+            'start_date': forms.DateInput(attrs={
+                'type': 'date', 
+                'class': 'form-control'
+            }),
+            'target_date': forms.DateInput(attrs={
+                'type': 'date', 
+                'class': 'form-control'
+            }),
+            'categories_to_reduce': forms.CheckboxSelectMultiple(),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': 'Ghi chú về mục tiêu...'
+            }),
+        }
+        labels = {
+            'goal_name': 'Tên mục tiêu',
+            'target_amount': 'Số tiền mục tiêu (đ)',
+            'current_amount': 'Số tiền hiện tại (đ)',
+            'start_date': 'Ngày bắt đầu',
+            'target_date': 'Ngày đích',
+            'categories_to_reduce': 'Danh mục muốn cắt giảm',
+            'notes': 'Ghi chú',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        
+        # Xử lý dấu phẩy trong data trước khi validate
+        if args and args[0]:
+            data = args[0].copy()
+            for field in ['target_amount', 'current_amount']:
+                if field in data and data[field]:
+                    # Loại bỏ dấu phẩy từ input
+                    data[field] = data[field].replace(',', '')
+            args = (data,) + args[1:]
+        
+        super().__init__(*args, **kwargs)
+        
+        if user:
+            # Chỉ hiển thị danh mục của user
+            self.fields['categories_to_reduce'].queryset = Category.objects.filter(user=user)
+        
+        # Đặt giá trị mặc định cho current_amount nếu đang tạo mới
+        if not self.instance.pk:
+            self.initial['current_amount'] = 0
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        target_date = cleaned_data.get('target_date')
+        target_amount = cleaned_data.get('target_amount')
+        current_amount = cleaned_data.get('current_amount')
+        
+        # Kiểm tra ngày đích phải sau ngày bắt đầu
+        if start_date and target_date:
+            if target_date <= start_date:
+                raise forms.ValidationError(
+                    'Ngày đích phải lớn hơn ngày bắt đầu.'
+                )
+        
+        # Kiểm tra số tiền mục tiêu phải > 0
+        if target_amount and target_amount <= 0:
+            raise forms.ValidationError(
+                'Số tiền mục tiêu phải lớn hơn 0.'
+            )
+        
+        # Kiểm tra số tiền hiện tại không được âm
+        if current_amount and current_amount < 0:
+            raise forms.ValidationError(
+                'Số tiền hiện tại không được âm.'
+            )
+        
+        return cleaned_data
+
+
+class UpdateSavingsProgressForm(forms.ModelForm):
+    """Form cập nhật tiến độ tiết kiệm"""
+    class Meta:
+        model = SavingsGoal
+        fields = ['current_amount', 'notes']
+        widgets = {
+            'current_amount': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'VD: 10,000,000'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': 'Ghi chú về cập nhật này...'
+            }),
+        }
+        labels = {
+            'current_amount': 'Số tiền hiện tại (đ)',
+            'notes': 'Ghi chú',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        # Xử lý dấu phẩy trong data trước khi validate
+        if args and args[0]:
+            data = args[0].copy()
+            if 'current_amount' in data and data['current_amount']:
+                # Loại bỏ dấu phẩy từ input
+                data['current_amount'] = data['current_amount'].replace(',', '')
+            args = (data,) + args[1:]
+        
+        super().__init__(*args, **kwargs)
+    
+    def clean_current_amount(self):
+        value = self.cleaned_data.get('current_amount')
+        # Kiểm tra số tiền không được âm
+        if value and value < 0:
+            raise forms.ValidationError('Số tiền không được âm.')
+        return value

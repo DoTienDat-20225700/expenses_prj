@@ -107,6 +107,14 @@
             </li>
             <li class="nav-item">
               <a
+                class="nav-link px-3 {% if 'savings_goal' in request.resolver_match.view_name %}active{% endif %}"
+                href="{% url 'ep1:savings_goal_list' %}"
+              >
+                <i class="fas fa-piggy-bank me-2"></i>Tiết Kiệm
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
                 class="nav-link px-3 {% if request.resolver_match.view_name == 'ep1:category_list' %}active{% endif %}"
                 href="{% url 'ep1:category_list' %}"
               >
@@ -288,5 +296,7 @@
         }, 10000);
       });
     </script>
+    
+    {% block extra_js %}{% endblock extra_js %}
   </body>
 </html>

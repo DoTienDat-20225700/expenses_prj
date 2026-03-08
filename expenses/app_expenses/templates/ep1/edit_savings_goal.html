@@ -1,0 +1,215 @@
+{% extends "ep1/base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-edit me-2"></i>{{ title }}</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ form.goal_name.label }}</label>
+            {{ form.goal_name }} {% if form.goal_name.errors %}
+            <div class="text-danger small mt-1">
+              {{ form.goal_name.errors }}
+            </div>
+            {% endif %}
+            <small class="form-text text-muted"
+              >{{ form.goal_name.help_text }}</small
+            >
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold"
+                >{{ form.target_amount.label }}</label
+              >
+              {{ form.target_amount }} {% if form.target_amount.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.target_amount.errors }}
+              </div>
+              {% endif %}
+              <small class="form-text text-muted"
+                >{{ form.target_amount.help_text }}</small
+              >
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold"
+                >{{ form.current_amount.label }}</label
+              >
+              {{ form.current_amount }} {% if form.current_amount.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.current_amount.errors }}
+              </div>
+              {% endif %}
+              <small class="form-text text-muted"
+                >{{ form.current_amount.help_text }}</small
+              >
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold"
+                >{{ form.start_date.label }}</label
+              >
+              {{ form.start_date }} {% if form.start_date.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.start_date.errors }}
+              </div>
+              {% endif %}
+              <small class="form-text text-muted"
+                >{{ form.start_date.help_text }}</small
+              >
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold"
+                >{{ form.target_date.label }}</label
+              >
+              {{ form.target_date }} {% if form.target_date.errors %}
+              <div class="text-danger small mt-1">
+                {{ form.target_date.errors }}
+              </div>
+              {% endif %}
+              <small class="form-text text-muted"
+                >{{ form.target_date.help_text }}</small
+              >
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold"
+              >{{ form.categories_to_reduce.label }}</label
+            >
+            <div class="alert alert-info small">
+              <i class="fas fa-info-circle"></i> Chọn các danh mục chi tiêu bạn
+              muốn cắt giảm để AI đưa ra gợi ý cụ thể.
+            </div>
+            <div class="border rounded p-3 category-selector-scroll">
+              {{ form.categories_to_reduce }}
+            </div>
+            {% if form.categories_to_reduce.errors %}
+            <div class="text-danger small mt-1">
+              {{ form.categories_to_reduce.errors }}
+            </div>
+            {% endif %}
+            <small class="form-text text-muted"
+              >{{ form.categories_to_reduce.help_text }}</small
+            >
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ form.notes.label }}</label>
+            {{ form.notes }} {% if form.notes.errors %}
+            <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+            {% endif %}
+          </div>
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-flex gap-2 justify-content-end">
+            <a
+              href="{% url 'ep1:savings_goal_detail' goal.pk %}"
+              class="btn btn-secondary"
+            >
+              <i class="fas fa-times me-1"></i>Hủy
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i>Cập nhật
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+// Format số với dấu phẩy ngăn cách hàng nghìn
+function formatNumber(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Loại bỏ dấu phẩy để lấy số thuần
+function unformatNumber(str) {
+  return str.replace(/,/g, '');
+}
+
+// Format input khi người dùng nhập
+function handleNumberInput(inputElement) {
+  let cursorPosition = inputElement.selectionStart;
+  let oldLength = inputElement.value.length;
+  
+  // Lấy giá trị và loại bỏ ký tự không phải số
+  let value = unformatNumber(inputElement.value);
+  value = value.replace(/[^0-9]/g, '');
+  
+  if (value === '') {
+    inputElement.value = '';
+    return;
+  }
+  
+  // Format lại với dấu phẩy
+  let formatted = formatNumber(value);
+  inputElement.value = formatted;
+  
+  // Điều chỉnh vị trí con trỏ sau khi format
+  let newLength = inputElement.value.length;
+  let lengthDiff = newLength - oldLength;
+  inputElement.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
+}
+
+// Xử lý khi trang load
+document.addEventListener('DOMContentLoaded', function() {
+  const targetAmountInput = document.querySelector('#id_target_amount');
+  const currentAmountInput = document.querySelector('#id_current_amount');
+  
+  // Format giá trị ban đầu
+  [targetAmountInput, currentAmountInput].forEach(input => {
+    if (input && input.value) {
+      let value = unformatNumber(input.value);
+      // Loại bỏ phần thập phân nếu có
+      value = value.split('.')[0];
+      if (value && value !== '0') {
+        input.value = formatNumber(value);
+      }
+    }
+  });
+  
+  // Thêm event listener cho input
+  if (targetAmountInput) {
+    targetAmountInput.addEventListener('input', function() {
+      handleNumberInput(this);
+    });
+  }
+  
+  if (currentAmountInput) {
+    currentAmountInput.addEventListener('input', function() {
+      handleNumberInput(this);
+    });
+  }
+  
+  // Trước khi submit, bỏ dấu phẩy
+  const form = document.querySelector('form');
+  if (form) {
+    form.addEventListener('submit', function() {
+      if (targetAmountInput) {
+        targetAmountInput.value = unformatNumber(targetAmountInput.value);
+      }
+      if (currentAmountInput) {
+        currentAmountInput.value = unformatNumber(currentAmountInput.value);
+      }
+    });
+  }
+});
+</script>
+{% endblock extra_js %}

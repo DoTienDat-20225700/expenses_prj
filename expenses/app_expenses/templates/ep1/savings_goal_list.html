@@ -1,0 +1,162 @@
+{% extends "ep1/base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-10">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3><i class="fas fa-piggy-bank me-2"></i>Mục tiêu Tiết kiệm</h3>
+      <a
+        href="{% url 'ep1:add_savings_goal' %}"
+        class="btn btn-success shadow-sm"
+      >
+        <i class="fas fa-plus me-1"></i> Tạo mục tiêu mới
+      </a>
+    </div>
+
+    {% if goals %}
+    <div class="row">
+      {% for goal in goals %}
+      <div class="col-md-6 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="card-title mb-0">
+                <i class="fas fa-bullseye me-2 text-primary"></i>{{ goal.goal_name }}
+              </h5>
+              {% if goal.is_completed %}
+              <span class="badge bg-success">
+                <i class="fas fa-check-circle"></i> Hoàn thành
+              </span>
+              {% elif goal.is_overdue %}
+              <span class="badge bg-danger">
+                <i class="fas fa-exclamation-triangle"></i> Quá hạn
+              </span>
+              {% elif not goal.is_active %}
+              <span class="badge bg-secondary">
+                <i class="fas fa-pause-circle"></i> Tạm dừng
+              </span>
+              {% else %}
+              <span class="badge bg-primary">
+                <i class="fas fa-clock"></i> Đang thực hiện
+              </span>
+              {% endif %}
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">Tiến độ</small>
+                <small class="text-muted fw-bold"
+                  >{{ goal.progress_percentage|floatformat:1 }}%</small
+                >
+              </div>
+              <div class="progress progress-sm">
+                <div
+                  class="progress-bar {% if goal.is_completed %}bg-success {% elif goal.progress_percentage >= 75 %}bg-info {% elif goal.progress_percentage >= 50 %}bg-primary {% elif goal.progress_percentage >= 25 %}bg-warning {% else %}bg-danger{% endif %}"
+                  role="progressbar"
+                  style="width: {{ goal.progress_percentage }}%"
+                  aria-valuenow="{{ goal.progress_percentage }}"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  {{ goal.progress_percentage|floatformat:0 }}%
+                </div>
+              </div>
+            </div>
+
+            <!-- Goal Info -->
+            <div class="row text-center mb-3">
+              <div class="col-6 border-end">
+                <div class="text-muted small">Hiện tại</div>
+                <div class="fw-bold text-primary">
+                  {{ goal.current_amount|floatformat:0|intcomma }}đ
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Mục tiêu</div>
+                <div class="fw-bold text-success">
+                  {{ goal.target_amount|floatformat:0|intcomma }}đ
+                </div>
+              </div>
+            </div>
+
+            <div class="row text-center mb-3">
+              <div class="col-6 border-end">
+                <div class="text-muted small">Còn thiếu</div>
+                <div class="fw-bold text-warning">
+                  {{ goal.amount_remaining|floatformat:0|intcomma }}đ
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Còn lại</div>
+                <div class="fw-bold text-info">
+                  {{ goal.days_remaining }} ngày
+                </div>
+              </div>
+            </div>
+
+            {% if not goal.is_completed and goal.is_active and goal.days_remaining > 0 %}
+            <div class="alert alert-info alert-permanent mb-3 py-2">
+              <small>
+                <i class="fas fa-lightbulb"></i>
+                Cần tiết kiệm:
+                <strong
+                  >{{ goal.daily_savings_needed|floatformat:0|intcomma }}đ/ngày</strong
+                >
+              </small>
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="d-flex gap-2">
+              <a
+                href="{% url 'ep1:savings_goal_detail' goal.pk %}"
+                class="btn btn-sm btn-primary flex-fill"
+              >
+                <i class="fas fa-eye"></i> Chi tiết & Gợi ý AI
+              </a>
+              <a
+                href="{% url 'ep1:edit_savings_goal' goal.pk %}"
+                class="btn btn-sm btn-outline-secondary"
+              >
+                <i class="fas fa-edit"></i>
+              </a>
+              <a
+                href="{% url 'ep1:delete_savings_goal' goal.pk %}"
+                class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('Bạn có chắc muốn xóa mục tiêu này?');"
+              >
+                <i class="fas fa-trash"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+      <div class="card-body text-center py-5">
+        <div class="mb-3">
+          <i class="fas fa-piggy-bank fa-4x text-muted opacity-25"></i>
+        </div>
+        <h5 class="text-muted mb-3">Chưa có mục tiêu tiết kiệm nào</h5>
+        <p class="text-muted mb-4">
+          Bắt đầu đặt mục tiêu tiết kiệm của bạn ngay hôm nay!<br />
+          AI sẽ giúp bạn tính toán và đưa ra gợi ý cụ thể.
+        </p>
+        <a href="{% url 'ep1:add_savings_goal' %}" class="btn btn-success">
+          <i class="fas fa-plus me-2"></i>Tạo mục tiêu đầu tiên
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="mt-3">
+      <a href="{% url 'ep1:dashboard' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Quay lại Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock content %}

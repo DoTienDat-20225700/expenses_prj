@@ -1,0 +1,162 @@
+{% extends "ep1/base.html" %}
+{% load humanize %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="fas fa-chart-line me-2"></i>Cập nhật tiến độ tiết kiệm
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <strong>{{ goal.goal_name }}</strong>
+        </div>
+
+        <div class="mb-3">
+          <div class="progress progress-md">
+            <div
+              class="progress-bar bg-success"
+              role="progressbar"
+              style="width: {{ goal.progress_percentage }}%"
+              aria-valuenow="{{ goal.progress_percentage }}"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            >
+              {{ goal.progress_percentage|floatformat:1 }}%
+            </div>
+          </div>
+        </div>
+
+        <div class="row text-center mb-4">
+          <div class="col-4">
+            <div class="text-muted small">Hiện tại</div>
+            <div class="fw-bold text-primary">
+              {{ goal.current_amount|floatformat:0|intcomma }}đ
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Mục tiêu</div>
+            <div class="fw-bold text-success">
+              {{ goal.target_amount|floatformat:0|intcomma }}đ
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted small">Còn thiếu</div>
+            <div class="fw-bold text-warning">
+              {{ goal.amount_remaining|floatformat:0|intcomma }}đ
+            </div>
+          </div>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-bold"
+              >{{ form.current_amount.label }}</label
+            >
+            {{ form.current_amount }} {% if form.current_amount.errors %}
+            <div class="text-danger small mt-1">
+              {{ form.current_amount.errors }}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">{{ form.notes.label }}</label>
+            {{ form.notes }} {% if form.notes.errors %}
+            <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+            {% endif %}
+          </div>
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-flex gap-2 justify-content-end">
+            <a
+              href="{% url 'ep1:savings_goal_detail' goal.pk %}"
+              class="btn btn-secondary"
+            >
+              <i class="fas fa-times me-1"></i>Hủy
+            </a>
+            <button type="submit" class="btn btn-info">
+              <i class="fas fa-save me-1"></i>Cập nhật
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+// Format số với dấu phẩy ngăn cách hàng nghìn
+function formatNumber(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Loại bỏ dấu phẩy để lấy số thuần
+function unformatNumber(str) {
+  return str.replace(/,/g, '');
+}
+
+// Format input khi người dùng nhập
+function handleNumberInput(inputElement) {
+  let cursorPosition = inputElement.selectionStart;
+  let oldLength = inputElement.value.length;
+  
+  // Lấy giá trị và loại bỏ ký tự không phải số
+  let value = unformatNumber(inputElement.value);
+  value = value.replace(/[^0-9]/g, '');
+  
+  if (value === '') {
+    inputElement.value = '';
+    return;
+  }
+  
+  // Format lại với dấu phẩy
+  let formatted = formatNumber(value);
+  inputElement.value = formatted;
+  
+  // Điều chỉnh vị trí con trỏ sau khi format
+  let newLength = inputElement.value.length;
+  let lengthDiff = newLength - oldLength;
+  inputElement.setSelectionRange(cursorPosition + lengthDiff, cursorPosition + lengthDiff);
+}
+
+// Xử lý khi trang load
+document.addEventListener('DOMContentLoaded', function() {
+  const currentAmountInput = document.querySelector('#id_current_amount');
+  
+  // Format giá trị ban đầu
+  if (currentAmountInput && currentAmountInput.value) {
+    let value = unformatNumber(currentAmountInput.value);
+    // Loại bỏ phần thập phân nếu có
+    value = value.split('.')[0];
+    if (value && value !== '0') {
+      currentAmountInput.value = formatNumber(value);
+    }
+  }
+  
+  // Thêm event listener cho input
+  if (currentAmountInput) {
+    currentAmountInput.addEventListener('input', function() {
+      handleNumberInput(this);
+    });
+  }
+  
+  // Trước khi submit, bỏ dấu phẩy
+  const form = document.querySelector('form');
+  if (form && currentAmountInput) {
+    form.addEventListener('submit', function() {
+      currentAmountInput.value = unformatNumber(currentAmountInput.value);
+    });
+  }
+});
+</script>
+{% endblock extra_js %}

@@ -51,6 +51,14 @@ urlpatterns = [
     path('recurring/toggle/<int:pk>/', views.toggle_recurring_status, name='toggle_recurring'),
     path('recurring/generate/', views.generate_recurring_expenses, name='generate_recurring'),
     
+    # Savings Goals
+    path('savings-goals/', views.savings_goal_list, name='savings_goal_list'),
+    path('savings-goals/add/', views.add_savings_goal, name='add_savings_goal'),
+    path('savings-goals/<int:pk>/', views.savings_goal_detail, name='savings_goal_detail'),
+    path('savings-goals/<int:pk>/edit/', views.edit_savings_goal, name='edit_savings_goal'),
+    path('savings-goals/<int:pk>/delete/', views.delete_savings_goal, name='delete_savings_goal'),
+    path('savings-goals/<int:pk>/update-progress/', views.update_savings_progress, name='update_savings_progress'),
+    
     # Profile
     path('profile/', views.profile, name='profile'),
     path('password_change/', 

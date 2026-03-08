@@ -269,6 +269,86 @@ class Income(models.Model):
         return f"{self.amount} - {self.source} - {self.date}"
 
 
+class SavingsGoal(models.Model):
+    """
+    Mục tiêu tiết kiệm với AI gợi ý lộ trình.
+    
+    Ví dụ: Người dùng muốn mua Macbook 30 triệu trong 6 tháng,
+    AI sẽ phân tích chi tiêu và gợi ý cắt giảm chi tiêu cafe/trà sữa mỗi ngày.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Người dùng")
+    goal_name = models.CharField("Tên mục tiêu", max_length=200, 
+                                 help_text="Ví dụ: Mua Macbook, Du lịch Nhật Bản, ...")
+    target_amount = models.DecimalField("Số tiền mục tiêu", max_digits=15, decimal_places=2,
+                                       help_text="Số tiền bạn muốn tiết kiệm")
+    current_amount = models.DecimalField("Số tiền hiện tại", max_digits=15, decimal_places=2, 
+                                        default=0, help_text="Số tiền đã tiết kiệm được")
+    start_date = models.DateField("Ngày bắt đầu", help_text="Ngày bắt đầu tiết kiệm")
+    target_date = models.DateField("Ngày đích", help_text="Ngày mong muốn đạt được mục tiêu")
+    
+    # Danh mục cần cắt giảm (lưu dưới dạng JSON hoặc ManyToMany)
+    categories_to_reduce = models.ManyToManyField(
+        Category, 
+        blank=True,
+        verbose_name="Danh mục cần cắt giảm",
+        help_text="Chọn các danh mục chi tiêu bạn muốn cắt giảm (cafe, trà sữa, ...)"
+    )
+    
+    is_completed = models.BooleanField("Đã hoàn thành", default=False)
+    is_active = models.BooleanField("Đang hoạt động", default=True)
+    notes = models.TextField("Ghi chú", blank=True, null=True)
+    created_at = models.DateTimeField("Ngày tạo", auto_now_add=True)
+    updated_at = models.DateTimeField("Cập nhật lần cuối", auto_now=True)
+    
+    class Meta:
+        verbose_name = "Mục tiêu tiết kiệm"
+        verbose_name_plural = "Mục tiêu tiết kiệm"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.goal_name} - {self.target_amount:,.0f}đ"
+    
+    def days_remaining(self):
+        """Tính số ngày còn lại để đạt mục tiêu"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        if self.target_date <= today:
+            return 0
+        return (self.target_date - today).days
+    
+    def amount_remaining(self):
+        """Số tiền còn thiếu để đạt mục tiêu"""
+        remaining = self.target_amount - self.current_amount
+        return max(remaining, 0)
+    
+    def daily_savings_needed(self):
+        """Số tiền cần tiết kiệm mỗi ngày"""
+        days = self.days_remaining()
+        if days <= 0:
+            return 0
+        return self.amount_remaining() / days
+    
+    def progress_percentage(self):
+        """Phần trăm hoàn thành mục tiêu"""
+        if self.target_amount == 0:
+            return 0
+        progress = (self.current_amount / self.target_amount) * 100
+        return min(progress, 100)
+    
+    def is_overdue(self):
+        """Kiểm tra xem đã quá hạn chưa"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        return today > self.target_date and not self.is_completed
+    
+    def check_completion(self):
+        """Kiểm tra và cập nhật trạng thái hoàn thành"""
+        if self.current_amount >= self.target_amount:
+            self.is_completed = True
+            return True
+        return False
+
+
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created:
