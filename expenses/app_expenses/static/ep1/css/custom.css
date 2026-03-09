@@ -1160,3 +1160,93 @@ body.dark-mode .badge.bg-warning {
   color: #1e293b !important;
   background-color: #fbbf24 !important;
 }
+
+/* ============================================
+   UTILITY CLASSES FOR INLINE STYLE CLEANUP
+   ============================================ */
+
+/* Display utilities */
+.d-none {
+  display: none !important;
+}
+
+/* Chat widget specific styles */
+.chat-badge-hidden {
+  display: none;
+}
+
+.chat-box-hidden {
+  display: none;
+}
+
+/* Chat assistant page styles */
+.chat-assistant-container {
+  margin-top: 80px;
+}
+
+.chat-container-fixed-height {
+  height: 500px;
+}
+
+.chat-messages-bg {
+  background-color: #f8f9fa;
+}
+
+body.dark-mode .chat-messages-bg {
+  background-color: #1e293b;
+}
+
+.voice-status-hidden {
+  display: none;
+}
+
+/* Chart container heights */
+.chart-container-300 {
+  height: 300px;
+}
+
+/* Budget progress bar container */
+.budget-progress-container {
+  height: 8px;
+  background-color: var(--border-color);
+}
+
+/* Balance icon container */
+.balance-icon-container {
+  width: 50px;
+  height: 50px;
+}
+
+.balance-icon-positive {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.balance-icon-negative {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.balance-icon-danger {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.balance-icon-success {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.balance-icon-blue {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Table column widths */
+.col-width-9 { width: 9%; }
+.col-width-10 { width: 10%; }
+.col-width-11 { width: 11%; }
+.col-width-13 { width: 13%; }
+.col-width-15 { width: 15%; }
+.col-width-20 { width: 20%; }
+.col-width-30 { width: 30%; }
+
+/* Text size utility */
+.text-075rem {
+  font-size: 0.75rem;
+}

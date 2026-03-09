@@ -107,5 +107,11 @@ urlpatterns = [
     path('manager/announcements/', views.announcement_manager, name='announcement_manager'),
     path('manager/announcements/delete/<int:pk>/', views.delete_announcement, name='delete_announcement'),
     path('manager/announcements/toggle/<int:pk>/', views.toggle_announcement, name='toggle_announcement'),
+    
+    # Chatbot / Voice Assistant
+    path('chat-assistant/', views.chat_assistant, name='chat_assistant'),
+    path('api/parse-expense/', views.parse_expense_api, name='parse_expense_api'),
+    path('api/save-expense-from-chat/', views.save_expense_from_chat_api, name='save_expense_from_chat_api'),
+    path('api/chat/history/', views.chat_history_api, name='chat_history_api'),
 ]
 

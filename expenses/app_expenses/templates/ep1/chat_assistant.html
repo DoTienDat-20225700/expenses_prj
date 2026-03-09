@@ -1,0 +1,488 @@
+{% extends "ep1/base.html" %} {% load static %} {% block title %}Trợ lý ảo{%
+endblock title %} {% block content %}
+<div class="container py-4 chat-assistant-container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Header -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="chat-avatar me-3">
+              <i class="fas fa-robot fa-2x text-primary"></i>
+            </div>
+            <div>
+              <h4 class="mb-1">💬 Trợ lý Chi Tiêu</h4>
+              <p class="mb-0 text-muted small">
+                Nhập chi tiêu bằng giọng nói hoặc chat tự nhiên
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Container -->
+      <div class="card shadow-sm border-0 mb-3 chat-container-fixed-height">
+        <div class="card-body d-flex flex-column p-0">
+          <!-- Chat Messages Area -->
+          <div
+            id="chatMessages"
+            class="flex-grow-1 overflow-auto p-3 chat-messages-bg"
+          >
+            <!-- Welcome Message -->
+            <div class="chat-message bot-message">
+              <div class="message-content">
+                <p class="mb-2">👋 Xin chào! Tôi là trợ lý chi tiêu của bạn.</p>
+                <p class="mb-2">Bạn có thể nói hoặc gõ câu như:</p>
+                <ul class="mb-0 small">
+                  <li>"Vừa ăn sáng hết 50k"</li>
+                  <li>"Chi 100 nghìn mua đồ ăn hôm qua"</li>
+                  <li>"Đổ xăng 200.000 đồng"</li>
+                  <li>"Mua cafe 45k sáng nay"</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input Area -->
+          <div class="border-top p-3 bg-white">
+            <form id="chatForm">
+              <div class="input-group">
+                <!-- Voice Button -->
+                <button
+                  class="btn btn-outline-danger"
+                  type="button"
+                  id="voiceBtn"
+                  title="Nhập bằng giọng nói"
+                >
+                  <i class="fas fa-microphone"></i>
+                </button>
+
+                <!-- Text Input -->
+                <input
+                  type="text"
+                  class="form-control"
+                  id="chatInput"
+                  placeholder="Nhập chi tiêu của bạn... (VD: Ăn sáng 50k)"
+                  autocomplete="off"
+                />
+
+                <!-- Send Button -->
+                <button class="btn btn-primary" type="submit" id="sendBtn">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+
+              <!-- Voice Status -->
+              <div
+                id="voiceStatus"
+                class="mt-2 text-center small text-muted voice-status-hidden"
+              >
+                <i class="fas fa-circle text-danger me-1 blink"></i>
+                <span>Đang nghe...</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted mb-3">Chi tiêu gần đây</h6>
+          <div id="recentExpenses" class="small">
+            {% if recent_expenses %} {% for expense in
+            recent_expenses|slice:":5" %}
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <div>
+                <span class="text-muted">{{ expense.date|date:"d/m" }}</span>
+                <span class="ms-2"
+                  >{{ expense.description|default:"Chi tiêu" }}</span
+                >
+                {% if expense.category %}
+                <span class="badge bg-light text-dark ms-1"
+                  >{{ expense.category.name }}</span
+                >
+                {% endif %}
+              </div>
+              <div class="text-danger fw-bold">
+                {{ expense.amount|floatformat:0 }}đ
+              </div>
+            </div>
+            {% endfor %} {% else %}
+            <p class="text-muted mb-0">Chưa có chi tiêu nào</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Xác nhận chi tiêu</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="expense-preview p-3 bg-light rounded">
+          <div class="row mb-2">
+            <div class="col-5 text-muted">Số tiền:</div>
+            <div class="col-7 fw-bold text-danger" id="previewAmount"></div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5 text-muted">Danh mục:</div>
+            <div class="col-7" id="previewCategory"></div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-5 text-muted">Ngày:</div>
+            <div class="col-7" id="previewDate"></div>
+          </div>
+          <div class="row">
+            <div class="col-5 text-muted">Mô tả:</div>
+            <div class="col-7" id="previewDescription"></div>
+          </div>
+        </div>
+
+        <!-- Edit Options -->
+        <div class="mt-3">
+          <label class="form-label small text-muted"
+            >Chọn danh mục khác (nếu muốn):</label
+          >
+          <select class="form-select form-select-sm" id="categoryOverride">
+            <option value="">-- Giữ nguyên --</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Hủy
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmSaveBtn">
+          <i class="fas fa-check me-2"></i>Lưu chi tiêu
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .chat-message {
+    margin-bottom: 1rem;
+    display: flex;
+  }
+
+  .bot-message {
+    justify-content: flex-start;
+  }
+
+  .user-message {
+    justify-content: flex-end;
+  }
+
+  .message-content {
+    max-width: 75%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    word-wrap: break-word;
+  }
+
+  .bot-message .message-content {
+    background-color: white;
+    border: 1px solid #dee2e6;
+  }
+
+  .user-message .message-content {
+    background-color: #0d6efd;
+    color: white;
+  }
+
+  .user-message .message-content a {
+    color: white;
+    text-decoration: underline;
+  }
+
+  .system-message .message-content {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+  }
+
+  .error-message .message-content {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+  }
+
+  .success-message .message-content {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+  }
+
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .blink {
+    animation: blink 1.5s infinite;
+  }
+
+  #voiceBtn.listening {
+    background-color: #dc3545;
+    color: white;
+    border-color: #dc3545;
+  }
+
+  #chatMessages {
+    scroll-behavior: smooth;
+  }
+</style>
+
+<script>
+  let currentParsedData = null;
+  let recognition = null;
+
+  // Initialize Speech Recognition
+  if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = "vi-VN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = function () {
+      document.getElementById("voiceBtn").classList.add("listening");
+      document.getElementById("voiceStatus").style.display = "block";
+    };
+
+    recognition.onend = function () {
+      document.getElementById("voiceBtn").classList.remove("listening");
+      document.getElementById("voiceStatus").style.display = "none";
+    };
+
+    recognition.onresult = function (event) {
+      const transcript = event.results[0][0].transcript;
+      document.getElementById("chatInput").value = transcript;
+      // Auto submit
+      setTimeout(() => {
+        document.getElementById("chatForm").dispatchEvent(new Event("submit"));
+      }, 500);
+    };
+
+    recognition.onerror = function (event) {
+      console.error("Speech recognition error:", event.error);
+      addMessage(
+        "bot",
+        "❌ Lỗi nhận dạng giọng nói. Vui lòng thử lại.",
+        "error",
+      );
+    };
+  }
+
+  // Voice Button Click
+  document.getElementById("voiceBtn").addEventListener("click", function () {
+    if (!recognition) {
+      alert(
+        "Trình duyệt của bạn không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome hoặc Edge.",
+      );
+      return;
+    }
+
+    if (this.classList.contains("listening")) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
+  });
+
+  // Chat Form Submit
+  document.getElementById("chatForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+
+    if (!text) return;
+
+    // Add user message
+    addMessage("user", text);
+
+    // Clear input
+    input.value = "";
+
+    // Show loading
+    const loadingId = addMessage("bot", "⏳ Đang xử lý...", "system");
+
+    // Call API
+    fetch("{% url 'ep1:parse_expense_api' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}",
+      },
+      body: JSON.stringify({ text: text }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        // Remove loading message
+        document.getElementById(loadingId).remove();
+
+        if (data.success) {
+          currentParsedData = data;
+          showConfirmation(data);
+        } else {
+          addMessage("bot", "❌ " + data.error, "error");
+        }
+      })
+      .catch((error) => {
+        document.getElementById(loadingId).remove();
+        addMessage("bot", "❌ Có lỗi xảy ra. Vui lòng thử lại.", "error");
+        console.error("Error:", error);
+      });
+  });
+
+  // Add message to chat
+  function addMessage(type, content, cssClass = "") {
+    const messagesDiv = document.getElementById("chatMessages");
+    const messageId = "msg_" + Date.now();
+
+    const messageDiv = document.createElement("div");
+    messageDiv.id = messageId;
+    messageDiv.className =
+      "chat-message " +
+      type +
+      "-message" +
+      (cssClass ? " " + cssClass + "-message" : "");
+
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "message-content";
+    contentDiv.innerHTML = content;
+
+    messageDiv.appendChild(contentDiv);
+    messagesDiv.appendChild(messageDiv);
+
+    // Scroll to bottom
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    return messageId;
+  }
+
+  // Show confirmation modal
+  function showConfirmation(data) {
+    // Format amount
+    const amount = new Intl.NumberFormat("vi-VN").format(data.amount);
+    document.getElementById("previewAmount").textContent = amount + " đ";
+
+    // Category
+    let categoryText =
+      data.category_name || data.category_hint || "Chưa xác định";
+    if (!data.category_id) {
+      categoryText += ' <span class="badge bg-warning text-dark">Gợi ý</span>';
+    }
+    document.getElementById("previewCategory").innerHTML = categoryText;
+
+    // Date
+    const date = new Date(data.date);
+    document.getElementById("previewDate").textContent =
+      date.toLocaleDateString("vi-VN");
+
+    // Description
+    document.getElementById("previewDescription").textContent =
+      data.description || data.original_text;
+
+    // Reset category override
+    document.getElementById("categoryOverride").value = "";
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
+    modal.show();
+  }
+
+  // Confirm Save Button
+  document
+    .getElementById("confirmSaveBtn")
+    .addEventListener("click", function () {
+      if (!currentParsedData) return;
+
+      this.disabled = true;
+      this.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+
+      // Check for category override
+      const categoryOverride =
+        document.getElementById("categoryOverride").value;
+      const categoryId = categoryOverride || currentParsedData.category_id;
+
+      // Prepare data
+      const expenseData = {
+        amount: currentParsedData.amount,
+        description:
+          currentParsedData.description || currentParsedData.original_text,
+        category_id: categoryId,
+        date: currentParsedData.date,
+      };
+
+      // Call save API
+      fetch("{% url 'ep1:save_expense_from_chat_api' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: JSON.stringify(expenseData),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(
+              document.getElementById("confirmModal"),
+            ).hide();
+
+            // Show success message
+            let message = "✅ Đã lưu chi tiêu thành công!";
+            if (data.warning) {
+              message += "<br><small>" + data.warning + "</small>";
+            }
+            addMessage("bot", message, "success");
+
+            // Reload recent expenses
+            setTimeout(() => {
+              location.reload();
+            }, 1500);
+          } else {
+            addMessage("bot", "❌ Lỗi: " + data.error, "error");
+          }
+        })
+        .catch((error) => {
+          addMessage(
+            "bot",
+            "❌ Có lỗi xảy ra khi lưu. Vui lòng thử lại.",
+            "error",
+          );
+          console.error("Error:", error);
+        })
+        .finally(() => {
+          this.disabled = false;
+          this.innerHTML = '<i class="fas fa-check me-2"></i>Lưu chi tiêu';
+        });
+    });
+</script>
+{% endblock content %}

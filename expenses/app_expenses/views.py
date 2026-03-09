@@ -1507,4 +1507,201 @@ def get_ai_savings_suggestions(user, goal):
             })
     
     return suggestions
+
+
+# ======================== CHATBOT / VOICE ASSISTANT ========================
+
+@login_required
+def chat_assistant(request):
+    """
+    Trang giao diện Trợ lý ảo (Chat + Voice input)
+    """
+    # Lấy các category của user để hiển thị
+    categories = Category.objects.filter(user=request.user)
+    
+    # Lấy 10 chi tiêu gần nhất để hiển thị context
+    recent_expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')[:10]
+    
+    context = {
+        'categories': categories,
+        'recent_expenses': recent_expenses,
+    }
+    
+    return render(request, 'ep1/chat_assistant.html', context)
+
+
+@login_required
+def parse_expense_api(request):
+    """
+    API endpoint để parse natural language input (hỗ trợ nhiều intent)
+    POST: { "text": "Vừa ăn sáng hết 50k" hoặc "Tổng chi tiêu hôm nay?" }
+    Returns: { "intent": "...", "response": {...} hoặc null nếu là CREATE_EXPENSE }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    
+    import json
+    try:
+        data = json.loads(request.body)
+        text = data.get('text', '').strip()
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    
+    if not text:
+        return JsonResponse({'success': False, 'error': 'Vui lòng nhập nội dung'}, status=400)
+    
+    # Phân tích intent
+    from app_expenses.utils.chat_intent import process_chat_input
+    result = process_chat_input(text, request.user)
+    
+    intent = result['intent']
+    confidence = result['confidence']
+    
+    # Nếu là query intent, trả về response luôn
+    if result['response'] is not None:
+        return JsonResponse({
+            'success': True,
+            'intent': intent,
+            'confidence': confidence,
+            'response': result['response']
+        })
+    
+    # Nếu là CREATE_EXPENSE, parse như cũ
+    from app_expenses.utils.nlp_parser import parse_expense_text
+    expense_result = parse_expense_text(text, request.user)
+    
+    if not expense_result['success']:
+        return JsonResponse(expense_result, status=400)
+    
+    # Convert date object to string để serialize
+    expense_result['date'] = expense_result['date'].isoformat()
+    
+    # Lấy thông tin category nếu có
+    if expense_result.get('category_id'):
+        try:
+            category = Category.objects.get(id=expense_result['category_id'], user=request.user)
+            expense_result['category_name'] = category.name
+        except Category.DoesNotExist:
+            expense_result['category_name'] = None
+    else:
+        expense_result['category_name'] = None
+    
+    # Thêm intent info
+    expense_result['intent'] = intent
+    expense_result['confidence'] = confidence
+    
+    return JsonResponse(expense_result)
+
+
+@login_required
+def save_expense_from_chat_api(request):
+    """
+    API endpoint để lưu expense từ chat input
+    POST: {
+        "amount": 50000,
+        "description": "Ăn sáng",
+        "category_id": 1,
+        "date": "2024-03-09"
+    }
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+    
+    import json
+    from decimal import Decimal
+    from datetime import datetime
+    
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    
+    # Validate dữ liệu
+    amount = data.get('amount')
+    description = data.get('description', '').strip()
+    category_id = data.get('category_id')
+    date_str = data.get('date')
+    
+    if not amount:
+        return JsonResponse({'success': False, 'error': 'Thiếu số tiền'}, status=400)
+    
+    if not date_str:
+        return JsonResponse({'success': False, 'error': 'Thiếu ngày tháng'}, status=400)
+    
+    try:
+        amount = Decimal(str(amount))
+        if amount <= 0:
+            return JsonResponse({'success': False, 'error': 'Số tiền phải lớn hơn 0'}, status=400)
+    except:
+        return JsonResponse({'success': False, 'error': 'Số tiền không hợp lệ'}, status=400)
+    
+    try:
+        expense_date = datetime.fromisoformat(date_str).date()
+    except:
+        return JsonResponse({'success': False, 'error': 'Ngày tháng không hợp lệ'}, status=400)
+    
+    # Kiểm tra category
+    category = None
+    if category_id:
+        try:
+            category = Category.objects.get(id=category_id, user=request.user)
+        except Category.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Danh mục không tồn tại'}, status=400)
+    
+    # Tạo expense
+    expense = Expense.objects.create(
+        user=request.user,
+        amount=amount,
+        description=description,
+        category=category,
+        date=expense_date
+    )
+    
+    # Kiểm tra budget warning
+    warning_message = None
+    try:
+        budget = Budget.objects.get(user=request.user)
+        current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        if current_total > budget.total:
+            over_amount = current_total - budget.total
+            warning_message = f'⚠️ Bạn đã vượt quá ngân sách {over_amount:,.0f} ₫!'
+    except Budget.DoesNotExist:
+        pass
+    
+    # Train model trong background
+    try:
+        thread = threading.Thread(target=train_model, args=(request.user,))
+        thread.start()
+    except Exception as e:
+        print(f"Lỗi chạy background task: {e}")
+    
+    return JsonResponse({
+        'success': True,
+        'expense_id': expense.id,
+        'warning': warning_message
+    })
+
+
+@login_required
+def chat_history_api(request):
+    """
+    API để lấy lịch sử chat (các expense gần đây)
+    GET: /api/chat/history/?limit=10
+    """
+    limit = int(request.GET.get('limit', 10))
+    
+    expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')[:limit]
+    
+    data = []
+    for expense in expenses:
+        data.append({
+            'id': expense.id,
+            'amount': float(expense.amount),
+            'description': expense.description,
+            'category': expense.category.name if expense.category else None,
+            'date': expense.date.isoformat(),
+        })
+    
+    return JsonResponse({'success': True, 'expenses': data})
     return redirect('ep1:recurring_list')
