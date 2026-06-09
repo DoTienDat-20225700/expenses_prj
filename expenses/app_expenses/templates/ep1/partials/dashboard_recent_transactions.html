@@ -1,0 +1,51 @@
+{% load humanize %}
+<div class="list-group list-group-flush rounded-bottom-4">
+  {% for expense in recent_expenses %}
+  <div
+    class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-transparent"
+  >
+    <div class="d-flex align-items-center">
+      <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-3 text-danger">
+        <i class="fas fa-arrow-down small"></i>
+      </div>
+      <div>
+        <div class="fw-bold text-main">
+          {{ expense.category.name|default:"Khác" }}
+        </div>
+        <small class="text-muted">{{ expense.date|date:"d/m/Y" }}</small>
+      </div>
+    </div>
+    <span class="text-danger fw-bold">
+      -{{ expense.amount|floatformat:0|intcomma }} ₫
+    </span>
+  </div>
+  {% endfor %} {% for income in recent_income %}
+  <div
+    class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-transparent"
+  >
+    <div class="d-flex align-items-center">
+      <div
+        class="rounded-circle bg-success bg-opacity-10 p-2 me-3 text-success"
+      >
+        <i class="fas fa-arrow-up small"></i>
+      </div>
+      <div>
+        <div class="fw-bold text-main">
+          {{ income.source.name|default:"Thu nhập" }}
+        </div>
+        <small class="text-muted">{{ income.date|date:"d/m/Y" }}</small>
+      </div>
+    </div>
+    <span class="text-success fw-bold">
+      +{{ income.amount|floatformat:0|intcomma }} ₫
+    </span>
+  </div>
+  {% endfor %}
+</div>
+
+{% if not recent_expenses and not recent_income %}
+<div class="text-center py-5 text-muted">
+  <i class="fas fa-receipt fs-1 mb-2 opacity-50"></i>
+  <p>Chưa có giao dịch nào</p>
+</div>
+{% endif %}

@@ -16,7 +16,8 @@
               <strong>Số tiền:</strong> {{ expense.amount|floatformat:0 }} ₫
             </p>
             <p class="mb-1">
-              <strong>Danh mục:</strong> {{ expense.category }}
+              <strong>Danh mục:</strong> {{ expense.category.name|default:"Chưa
+              phân loại" }}
             </p>
             <p class="mb-1">
               <strong>Ngày:</strong> {{ expense.date|date:"d/m/Y" }}

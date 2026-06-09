@@ -51,7 +51,7 @@ widget_tweaks %} {% block content %}
             <p class="text-muted mb-1 small text-uppercase fw-bold">
               Chi Tiêu Tháng
             </p>
-            <h3 class="fw-bold mb-0 text-danger">
+            <h3 id="dashThisMonthExpenses" class="fw-bold mb-0 text-danger">
               {{ this_month_expenses|floatformat:0|intcomma }} ₫
             </h3>
           </div>
@@ -63,7 +63,11 @@ widget_tweaks %} {% block content %}
         </div>
         <div class="d-flex align-items-center small text-muted">
           <i class="fas fa-history me-1"></i>
-          Tổng ví: {{ total_expenses|floatformat:0|intcomma }} ₫
+          Tổng ví:
+          <span id="dashTotalExpenses"
+            >{{ total_expenses|floatformat:0|intcomma }}</span
+          >
+          ₫
         </div>
       </div>
     </div>
@@ -77,7 +81,7 @@ widget_tweaks %} {% block content %}
             <p class="text-muted mb-1 small text-uppercase fw-bold">
               Thu Nhập Tháng
             </p>
-            <h3 class="fw-bold mb-0 text-success">
+            <h3 id="dashThisMonthIncome" class="fw-bold mb-0 text-success">
               {{ this_month_income|floatformat:0|intcomma }} ₫
             </h3>
           </div>
@@ -89,7 +93,11 @@ widget_tweaks %} {% block content %}
         </div>
         <div class="d-flex align-items-center small text-muted">
           <i class="fas fa-history me-1"></i>
-          Tổng ví: {{ total_income|floatformat:0|intcomma }} ₫
+          Tổng ví:
+          <span id="dashTotalIncome"
+            >{{ total_income|floatformat:0|intcomma }}</span
+          >
+          ₫
         </div>
       </div>
     </div>
@@ -104,15 +112,18 @@ widget_tweaks %} {% block content %}
               Số Dư Hiện Tại
             </p>
             <h3
+              id="dashBalance"
               class="fw-bold mb-0 {% if balance >= 0 %}text-success{% else %}text-danger{% endif %}"
             >
               {{ balance|floatformat:0|intcomma }} ₫
             </h3>
           </div>
           <div
+            id="dashBalanceIconWrap"
             class="rounded-circle p-3 d-flex align-items-center justify-content-center balance-icon-container {% if balance >= 0 %}balance-icon-positive{% else %}balance-icon-negative{% endif %}"
           >
             <i
+              id="dashBalanceIcon"
               class="fas fa-piggy-bank {% if balance >= 0 %}text-success{% else %}text-danger{% endif %} fs-5"
             ></i>
           </div>
@@ -130,7 +141,7 @@ widget_tweaks %} {% block content %}
             <p class="text-muted mb-1 small text-uppercase fw-bold">
               Ngân Sách
             </p>
-            <h3 class="fw-bold mb-0 text-primary">
+            <h3 id="dashBudgetTotal" class="fw-bold mb-0 text-primary">
               {{ budget.total|floatformat:0|intcomma }} ₫
             </h3>
           </div>
@@ -144,6 +155,7 @@ widget_tweaks %} {% block content %}
         {% if budget.total > 0 %}
         <div class="progress mb-2 rounded-pill budget-progress-container">
           <div
+            id="dashBudgetProgress"
             class="progress-bar rounded-pill {% if budget_percentage > 100 %}bg-danger{% elif budget_percentage > 70 %}bg-warning{% else %}bg-primary{% endif %}"
             role="progressbar"
             style="width: {{ budget_percentage|floatformat:0 }}%"
@@ -153,10 +165,11 @@ widget_tweaks %} {% block content %}
           ></div>
         </div>
         <div class="d-flex justify-content-between small fw-bold">
-          <span class="text-muted"
-            >Đã tiêu: {{ budget_percentage|floatformat:0 }}%</span
-          >
+          <span id="dashBudgetPercent" class="text-muted">
+            Đã tiêu: {{ budget_percentage|floatformat:0 }}%
+          </span>
           <span
+            id="dashBudgetRemaining"
             class="{% if budget_remaining >= 0 %}text-success{% else %}text-danger{% endif %}"
           >
             Còn: {{ budget_remaining|floatformat:0|intcomma }}
@@ -206,28 +219,9 @@ widget_tweaks %} {% block content %}
           <i class="fas fa-fire me-2 text-danger"></i>Top Danh Mục Tốn Kém
         </h5>
       </div>
-      <div class="card-body p-0">
-        {% if top_categories %}
-        <div class="list-group list-group-flush rounded-bottom-4">
-          {% for cat in top_categories %}
-          <div
-            class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-transparent"
-          >
-            <span class="badge category-badge px-3 py-2 rounded-pill shadow-sm">
-              {{ cat.category__name|default:"Không xác định" }}
-            </span>
-            <span class="fw-bold text-main">
-              {{ cat.total|floatformat:0|intcomma }} ₫
-            </span>
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="text-center py-5 text-muted">
-          <i class="fas fa-inbox fs-1 mb-2 opacity-50"></i>
-          <p>Chưa có dữ liệu</p>
-        </div>
-        {% endif %}
+      <div id="dashTopCategories" class="card-body p-0">
+        {% include "ep1/partials/dashboard_top_categories.html" with
+        top_categories=top_categories %}
       </div>
     </div>
   </div>
@@ -239,61 +233,9 @@ widget_tweaks %} {% block content %}
           <i class="fas fa-clock me-2 text-info"></i>Giao Dịch Mới Nhất
         </h5>
       </div>
-      <div class="card-body p-0">
-        <div class="list-group list-group-flush rounded-bottom-4">
-          {% for expense in recent_expenses %}
-          <div
-            class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-transparent"
-          >
-            <div class="d-flex align-items-center">
-              <div
-                class="rounded-circle bg-danger bg-opacity-10 p-2 me-3 text-danger"
-              >
-                <i class="fas fa-arrow-down small"></i>
-              </div>
-              <div>
-                <div class="fw-bold text-main">
-                  {{ expense.category.name|default:"Khác" }}
-                </div>
-                <small class="text-muted"
-                  >{{ expense.date|date:"d/m/Y" }}</small
-                >
-              </div>
-            </div>
-            <span class="text-danger fw-bold">
-              -{{ expense.amount|floatformat:0|intcomma }} ₫
-            </span>
-          </div>
-          {% endfor %} {% for income in recent_income %}
-          <div
-            class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-transparent"
-          >
-            <div class="d-flex align-items-center">
-              <div
-                class="rounded-circle bg-success bg-opacity-10 p-2 me-3 text-success"
-              >
-                <i class="fas fa-arrow-up small"></i>
-              </div>
-              <div>
-                <div class="fw-bold text-main">
-                  {{ income.source.name|default:"Thu nhập" }}
-                </div>
-                <small class="text-muted">{{ income.date|date:"d/m/Y" }}</small>
-              </div>
-            </div>
-            <span class="text-success fw-bold">
-              +{{ income.amount|floatformat:0|intcomma }} ₫
-            </span>
-          </div>
-          {% endfor %}
-        </div>
-
-        {% if not recent_expenses and not recent_income %}
-        <div class="text-center py-5 text-muted">
-          <i class="fas fa-receipt fs-1 mb-2 opacity-50"></i>
-          <p>Chưa có giao dịch nào</p>
-        </div>
-        {% endif %}
+      <div id="dashRecentTransactions" class="card-body p-0">
+        {% include "ep1/partials/dashboard_recent_transactions.html" with
+        recent_expenses=recent_expenses recent_income=recent_income %}
       </div>
     </div>
   </div>
@@ -409,7 +351,7 @@ widget_tweaks %} {% block content %}
       .then((res) => res.json())
       .then((data) => {
         const ctx = document.getElementById("categoryChart").getContext("2d");
-        new Chart(ctx, {
+        window.dashboardCategoryChart = new Chart(ctx, {
           type: "doughnut",
           data: {
             labels: data.labels,
@@ -460,7 +402,7 @@ widget_tweaks %} {% block content %}
 
         // Simplified solid colors for better performance
 
-        new Chart(ctx, {
+        window.dashboardIncomeExpenseChart = new Chart(ctx, {
           type: "line",
           data: {
             labels: data.labels,
@@ -516,6 +458,147 @@ widget_tweaks %} {% block content %}
           },
         });
       });
+
+    // Refresh dashboard UI (used after chat save)
+    window.refreshDashboardUI = function () {
+      fetch("{% url 'ep1:dashboard_refresh_api' %}")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.success) return;
+
+          const formatter = new Intl.NumberFormat("vi-VN");
+
+          const thisMonthEl = document.getElementById("dashThisMonthExpenses");
+          if (thisMonthEl) {
+            thisMonthEl.textContent =
+              formatter.format(data.summary.this_month_expenses) + " ₫";
+          }
+
+          const totalExpensesEl = document.getElementById("dashTotalExpenses");
+          if (totalExpensesEl) {
+            totalExpensesEl.textContent = formatter.format(
+              data.summary.total_expenses,
+            );
+          }
+
+          const thisMonthIncomeEl = document.getElementById(
+            "dashThisMonthIncome",
+          );
+          if (thisMonthIncomeEl) {
+            thisMonthIncomeEl.textContent =
+              formatter.format(data.summary.this_month_income) + " ₫";
+          }
+
+          const totalIncomeEl = document.getElementById("dashTotalIncome");
+          if (totalIncomeEl) {
+            totalIncomeEl.textContent = formatter.format(
+              data.summary.total_income,
+            );
+          }
+
+          const balanceEl = document.getElementById("dashBalance");
+          const balanceIconWrap = document.getElementById(
+            "dashBalanceIconWrap",
+          );
+          const balanceIcon = document.getElementById("dashBalanceIcon");
+          if (balanceEl && balanceIconWrap && balanceIcon) {
+            const balance = data.summary.balance || 0;
+            balanceEl.textContent = formatter.format(balance) + " ₫";
+
+            balanceEl.classList.remove("text-success", "text-danger");
+            balanceIconWrap.classList.remove(
+              "balance-icon-positive",
+              "balance-icon-negative",
+            );
+            balanceIcon.classList.remove("text-success", "text-danger");
+
+            if (balance >= 0) {
+              balanceEl.classList.add("text-success");
+              balanceIconWrap.classList.add("balance-icon-positive");
+              balanceIcon.classList.add("text-success");
+            } else {
+              balanceEl.classList.add("text-danger");
+              balanceIconWrap.classList.add("balance-icon-negative");
+              balanceIcon.classList.add("text-danger");
+            }
+          }
+
+          const budgetTotalEl = document.getElementById("dashBudgetTotal");
+          if (budgetTotalEl) {
+            budgetTotalEl.textContent =
+              formatter.format(data.summary.budget_total) + " ₫";
+          }
+
+          const budgetProgress = document.getElementById("dashBudgetProgress");
+          const budgetPercent = document.getElementById("dashBudgetPercent");
+          const budgetRemaining = document.getElementById(
+            "dashBudgetRemaining",
+          );
+          if (budgetProgress && budgetPercent && budgetRemaining) {
+            const percent = Math.round(data.summary.budget_percentage || 0);
+            budgetProgress.style.width = percent + "%";
+            budgetProgress.setAttribute("aria-valuenow", percent);
+
+            budgetProgress.classList.remove(
+              "bg-primary",
+              "bg-warning",
+              "bg-danger",
+            );
+            if (percent > 100) {
+              budgetProgress.classList.add("bg-danger");
+            } else if (percent > 70) {
+              budgetProgress.classList.add("bg-warning");
+            } else {
+              budgetProgress.classList.add("bg-primary");
+            }
+
+            budgetPercent.textContent = "Đã tiêu: " + percent + "%";
+
+            const remaining = data.summary.budget_remaining || 0;
+            budgetRemaining.textContent = "Còn: " + formatter.format(remaining);
+            budgetRemaining.classList.remove("text-success", "text-danger");
+            budgetRemaining.classList.add(
+              remaining >= 0 ? "text-success" : "text-danger",
+            );
+          }
+
+          const topCategoriesEl = document.getElementById("dashTopCategories");
+          if (topCategoriesEl && data.top_categories_html) {
+            topCategoriesEl.innerHTML = data.top_categories_html;
+          }
+
+          const recentTransactionsEl = document.getElementById(
+            "dashRecentTransactions",
+          );
+          if (recentTransactionsEl && data.recent_transactions_html) {
+            recentTransactionsEl.innerHTML = data.recent_transactions_html;
+          }
+
+          if (window.dashboardCategoryChart && data.charts_category) {
+            window.dashboardCategoryChart.data.labels =
+              data.charts_category.labels;
+            window.dashboardCategoryChart.data.datasets[0].data =
+              data.charts_category.data;
+            window.dashboardCategoryChart.update();
+          }
+
+          if (
+            window.dashboardIncomeExpenseChart &&
+            data.charts_income_expense
+          ) {
+            window.dashboardIncomeExpenseChart.data.labels =
+              data.charts_income_expense.labels;
+            window.dashboardIncomeExpenseChart.data.datasets[0].data =
+              data.charts_income_expense.expenses;
+            window.dashboardIncomeExpenseChart.data.datasets[1].data =
+              data.charts_income_expense.income;
+            window.dashboardIncomeExpenseChart.update();
+          }
+        })
+        .catch((err) => {
+          console.error("Refresh dashboard failed:", err);
+        });
+    };
   });
 </script>
 {% endblock content %}

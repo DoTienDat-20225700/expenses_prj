@@ -113,5 +113,7 @@ urlpatterns = [
     path('api/parse-expense/', views.parse_expense_api, name='parse_expense_api'),
     path('api/save-expense-from-chat/', views.save_expense_from_chat_api, name='save_expense_from_chat_api'),
     path('api/chat/history/', views.chat_history_api, name='chat_history_api'),
+    path('api/ep1-list-refresh/', views.ep1_list_refresh_api, name='ep1_list_refresh_api'),
+    path('api/dashboard-refresh/', views.dashboard_refresh_api, name='dashboard_refresh_api'),
 ]
 

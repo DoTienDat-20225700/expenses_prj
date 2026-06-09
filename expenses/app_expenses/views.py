@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, get_user
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.core.paginator import Paginator
+from django.template.loader import render_to_string
 from django.db.models.functions import TruncDate
 from django.db.models import Sum, Count, Q
 from django.contrib import messages
@@ -398,7 +399,7 @@ def ep1_lists(request):
     category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
     daily_data = expenses.annotate(day=TruncDate('date')).values('day').annotate(total=Sum('amount')).order_by('day')
 
-    chart_labels = [item['category__name'] for item in category_data]
+    chart_labels = [item['category__name'] or 'Chưa phân loại' for item in category_data]
     chart_data = [float(item['total']) for item in category_data]
     chart_labels_day = [item['day'].strftime('%d/%m/%Y') for item in daily_data]
     chart_data_day = [float(item['total']) for item in daily_data]
@@ -440,6 +441,71 @@ def ep1_lists(request):
         'date_to': request.GET.get('date_to'),
     }
     return render(request, 'ep1/ep1_lists.html', context)
+
+
+@login_required
+def ep1_list_refresh_api(request):
+    """Return updated list rows, summaries, and chart data for the expenses list page."""
+    base_expenses = Expense.objects.filter(user=request.user).select_related('category')
+    filtered_expenses = _apply_filters(base_expenses, request.GET)
+    expenses = _apply_sorting(filtered_expenses, request.GET)
+
+    paginator = Paginator(expenses, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    today = timezone.now().date()
+    first_day_this_month = today.replace(day=1)
+    from dateutil.relativedelta import relativedelta
+    first_day_next_month = (first_day_this_month + relativedelta(months=1))
+
+    this_month_expenses = Expense.objects.filter(
+        user=request.user,
+        date__gte=first_day_this_month,
+        date__lt=first_day_next_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    filtered_total = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
+    global_category_data = base_expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
+    top_category_item = global_category_data.first()
+    top_category = (top_category_item['category__name'] or 'Chưa phân loại') if top_category_item else '—'
+
+    category_data = expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
+    daily_data = expenses.annotate(day=TruncDate('date')).values('day').annotate(total=Sum('amount')).order_by('day')
+
+    chart_labels = [item['category__name'] or 'Chưa phân loại' for item in category_data]
+    chart_data = [float(item['total']) for item in category_data]
+    chart_labels_day = [item['day'].strftime('%d/%m/%Y') for item in daily_data]
+    chart_data_day = [float(item['total']) for item in daily_data]
+
+    budget_obj, _ = Budget.objects.get_or_create(user=request.user)
+    remaining = budget_obj.total - this_month_expenses
+
+    rows_html = render_to_string(
+        'ep1/partials/expense_rows.html',
+        {
+            'expenses': page_obj,
+            'next_url': request.get_full_path(),
+        },
+        request=request,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'rows_html': rows_html,
+        'summary': {
+            'this_month_expenses': float(this_month_expenses),
+            'total_spent': float(filtered_total),
+            'remaining': float(remaining),
+            'top_category': top_category,
+        },
+        'charts': {
+            'labels': chart_labels,
+            'data': chart_data,
+            'labels_day': chart_labels_day,
+            'data_day': chart_data_day,
+        },
+    })
 
 @login_required
 def add_ep1(request):
@@ -793,6 +859,118 @@ def chart_expense_vs_income(request):
         'labels': labels,
         'expenses': expense_data,
         'income': income_data
+    })
+
+
+@login_required
+def dashboard_refresh_api(request):
+    """Return updated dashboard summary, lists, and chart data."""
+    from dateutil.relativedelta import relativedelta
+
+    user = request.user
+    today = timezone.now().date()
+
+    first_day_this_month = today.replace(day=1)
+    first_day_next_month = (first_day_this_month + relativedelta(months=1))
+
+    total_expenses = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+    this_month_expenses = Expense.objects.filter(
+        user=user,
+        date__gte=first_day_this_month,
+        date__lt=first_day_next_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+    this_month_income = Income.objects.filter(
+        user=user,
+        date__gte=first_day_this_month,
+        date__lt=first_day_next_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    balance = total_income - total_expenses
+
+    budget_obj, _ = Budget.objects.get_or_create(user=user)
+    budget_remaining = budget_obj.total - this_month_expenses
+    budget_percentage = (this_month_expenses / budget_obj.total) * 100 if budget_obj.total > 0 else 0
+
+    top_categories = Expense.objects.filter(user=user).values('category__name').annotate(
+        total=Sum('amount')
+    ).order_by('-total')[:5]
+
+    recent_expenses = Expense.objects.filter(user=user).select_related('category').order_by('-date')[:3]
+    recent_income = Income.objects.filter(user=user).select_related('source').order_by('-date')[:3]
+
+    category_data = Expense.objects.filter(user=user).values('category__name').annotate(
+        total=Sum('amount')
+    ).order_by('-total')[:10]
+    category_labels = [item['category__name'] or 'Không xác định' for item in category_data]
+    category_values = [float(item['total']) for item in category_data]
+
+    months_data = []
+    for i in range(5, -1, -1):
+        month_start = (today.replace(day=1) - relativedelta(months=i))
+        month_end = (month_start + relativedelta(months=1))
+
+        month_expenses = Expense.objects.filter(
+            user=user,
+            date__gte=month_start,
+            date__lt=month_end
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+        month_income = Income.objects.filter(
+            user=user,
+            date__gte=month_start,
+            date__lt=month_end
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+        months_data.append({
+            'label': month_start.strftime('%m/%Y'),
+            'income': float(month_income),
+            'expenses': float(month_expenses),
+        })
+
+    income_labels = [item['label'] for item in months_data]
+    income_values = [item['income'] for item in months_data]
+    expense_values = [item['expenses'] for item in months_data]
+
+    top_categories_html = render_to_string(
+        'ep1/partials/dashboard_top_categories.html',
+        {'top_categories': top_categories},
+        request=request,
+    )
+
+    recent_transactions_html = render_to_string(
+        'ep1/partials/dashboard_recent_transactions.html',
+        {
+            'recent_expenses': recent_expenses,
+            'recent_income': recent_income,
+        },
+        request=request,
+    )
+
+    return JsonResponse({
+        'success': True,
+        'summary': {
+            'this_month_expenses': float(this_month_expenses),
+            'total_expenses': float(total_expenses),
+            'this_month_income': float(this_month_income),
+            'total_income': float(total_income),
+            'balance': float(balance),
+            'budget_total': float(budget_obj.total),
+            'budget_remaining': float(budget_remaining),
+            'budget_percentage': float(budget_percentage),
+        },
+        'top_categories_html': top_categories_html,
+        'recent_transactions_html': recent_transactions_html,
+        'charts_category': {
+            'labels': category_labels,
+            'data': category_values,
+        },
+        'charts_income_expense': {
+            'labels': income_labels,
+            'income': income_values,
+            'expenses': expense_values,
+        },
     })
 
 
@@ -1550,47 +1728,65 @@ def parse_expense_api(request):
     if not text:
         return JsonResponse({'success': False, 'error': 'Vui lòng nhập nội dung'}, status=400)
     
-    # Phân tích intent
-    from app_expenses.utils.chat_intent import process_chat_input
-    result = process_chat_input(text, request.user)
-    
-    intent = result['intent']
-    confidence = result['confidence']
-    
-    # Nếu là query intent, trả về response luôn
-    if result['response'] is not None:
-        return JsonResponse({
-            'success': True,
-            'intent': intent,
-            'confidence': confidence,
-            'response': result['response']
-        })
-    
-    # Nếu là CREATE_EXPENSE, parse như cũ
-    from app_expenses.utils.nlp_parser import parse_expense_text
-    expense_result = parse_expense_text(text, request.user)
-    
-    if not expense_result['success']:
-        return JsonResponse(expense_result, status=400)
-    
-    # Convert date object to string để serialize
-    expense_result['date'] = expense_result['date'].isoformat()
-    
-    # Lấy thông tin category nếu có
-    if expense_result.get('category_id'):
-        try:
-            category = Category.objects.get(id=expense_result['category_id'], user=request.user)
-            expense_result['category_name'] = category.name
-        except Category.DoesNotExist:
+    try:
+        # Phân tích intent
+        from app_expenses.utils.chat_intent import process_chat_input
+        result = process_chat_input(text, request.user)
+        
+        intent = result['intent']
+        confidence = result['confidence']
+        
+        # Nếu là query intent hoặc OUT_OF_SCOPE, trả về response luôn
+        if result['response'] is not None:
+            return JsonResponse({
+                'success': True,
+                'intent': intent,
+                'confidence': confidence,
+                'response': result['response'],
+                'is_query': True  # Flag để frontend biết đây là query
+            })
+        
+        # Nếu là CREATE_EXPENSE, parse như cũ
+        from app_expenses.utils.nlp_parser import parse_expense_text
+        expense_result = parse_expense_text(text, request.user)
+        
+        if not expense_result['success']:
+            return JsonResponse(expense_result, status=400)
+        
+        # Convert date object to string để serialize
+        if isinstance(expense_result.get('date'), str):
+            # Already string
+            date_str = expense_result['date']
+        else:
+            # Convert date object to ISO string
+            date_str = expense_result['date'].isoformat()
+        expense_result['date'] = date_str
+        
+        # Lấy thông tin category nếu có
+        if expense_result.get('category_id'):
+            try:
+                category = Category.objects.get(id=expense_result['category_id'], user=request.user)
+                expense_result['category_name'] = category.name
+            except Category.DoesNotExist:
+                expense_result['category_name'] = None
+        else:
             expense_result['category_name'] = None
-    else:
-        expense_result['category_name'] = None
-    
-    # Thêm intent info
-    expense_result['intent'] = intent
-    expense_result['confidence'] = confidence
-    
-    return JsonResponse(expense_result)
+        
+        # Thêm intent info
+        expense_result['intent'] = intent
+        expense_result['confidence'] = confidence
+        expense_result['is_query'] = False  # Flag để frontend biết đây là expense
+        
+        return JsonResponse(expense_result)
+        
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()  # Log stack trace
+        return JsonResponse({
+            'success': False,
+            'error': f'Lỗi xử lý: {error_msg}'
+        }, status=500)
 
 
 @login_required
@@ -1610,56 +1806,95 @@ def save_expense_from_chat_api(request):
     import json
     from decimal import Decimal
     from datetime import datetime
+    import traceback
     
     try:
-        data = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
-    
-    # Validate dữ liệu
-    amount = data.get('amount')
-    description = data.get('description', '').strip()
-    category_id = data.get('category_id')
-    date_str = data.get('date')
-    
-    if not amount:
-        return JsonResponse({'success': False, 'error': 'Thiếu số tiền'}, status=400)
-    
-    if not date_str:
-        return JsonResponse({'success': False, 'error': 'Thiếu ngày tháng'}, status=400)
-    
-    try:
-        amount = Decimal(str(amount))
-        if amount <= 0:
-            return JsonResponse({'success': False, 'error': 'Số tiền phải lớn hơn 0'}, status=400)
-    except:
-        return JsonResponse({'success': False, 'error': 'Số tiền không hợp lệ'}, status=400)
-    
-    try:
-        expense_date = datetime.fromisoformat(date_str).date()
-    except:
-        return JsonResponse({'success': False, 'error': 'Ngày tháng không hợp lệ'}, status=400)
-    
-    # Kiểm tra category
-    category = None
-    if category_id:
         try:
-            category = Category.objects.get(id=category_id, user=request.user)
-        except Category.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Danh mục không tồn tại'}, status=400)
-    
-    # Tạo expense
-    expense = Expense.objects.create(
-        user=request.user,
-        amount=amount,
-        description=description,
-        category=category,
-        date=expense_date
-    )
-    
-    # Kiểm tra budget warning
-    warning_message = None
-    try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+        
+        # Validate dữ liệu
+        amount = data.get('amount')
+        description = data.get('description', '').strip()
+        category_id = data.get('category_id')
+        date_str = data.get('date')
+        
+        if not amount:
+            return JsonResponse({'success': False, 'error': 'Thiếu số tiền'}, status=400)
+        
+        if not date_str:
+            return JsonResponse({'success': False, 'error': 'Thiếu ngày tháng'}, status=400)
+        
+        try:
+            amount = Decimal(str(amount))
+            if amount <= 0:
+                return JsonResponse({'success': False, 'error': 'Số tiền phải lớn hơn 0'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Số tiền không hợp lệ: {str(e)}'}, status=400)
+        
+        try:
+            # Handle both ISO format and simple date format
+            if 'T' in date_str:
+                expense_date = datetime.fromisoformat(date_str).date()
+            else:
+                expense_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Ngày tháng không hợp lệ ({date_str}): {str(e)}'}, status=400)
+        
+        # Kiểm tra category
+        category = None
+        if category_id:
+            try:
+                category = Category.objects.get(id=category_id, user=request.user)
+            except Category.DoesNotExist:
+                return JsonResponse({'success': False, 'error': f'Danh mục không tồn tại (ID: {category_id})'}, status=400)
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': f'Lỗi kiểm tra danh mục: {str(e)}'}, status=400)
+        
+        # Tạo expense
+        expense = Expense.objects.create(
+            user=request.user,
+            amount=amount,
+            description=description,
+            category=category,
+            date=expense_date
+        )
+        
+        # Kiểm tra budget warning
+        warning_message = None
+        try:
+            budget = Budget.objects.get(user=request.user)
+            current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
+            
+            if current_total > budget.total:
+                over_amount = current_total - budget.total
+                warning_message = f'⚠️ Bạn đã vượt quá ngân sách {over_amount:,.0f} ₫!'
+        except Budget.DoesNotExist:
+            pass
+        except Exception as e:
+            print(f"Lỗi kiểm tra budget: {e}")
+        
+        # Train model trong background
+        try:
+            thread = threading.Thread(target=train_model, args=(request.user,))
+            thread.start()
+        except Exception as e:
+            print(f"Lỗi chạy background task: {e}")
+        
+        return JsonResponse({
+            'success': True,
+            'expense_id': expense.id,
+            'warning': warning_message
+        })
+        
+    except Exception as e:
+        # Catch-all for unexpected errors
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': f'Lỗi lưu chi tiêu: {str(e)}'
+        }, status=500)
         budget = Budget.objects.get(user=request.user)
         current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
         

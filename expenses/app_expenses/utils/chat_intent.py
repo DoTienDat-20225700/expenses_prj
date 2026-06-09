@@ -29,7 +29,51 @@ class ChatIntentDetector:
     - MONTHLY_REPORT: Báo cáo tháng chi tiết
     - GREETING: Chào hỏi
     - HELP: Hỏi trợ giúp
+    - OUT_OF_SCOPE: Câu hỏi ngoài lĩnh vực
     """
+    
+    # Từ khóa liên quan đến tài chính (in scope)
+    FINANCE_KEYWORDS = [
+        'chi', 'tiêu', 'chi tiêu', 'chi bao', 'chi tất',
+        'tài chính', 'tiền', 'đồng',  # Removed 'đ' - too short, false positives
+        'thu', 'thu nhập', 'lương', 'kiếm', 'được',
+        'tiết kiệm', 'tiết', 'mục tiêu', 'goals',
+        'ngân sách', 'budget', 'hạn mức', 'vượt',
+        'giao dịch', 'transaction', 'tổng', 'số',
+        'danh mục', 'category', 'ăn', 'uống', 'mua', 'shopping',
+        'grab', 'taxi', 'xăng', 'cafe', 'gym', 'phone',
+        'tháng', 'tuần', 'ngày', 'hôm', 'năm',
+        'tư vấn', 'advice', 'khuyên', 'mẹo', 'tips',
+        'báo cáo', 'report', 'phân tích', 'analyze',
+        'so sánh', 'compare', 'top', 'lớn nhất',
+        'tìm', 'search', 'gần đây', 'mới nhất', 'vừa',
+        'bao nhiêu', 'tổng',  # Removed 'có', 'đã' - too generic
+        'xem', 'help', 'giúp', 'hướng dẫn', 'chức năng',
+        'chào', 'hello', 'xin chào', 'hế lô'  # Removed 'hi' - too short
+    ]
+    
+    # Từ khóa ngoài lĩnh vực (out of scope)
+    OUT_OF_SCOPE_KEYWORDS = [
+        'thời tiết', 'trời', 'mưa', 'nắng',
+        'tin tức', 'news', 'sự kiện', 'event',
+        'phim', 'phát sóng', 'xem phim',
+        'nhạc', 'bài hát', 'ca sĩ', 'concert',
+        'thể thao', 'bóng', 'game', 'chơi',
+        'công nghệ', 'tech', 'iphone', 'ipad', 'laptop', 'máy tính',
+        'lịch sử', 'địa lý', 'khoa học',
+        'công thức', 'cách nấu', 'nấu ăn',
+        'hình ảnh', 'ảnh', 'hình',
+        'đó là gì', 'cái gì', 'ai', 'ở đâu',
+        'như thế nào', 'tại sao', 'vì sao',
+        'những lý do', 'nguyên nhân',
+        'tạm biệt', 'goodbye', 'bye',
+        'tình cảm', 'tình yêu', 'yêu thương',
+        'sức khỏe', 'bệnh', 'thuốc', 'bác sĩ',
+        'thời gian', 'giờ', 'phút', 'giây',  # Nếu không có context tài chính
+        'tên', 'họ', 'nhân vật', 'người',
+        'chuyên gia', 'kỹ sư', 'bác', 'ông',
+        'kinh doanh', 'đầu tư', 'cổ phiếu', 'forex', 'chứng khoán',  # Ngoài scope của app này
+    ]
     
     # Từ khóa cho mỗi intent
     INTENT_KEYWORDS = {
@@ -118,11 +162,44 @@ class ChatIntentDetector:
         },
     }
     
+    def is_in_scope(self, text):
+        """
+        Kiểm tra xem câu hỏi có liên quan đến tài chính không
+        Returns: (is_in_scope: bool, reason: str)
+        """
+        text_lower = text.lower()
+        
+        # Nếu có out of scope keywords, return False IMMEDIATELY (highest priority)
+        for keyword in self.OUT_OF_SCOPE_KEYWORDS:
+            if keyword in text_lower:
+                return False, f"Out of scope: {keyword}"
+        
+        # Nếu có greeting keywords, assume là in scope (hỏi/chào chatbot)
+        if any(word in text_lower for word in ['chào', 'hello', 'xin chào', 'hế lô']):
+            return True, "Greeting"
+        
+        # Nếu có finance keywords, return True
+        for keyword in self.FINANCE_KEYWORDS:
+            if keyword in text_lower:
+                return True, "In scope"
+        
+        # Nếu có số tiền, assume là về chi tiêu
+        if re.search(r'\d+\s*[ktk]|\d+\s*triệu|\d+\s*nghìn|\d{3,}', text):
+            return True, "Detected amount"
+        
+        # Default: Out of scope
+        return False, "No finance keywords detected"
+    
     def detect_intent(self, text):
         """
         Phát hiện intent từ text
         Returns: (intent_type, confidence)
         """
+        # Kiểm tra scope trước
+        in_scope, reason = self.is_in_scope(text)
+        if not in_scope:
+            return 'OUT_OF_SCOPE', 0.9
+        
         text = text.lower().strip()
         
         # Check cho mỗi intent
@@ -206,6 +283,9 @@ class ChatIntentDetector:
             # Nếu có số tiền thì assume là CREATE_EXPENSE
             if re.search(r'\d+', text):
                 return 'CREATE_EXPENSE', 0.5
+            # Nếu không in scope, return OUT_OF_SCOPE
+            if not in_scope:
+                return 'OUT_OF_SCOPE', 0.9
             return 'UNKNOWN', 0.0
         
         best_intent = max(scores, key=scores.get)
@@ -452,6 +532,23 @@ class ChatQueryHandler:
                 'balance': float(balance),
                 'budget': float(budget_amount)
             }
+        }
+    
+    def handle_out_of_scope(self, text):
+        """Xử lý câu hỏi ngoài lĩnh vực"""
+        response = """❌ Xin lỗi, tôi chỉ hỗ trợ các câu hỏi về **tài chính và chi tiêu** cá nhân.
+
+Bạn có thể hỏi tôi về:
+• 💰 Chi tiêu, thu nhập, tiết kiệm
+• 📊 Phân tích tài chính, báo cáo tháng
+• 💡 Tư vấn quản lý tiền
+• 📈 Xu hướng chi tiêu, so sánh kỳ
+
+Ví dụ: "Chi tiêu tháng này bao nhiêu?" hoặc "Gõ 'help' để xem hướng dẫn"
+"""
+        return {
+            'type': 'info',
+            'message': response
         }
     
     def handle_greeting(self, text):
@@ -1097,7 +1194,9 @@ def process_chat_input(text, user):
     # Xử lý các intent khác
     handler = ChatQueryHandler(user)
     
-    if intent == 'CREATE_INCOME':
+    if intent == 'OUT_OF_SCOPE':
+        response = handler.handle_out_of_scope(text)
+    elif intent == 'CREATE_INCOME':
         response = handler.handle_create_income(text)
     elif intent == 'QUERY_EXPENSES':
         response = handler.handle_query_expenses(text)

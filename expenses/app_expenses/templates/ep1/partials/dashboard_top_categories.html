@@ -1,0 +1,21 @@
+{% load humanize %} {% if top_categories %}
+<div class="list-group list-group-flush rounded-bottom-4">
+  {% for cat in top_categories %}
+  <div
+    class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 bg-transparent"
+  >
+    <span class="badge category-badge px-3 py-2 rounded-pill shadow-sm">
+      {{ cat.category__name|default:"Không xác định" }}
+    </span>
+    <span class="fw-bold text-main">
+      {{ cat.total|floatformat:0|intcomma }} ₫
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="fas fa-inbox fs-1 mb-2 opacity-50"></i>
+  <p>Chưa có dữ liệu</p>
+</div>
+{% endif %}

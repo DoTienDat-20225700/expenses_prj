@@ -345,7 +345,7 @@
             <i class="fas fa-robot me-2 text-white"></i>
             <div>
               <h6 class="mb-0 text-white">Trợ lý Chi Tiêu</h6>
-              <small class="text-white-50">Nhập bằng giọng nói hoặc text</small>
+              <small class="text-white-50">Nhập bằng text</small>
             </div>
           </div>
           <button class="btn btn-sm text-white" id="chatCloseBtn" aria-label="Đóng">
@@ -379,14 +379,7 @@
         <div class="chat-input-area">
           <form id="floatingChatForm">
             <div class="input-group">
-              <button 
-                class="btn btn-outline-danger btn-sm" 
-                type="button" 
-                id="floatingVoiceBtn"
-                title="Nhập bằng giọng nói"
-              >
-                <i class="fas fa-microphone"></i>
-              </button>
+              <!-- voice input removed -->
               <input 
                 type="text" 
                 class="form-control form-control-sm" 
@@ -398,9 +391,7 @@
                 <i class="fas fa-paper-plane"></i>
               </button>
             </div>
-            <div id="floatingVoiceStatus" class="text-center small text-danger mt-1 voice-status-hidden">
-              <i class="fas fa-circle blink me-1"></i>Đang nghe...
-            </div>
+            <!-- voice status removed -->
           </form>
         </div>
       </div>
@@ -409,13 +400,13 @@
     <!-- Confirmation Modal for Chat -->
     <div class="modal fade" id="floatingConfirmModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
+        <div class="modal-content floating-confirm-modal">
           <div class="modal-header border-0 pb-0">
             <h6 class="modal-title">Xác nhận chi tiêu</h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <div class="expense-preview p-2 bg-light rounded small">
+            <div class="expense-preview p-2 rounded small">
               <div class="row mb-1">
                 <div class="col-5 text-muted">Số tiền:</div>
                 <div class="col-7 fw-bold text-danger" id="floatingPreviewAmount"></div>
@@ -511,6 +502,10 @@
         flex-direction: column;
         overflow: hidden;
         animation: slideUp 0.3s ease;
+      }
+
+      .chat-box-hidden {
+        display: none;
       }
       
       @keyframes slideUp {
@@ -622,11 +617,7 @@
         50% { opacity: 0.3; }
       }
       
-      #floatingVoiceBtn.listening {
-        background-color: #dc3545;
-        color: white;
-        border-color: #dc3545;
-      }
+      /* Floating voice button removed */
       
       /* Mobile Responsive */
       @media (max-width: 576px) {
@@ -660,82 +651,114 @@
         border-color: #4b5563;
         color: #e5e7eb;
       }
+
+      /* Chat confirmation modal follows the active theme */
+      .floating-confirm-modal {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .floating-confirm-modal .modal-title,
+      .floating-confirm-modal .form-label,
+      .floating-confirm-modal .text-muted {
+        color: var(--text-primary) !important;
+      }
+
+      .floating-confirm-modal .btn-close {
+        filter: none;
+        opacity: 0.8;
+      }
+
+      .floating-confirm-modal .expense-preview {
+        background: rgba(148, 163, 184, 0.12);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+      }
+
+      .floating-confirm-modal .form-select {
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        border-color: var(--border-color);
+      }
+
+      body.dark-mode .floating-confirm-modal {
+        background: #111827;
+        color: #e5e7eb;
+        border-color: #374151;
+      }
+
+      body.dark-mode .floating-confirm-modal .modal-header,
+      body.dark-mode .floating-confirm-modal .modal-footer {
+        border-color: #374151 !important;
+      }
+
+      body.dark-mode .floating-confirm-modal .modal-title,
+      body.dark-mode .floating-confirm-modal .form-label,
+      body.dark-mode .floating-confirm-modal .text-muted {
+        color: #e5e7eb !important;
+      }
+
+      body.dark-mode .floating-confirm-modal .btn-close {
+        filter: invert(1);
+      }
+
+      body.dark-mode .floating-confirm-modal .expense-preview {
+        background: rgba(15, 23, 42, 0.88);
+        border-color: #374151;
+        color: #e5e7eb;
+      }
+
+      body.dark-mode .floating-confirm-modal .form-select {
+        background-color: #0f172a;
+        color: #e5e7eb;
+        border-color: #374151;
+      }
+
+      .floating-confirm-backdrop {
+        background: rgba(0, 0, 0, 0.45);
+      }
     </style>
     
     <script>
       // Floating Chat Widget JavaScript
       (function() {
         let floatingCurrentParsedData = null;
-        let floatingRecognition = null;
         
         const chatToggleBtn = document.getElementById('chatToggleBtn');
         const chatCloseBtn = document.getElementById('chatCloseBtn');
         const chatBox = document.getElementById('chatBox');
         const chatForm = document.getElementById('floatingChatForm');
         const chatInput = document.getElementById('floatingChatInput');
-        const voiceBtn = document.getElementById('floatingVoiceBtn');
-        const voiceStatus = document.getElementById('floatingVoiceStatus');
         const chatMessages = document.getElementById('floatingChatMessages');
         
+        // Restore chat open state (default: closed)
+        const savedChatState = localStorage.getItem('floatingChatOpen');
+        if (savedChatState === 'true') {
+          chatBox.style.display = 'flex';
+        } else {
+          chatBox.style.display = 'none';
+        }
+
         // Toggle chat box
         chatToggleBtn.addEventListener('click', function() {
           if (chatBox.style.display === 'none') {
             chatBox.style.display = 'flex';
             chatInput.focus();
+            localStorage.setItem('floatingChatOpen', 'true');
           } else {
             chatBox.style.display = 'none';
+            localStorage.setItem('floatingChatOpen', 'false');
           }
         });
         
         chatCloseBtn.addEventListener('click', function() {
           chatBox.style.display = 'none';
+          localStorage.setItem('floatingChatOpen', 'false');
         });
         
-        // Initialize Speech Recognition
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-          floatingRecognition = new SpeechRecognition();
-          floatingRecognition.lang = 'vi-VN';
-          floatingRecognition.continuous = false;
-          floatingRecognition.interimResults = false;
-          
-          floatingRecognition.onstart = function() {
-            voiceBtn.classList.add('listening');
-            voiceStatus.style.display = 'block';
-          };
-          
-          floatingRecognition.onend = function() {
-            voiceBtn.classList.remove('listening');
-            voiceStatus.style.display = 'none';
-          };
-          
-          floatingRecognition.onresult = function(event) {
-            const transcript = event.results[0][0].transcript;
-            chatInput.value = transcript;
-            setTimeout(() => {
-              chatForm.dispatchEvent(new Event('submit'));
-            }, 500);
-          };
-          
-          floatingRecognition.onerror = function(event) {
-            console.error('Speech recognition error:', event.error);
-            addFloatingMessage('bot', '❌ Lỗi nhận dạng giọng nói.', 'error');
-          };
-        }
-        
-        // Voice button
-        voiceBtn.addEventListener('click', function() {
-          if (!floatingRecognition) {
-            alert('Trình duyệt không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome hoặc Edge.');
-            return;
-          }
-          
-          if (this.classList.contains('listening')) {
-            floatingRecognition.stop();
-          } else {
-            floatingRecognition.start();
-          }
-        });
+        // Voice recognition removed — only text input supported
         
         // Chat form submit
         chatForm.addEventListener('submit', function(e) {
@@ -762,18 +785,26 @@
             document.getElementById(loadingId).remove();
             
             if (data.success) {
-              // Kiểm tra xem có phải là query response không
-              if (data.response) {
+              // Kiểm tra xem có phải là query response không (is_query flag)
+              if (data.is_query === true || data.response) {
                 // Đây là query response (info/help/greeting)
-                const message = formatMessage(data.response.message);
-                addFloatingMessage('bot', message, 'success');
-              } else {
-                // Đây là create expense response
+                const message = data.response?.message || data.response || 'Đã xử lý';
+                addFloatingMessage('bot', formatMessage(message), 'success');
+              } else if (data.is_query === false) {
+                // Đây là create expense response - show confirmation
                 floatingCurrentParsedData = data;
                 showFloatingConfirmation(data);
+              } else {
+                // Fallback: check if we have expense data
+                if (data.amount !== undefined && data.category_id !== undefined) {
+                  floatingCurrentParsedData = data;
+                  showFloatingConfirmation(data);
+                } else {
+                  addFloatingMessage('bot', '✅ Đã xử lý', 'success');
+                }
               }
             } else {
-              addFloatingMessage('bot', '❌ ' + data.error, 'error');
+              addFloatingMessage('bot', '❌ ' + (data.error || 'Có lỗi xảy ra'), 'error');
             }
           })
           .catch(error => {
@@ -815,76 +846,131 @@
         
         // Show confirmation modal
         function showFloatingConfirmation(data) {
-          const amount = new Intl.NumberFormat('vi-VN').format(data.amount);
-          document.getElementById('floatingPreviewAmount').textContent = amount + ' đ';
-          
-          let categoryText = data.category_name || data.category_hint || 'Chưa xác định';
-          if (!data.category_id) {
-            categoryText += ' <span class="badge bg-warning text-dark">Gợi ý</span>';
+          try {
+            const amount = new Intl.NumberFormat('vi-VN').format(data.amount);
+            document.getElementById('floatingPreviewAmount').textContent = amount + ' đ';
+            
+            let categoryText = data.category_name || data.category_hint || 'Chưa xác định';
+            if (!data.category_id) {
+              categoryText += ' <span class="badge bg-warning text-dark">Gợi ý</span>';
+            }
+            document.getElementById('floatingPreviewCategory').innerHTML = categoryText;
+            
+            // Handle date parsing safely
+            let displayDate = 'Hôm nay';
+            if (data.date) {
+              try {
+                const date = new Date(data.date);
+                displayDate = date.toLocaleDateString('vi-VN');
+              } catch (e) {
+                console.warn('Date parse error:', e, data.date);
+              }
+            }
+            document.getElementById('floatingPreviewDate').textContent = displayDate;
+            document.getElementById('floatingPreviewDescription').textContent = data.description || data.original_text || '';
+            document.getElementById('floatingCategoryOverride').value = '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('floatingConfirmModal'));
+            modal.show();
+
+            // Tag newest backdrop so it doesn't block clicks
+            setTimeout(function() {
+              const backdrops = document.querySelectorAll('.modal-backdrop');
+              const backdrop = backdrops[backdrops.length - 1];
+              if (backdrop) {
+                backdrop.classList.add('floating-confirm-backdrop');
+              }
+            }, 0);
+          } catch (error) {
+            console.error('Error in showFloatingConfirmation:', error, data);
+            addFloatingMessage('bot', '❌ Lỗi hiển thị dữ liệu: ' + error.message, 'error');
           }
-          document.getElementById('floatingPreviewCategory').innerHTML = categoryText;
-          
-          const date = new Date(data.date);
-          document.getElementById('floatingPreviewDate').textContent = date.toLocaleDateString('vi-VN');
-          document.getElementById('floatingPreviewDescription').textContent = data.description || data.original_text;
-          document.getElementById('floatingCategoryOverride').value = '';
-          
-          const modal = new bootstrap.Modal(document.getElementById('floatingConfirmModal'));
-          modal.show();
+        }
+
+        // Ensure backdrop cleanup so it never blocks clicks
+        const floatingConfirmModalEl = document.getElementById('floatingConfirmModal');
+        if (floatingConfirmModalEl) {
+          floatingConfirmModalEl.addEventListener('hidden.bs.modal', function() {
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('padding-right');
+            document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+              backdrop.remove();
+            });
+          });
         }
         
         // Confirm save button
         document.getElementById('floatingConfirmSaveBtn').addEventListener('click', function() {
-          if (!floatingCurrentParsedData) return;
+          if (!floatingCurrentParsedData) {
+            addFloatingMessage('bot', '❌ Không có dữ liệu để lưu', 'error');
+            return;
+          }
           
           this.disabled = true;
           this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Lưu...';
           
-          const categoryOverride = document.getElementById('floatingCategoryOverride').value;
-          const categoryId = categoryOverride || floatingCurrentParsedData.category_id;
-          
-          const expenseData = {
-            amount: floatingCurrentParsedData.amount,
-            description: floatingCurrentParsedData.description || floatingCurrentParsedData.original_text,
-            category_id: categoryId,
-            date: floatingCurrentParsedData.date
-          };
-          
-          fetch("{% url 'ep1:save_expense_from_chat_api' %}", {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify(expenseData)
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              bootstrap.Modal.getInstance(document.getElementById('floatingConfirmModal')).hide();
-              
-              let message = '✅ Đã lưu thành công!';
-              if (data.warning) {
-                message += '<br><small>' + data.warning + '</small>';
+          try {
+            const categoryOverride = document.getElementById('floatingCategoryOverride').value;
+            const categoryId = categoryOverride || floatingCurrentParsedData.category_id;
+            
+            const expenseData = {
+              amount: floatingCurrentParsedData.amount,
+              description: floatingCurrentParsedData.description || floatingCurrentParsedData.original_text,
+              category_id: categoryId,
+              date: floatingCurrentParsedData.date
+            };
+            
+            console.log('Sending expense data:', expenseData);
+            
+            fetch("{% url 'ep1:save_expense_from_chat_api' %}", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+              },
+              body: JSON.stringify(expenseData)
+            })
+            .then(response => {
+              console.log('Response status:', response.status);
+              return response.json();
+            })
+            .then(data => {
+              console.log('Response data:', data);
+              if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('floatingConfirmModal')).hide();
+                
+                let message = '✅ Đã lưu thành công!';
+                if (data.warning) {
+                  message += '<br><small>' + data.warning + '</small>';
+                }
+                addFloatingMessage('bot', message, 'success');
+
+                if (window.refreshExpenseListUI) {
+                  window.refreshExpenseListUI();
+                }
+
+                if (window.refreshDashboardUI) {
+                  window.refreshDashboardUI();
+                }
+                
+              } else {
+                addFloatingMessage('bot', '❌ Lỗi: ' + (data.error || 'Không xác định'), 'error');
               }
-              addFloatingMessage('bot', message, 'success');
-              
-              // Reload after 2 seconds
-              setTimeout(() => {
-                location.reload();
-              }, 2000);
-            } else {
-              addFloatingMessage('bot', '❌ Lỗi: ' + data.error, 'error');
-            }
-          })
-          .catch(error => {
-            addFloatingMessage('bot', '❌ Có lỗi xảy ra.', 'error');
-            console.error('Error:', error);
-          })
-          .finally(() => {
+            })
+            .catch(error => {
+              console.error('Fetch error:', error);
+              addFloatingMessage('bot', '❌ Có lỗi xảy ra: ' + error.message, 'error');
+            })
+            .finally(() => {
+              this.disabled = false;
+              this.innerHTML = '<i class="fas fa-check me-1"></i>Lưu';
+            });
+          } catch (error) {
+            console.error('Error preparing data:', error);
+            addFloatingMessage('bot', '❌ Lỗi chuẩn bị dữ liệu: ' + error.message, 'error');
             this.disabled = false;
             this.innerHTML = '<i class="fas fa-check me-1"></i>Lưu';
-          });
+          }
         });
       })();
     </script>

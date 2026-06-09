@@ -44,12 +44,13 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
             <p class="text-muted mb-1 small">Chi Tiêu Tháng Này</p>
-            <h3 class="fw-bold mb-0 text-danger">
+            <h3 id="summaryThisMonth" class="fw-bold mb-0 text-danger">
               {{ this_month_expenses|floatformat:0|intcomma }} ₫
             </h3>
-            <small class="text-muted text-075rem"
-              >Đang hiển thị: {{ total_spent|floatformat:0|intcomma }} ₫</small
-            >
+            <small class="text-muted text-075rem">
+              Đang hiển thị:
+              <span id="summaryTotalSpent">{{ total_spent|floatformat:0|intcomma }}</span> ₫
+            </small>
           </div>
           <div class="bg-danger bg-opacity-10 p-3 rounded-3">
             <i class="fas fa-coins text-danger fs-4"></i>
@@ -65,7 +66,7 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
             <p class="text-muted mb-1 small">Chi Nhiều Nhất</p>
-            <h3 class="fw-bold mb-0">{{ top_category }}</h3>
+            <h3 id="summaryTopCategory" class="fw-bold mb-0">{{ top_category }}</h3>
           </div>
           <div class="bg-success bg-opacity-10 p-3 rounded-3">
             <i class="fas fa-chart-line text-success fs-4"></i>
@@ -82,15 +83,18 @@
           <div>
             <p class="text-muted mb-1 small">Ngân Sách Còn Lại (Tháng này)</p>
             <h3
+              id="summaryRemaining"
               class="fw-bold mb-0 {% if remaining >= 0 %}text-success{% else %}text-danger{% endif %}"
             >
               {{ remaining|floatformat:0|intcomma }} ₫
             </h3>
           </div>
           <div
+            id="summaryRemainingAccent"
             class="{% if remaining >= 0 %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 p-3 rounded-3"
           >
             <i
+              id="summaryRemainingIcon"
               class="fas fa-wallet {% if remaining >= 0 %}text-success{% else %}text-danger{% endif %} fs-4"
             ></i>
           </div>
@@ -202,7 +206,7 @@
             <th class="py-3 text-center col-width-10">Hành động</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="expenseTableBody">
           {% for expense in expenses %}
           <tr>
             <td class="ps-3 fw-bold text-primary">
@@ -213,7 +217,7 @@
             </td>
             <td>
               <span class="badge px-3 py-2 rounded-pill category-badge">
-                {{ expense.category }}
+                {{ expense.category.name|default:"Chưa phân loại" }}
               </span>
             </td>
             <td class="text-muted">{{ expense.date|date:"d/m/Y" }}</td>
@@ -276,8 +280,7 @@
 
           <li class="page-item active">
             <span class="page-link"
-              >Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages
-              }}</span
+              >Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span
             >
           </li>
 
@@ -341,7 +344,7 @@
   document.addEventListener('DOMContentLoaded', function () {
       // Biểu đồ Tròn
       const ctxPie = document.getElementById('expenseChart').getContext('2d');
-      new Chart(ctxPie, {
+      window.expenseChartInstance = new Chart(ctxPie, {
           type: 'doughnut',
           data: {
               labels: {{ chart_labels|safe }},
@@ -371,7 +374,7 @@
 
       // Biểu đồ Cột
       const ctxDay = document.getElementById('barChartDay').getContext('2d');
-      new Chart(ctxDay, {
+      window.expenseDayChartInstance = new Chart(ctxDay, {
           type: 'bar',
           data: {
               labels: {{ chart_labels_day|safe }},
@@ -402,6 +405,77 @@
           input.addEventListener('input', function() { this.value = formatNumber(this.value); });
           input.closest('form').addEventListener('submit', function() { input.value = input.value.replace(/,/g, ''); });
       }
+
+        // Refresh list UI (used after chat save)
+        window.refreshExpenseListUI = function() {
+          const url = new URL('{% url "ep1:ep1_list_refresh_api" %}', window.location.origin);
+          url.search = window.location.search;
+
+          fetch(url)
+            .then((res) => res.json())
+            .then((data) => {
+              if (!data.success) return;
+
+              const formatter = new Intl.NumberFormat('vi-VN');
+
+              const tbody = document.getElementById('expenseTableBody');
+              if (tbody && data.rows_html) {
+                tbody.innerHTML = data.rows_html;
+              }
+
+              const thisMonthEl = document.getElementById('summaryThisMonth');
+              if (thisMonthEl) {
+                thisMonthEl.textContent = formatter.format(data.summary.this_month_expenses) + ' ₫';
+              }
+
+              const totalSpentEl = document.getElementById('summaryTotalSpent');
+              if (totalSpentEl) {
+                totalSpentEl.textContent = formatter.format(data.summary.total_spent);
+              }
+
+              const topCategoryEl = document.getElementById('summaryTopCategory');
+              if (topCategoryEl) {
+                topCategoryEl.textContent = data.summary.top_category || '—';
+              }
+
+              const remainingEl = document.getElementById('summaryRemaining');
+              const remainingAccent = document.getElementById('summaryRemainingAccent');
+              const remainingIcon = document.getElementById('summaryRemainingIcon');
+              if (remainingEl && remainingAccent && remainingIcon) {
+                const remaining = data.summary.remaining || 0;
+                remainingEl.textContent = formatter.format(remaining) + ' ₫';
+
+                remainingEl.classList.remove('text-success', 'text-danger');
+                remainingAccent.classList.remove('bg-success', 'bg-danger');
+                remainingIcon.classList.remove('text-success', 'text-danger');
+
+                if (remaining >= 0) {
+                  remainingEl.classList.add('text-success');
+                  remainingAccent.classList.add('bg-success');
+                  remainingIcon.classList.add('text-success');
+                } else {
+                  remainingEl.classList.add('text-danger');
+                  remainingAccent.classList.add('bg-danger');
+                  remainingIcon.classList.add('text-danger');
+                }
+              }
+
+              if (window.expenseChartInstance) {
+                window.expenseChartInstance.data.labels = data.charts.labels;
+                window.expenseChartInstance.data.datasets[0].data = data.charts.data;
+                window.expenseChartInstance.update();
+              }
+
+              if (window.expenseDayChartInstance) {
+                window.expenseDayChartInstance.data.labels = data.charts.labels_day;
+                window.expenseDayChartInstance.data.datasets[0].data = data.charts.data_day;
+                window.expenseDayChartInstance.update();
+              }
+            })
+            .catch((err) => {
+              console.error('Refresh list failed:', err);
+            });
+        };
   });
 </script>
 

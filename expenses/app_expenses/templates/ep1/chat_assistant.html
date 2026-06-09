@@ -13,7 +13,7 @@ endblock title %} {% block content %}
             <div>
               <h4 class="mb-1">💬 Trợ lý Chi Tiêu</h4>
               <p class="mb-0 text-muted small">
-                Nhập chi tiêu bằng giọng nói hoặc chat tự nhiên
+                Nhập chi tiêu bằng chat tự nhiên
               </p>
             </div>
           </div>
@@ -47,16 +47,6 @@ endblock title %} {% block content %}
           <div class="border-top p-3 bg-white">
             <form id="chatForm">
               <div class="input-group">
-                <!-- Voice Button -->
-                <button
-                  class="btn btn-outline-danger"
-                  type="button"
-                  id="voiceBtn"
-                  title="Nhập bằng giọng nói"
-                >
-                  <i class="fas fa-microphone"></i>
-                </button>
-
                 <!-- Text Input -->
                 <input
                   type="text"
@@ -72,14 +62,7 @@ endblock title %} {% block content %}
                 </button>
               </div>
 
-              <!-- Voice Status -->
-              <div
-                id="voiceStatus"
-                class="mt-2 text-center small text-muted voice-status-hidden"
-              >
-                <i class="fas fa-circle text-danger me-1 blink"></i>
-                <span>Đang nghe...</span>
-              </div>
+              <!-- Voice input removed -->
             </form>
           </div>
         </div>
@@ -243,11 +226,7 @@ endblock title %} {% block content %}
     animation: blink 1.5s infinite;
   }
 
-  #voiceBtn.listening {
-    background-color: #dc3545;
-    color: white;
-    border-color: #dc3545;
-  }
+  /* Voice button removed */
 
   #chatMessages {
     scroll-behavior: smooth;
@@ -256,61 +235,8 @@ endblock title %} {% block content %}
 
 <script>
   let currentParsedData = null;
-  let recognition = null;
 
-  // Initialize Speech Recognition
-  if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.lang = "vi-VN";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = function () {
-      document.getElementById("voiceBtn").classList.add("listening");
-      document.getElementById("voiceStatus").style.display = "block";
-    };
-
-    recognition.onend = function () {
-      document.getElementById("voiceBtn").classList.remove("listening");
-      document.getElementById("voiceStatus").style.display = "none";
-    };
-
-    recognition.onresult = function (event) {
-      const transcript = event.results[0][0].transcript;
-      document.getElementById("chatInput").value = transcript;
-      // Auto submit
-      setTimeout(() => {
-        document.getElementById("chatForm").dispatchEvent(new Event("submit"));
-      }, 500);
-    };
-
-    recognition.onerror = function (event) {
-      console.error("Speech recognition error:", event.error);
-      addMessage(
-        "bot",
-        "❌ Lỗi nhận dạng giọng nói. Vui lòng thử lại.",
-        "error",
-      );
-    };
-  }
-
-  // Voice Button Click
-  document.getElementById("voiceBtn").addEventListener("click", function () {
-    if (!recognition) {
-      alert(
-        "Trình duyệt của bạn không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome hoặc Edge.",
-      );
-      return;
-    }
-
-    if (this.classList.contains("listening")) {
-      recognition.stop();
-    } else {
-      recognition.start();
-    }
-  });
+  // Voice recognition removed — only text input supported now
 
   // Chat Form Submit
   document.getElementById("chatForm").addEventListener("submit", function (e) {
@@ -345,8 +271,20 @@ endblock title %} {% block content %}
         document.getElementById(loadingId).remove();
 
         if (data.success) {
-          currentParsedData = data;
-          showConfirmation(data);
+          // If the parser thinks this is a query (not a create), render response
+          if (data.is_query) {
+            const resp = data.response;
+            if (resp && resp.message) {
+              addMessage("bot", resp.message);
+            } else {
+              addMessage("bot", "🤖 Đã xử lý. Không có dữ liệu trả về.");
+            }
+            currentParsedData = null;
+          } else {
+            // CREATE_EXPENSE flow: show confirmation modal for saving
+            currentParsedData = data;
+            showConfirmation(data);
+          }
         } else {
           addMessage("bot", "❌ " + data.error, "error");
         }
@@ -382,6 +320,63 @@ endblock title %} {% block content %}
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
     return messageId;
+  }
+
+  // Refresh recent expenses area without reloading the page
+  function refreshRecentExpenses(limit = 5) {
+    fetch("{% url 'ep1:chat_history_api' %}?limit=" + limit)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const container = document.getElementById("recentExpenses");
+        container.innerHTML = "";
+        const expenses = data.expenses || [];
+        if (expenses.length === 0) {
+          container.innerHTML =
+            '<p class="text-muted mb-0">Chưa có chi tiêu nào</p>';
+          return;
+        }
+
+        expenses.forEach((exp) => {
+          const row = document.createElement("div");
+          row.className = "d-flex justify-content-between py-2 border-bottom";
+
+          const left = document.createElement("div");
+          const dateSpan = document.createElement("span");
+          const d = new Date(exp.date);
+          dateSpan.className = "text-muted";
+          dateSpan.textContent = d.toLocaleDateString("vi-VN", {
+            day: "2-digit",
+            month: "2-digit",
+          });
+
+          const desc = document.createElement("span");
+          desc.className = "ms-2";
+          desc.textContent = exp.description || "Chi tiêu";
+
+          left.appendChild(dateSpan);
+          left.appendChild(desc);
+
+          if (exp.category) {
+            const badge = document.createElement("span");
+            badge.className = "badge bg-light text-dark ms-1";
+            badge.textContent = exp.category;
+            left.appendChild(badge);
+          }
+
+          const right = document.createElement("div");
+          right.className = "text-danger fw-bold";
+          right.textContent =
+            new Intl.NumberFormat("vi-VN").format(exp.amount) + "đ";
+
+          row.appendChild(left);
+          row.appendChild(right);
+          container.appendChild(row);
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to refresh recent expenses", err);
+      });
   }
 
   // Show confirmation modal
@@ -463,10 +458,19 @@ endblock title %} {% block content %}
             }
             addMessage("bot", message, "success");
 
-            // Reload recent expenses
-            setTimeout(() => {
-              location.reload();
-            }, 1500);
+            // Update recent expenses area in-place (no reload)
+            refreshRecentExpenses();
+
+            // Dispatch a global event so other parts of the app can refresh if needed
+            try {
+              window.dispatchEvent(
+                new CustomEvent("expense:saved", {
+                  detail: { expense_id: data.expense_id },
+                }),
+              );
+            } catch (e) {
+              // ignore
+            }
           } else {
             addMessage("bot", "❌ Lỗi: " + data.error, "error");
           }

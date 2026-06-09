@@ -4,8 +4,16 @@ import sys
 def run_command(command):
     try:
         # Chạy lệnh terminal
-        subprocess.run(command, shell=True, check=True)
-        print("✅ Thành công!")
+        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            print("✅ Thành công!")
+        else:
+            # Kiểm tra nếu service đã chạy
+            if "already started" in result.stderr or "already started" in result.stdout:
+                print("✅ MySQL đã chạy sẵn!")
+            else:
+                print("❌ Có lỗi xảy ra:")
+                print(result.stderr if result.stderr else result.stdout)
     except subprocess.CalledProcessError:
         print("❌ Có lỗi xảy ra. Hãy kiểm tra lại MySQL.")
 

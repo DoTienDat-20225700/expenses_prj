@@ -670,6 +670,21 @@ body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.8;
 }
 
+/* Keep modal above backdrop so it stays clickable */
+.modal-backdrop {
+  z-index: 1900;
+}
+
+.modal {
+  z-index: 2000;
+  pointer-events: auto;
+}
+
+.modal .modal-dialog,
+.modal .modal-content {
+  pointer-events: auto;
+}
+
 /* Nút đóng modal màu trắng */
 /* =========================================
    10. PROFILE AVATAR (Hồ sơ)
