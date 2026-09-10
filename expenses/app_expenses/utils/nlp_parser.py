@@ -47,6 +47,8 @@ class ExpenseNLPParser:
         (r'(\d+(?:[.,]\d+)?)\s*k(?!\w)', lambda x: float(x.replace(',', '.')) * 1000),
         # 5 triệu, 1.5 triệu, 2,5 triệu
         (r'(\d+(?:[.,]\d+)?)\s*tri[eệ]u', lambda x: float(x.replace(',', '.')) * 1000000),
+        # 5tr, 1.5tr
+        (r'(\d+(?:[.,]\d+)?)\s*tr(?!\w)', lambda x: float(x.replace(',', '.')) * 1000000),
         # 50 nghìn, 100 ngàn
         (r'(\d+(?:[.,]\d+)?)\s*(?:nghìn|ngàn|ngh[iì]n)', lambda x: float(x.replace(',', '.')) * 1000),
         # 1 tỷ

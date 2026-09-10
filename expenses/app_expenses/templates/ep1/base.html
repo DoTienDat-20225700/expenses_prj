@@ -384,7 +384,7 @@
                 type="text" 
                 class="form-control form-control-sm" 
                 id="floatingChatInput"
-                placeholder="Nhập chi tiêu..."
+                placeholder="Nhập câu hỏi hoặc giao dịch..."
                 autocomplete="off"
               />
               <button class="btn btn-primary btn-sm" type="submit">
@@ -402,43 +402,63 @@
       <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content floating-confirm-modal">
           <div class="modal-header border-0 pb-0">
-            <h6 class="modal-title">Xác nhận chi tiêu</h6>
+            <h6 class="modal-title" id="floatingConfirmTitle">Xác nhận chi tiêu</h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
             <div class="expense-preview p-2 rounded small">
               <div class="row mb-1">
                 <div class="col-5 text-muted">Số tiền:</div>
-                <div class="col-7 fw-bold text-danger" id="floatingPreviewAmount"></div>
+                <div class="col-7">
+                  <input type="number" min="1" step="0.01" class="form-control form-control-sm" id="floatingPreviewAmount">
+                </div>
               </div>
               <div class="row mb-1">
-                <div class="col-5 text-muted">Danh mục:</div>
+                <div class="col-5 text-muted" id="floatingPreviewCategoryLabel">Danh mục:</div>
                 <div class="col-7" id="floatingPreviewCategory"></div>
               </div>
               <div class="row mb-1">
                 <div class="col-5 text-muted">Ngày:</div>
-                <div class="col-7" id="floatingPreviewDate"></div>
+                <div class="col-7">
+                  <input type="date" class="form-control form-control-sm" id="floatingPreviewDate">
+                </div>
               </div>
               <div class="row">
                 <div class="col-5 text-muted">Mô tả:</div>
-                <div class="col-7" id="floatingPreviewDescription"></div>
+                <div class="col-7">
+                  <input type="text" maxlength="500" class="form-control form-control-sm" id="floatingPreviewDescription">
+                </div>
               </div>
             </div>
             
             <div class="mt-2">
-              <label class="form-label small text-muted">Chọn danh mục khác:</label>
+              <label class="form-label small text-muted" id="floatingCategoryOverrideLabel">Chọn danh mục khác:</label>
               <select class="form-select form-select-sm" id="floatingCategoryOverride">
                 <option value="">-- Giữ nguyên --</option>
                 {% for cat in user.category_set.all %}
                 <option value="{{ cat.id }}">{{ cat.name }}</option>
                 {% endfor %}
               </select>
+              <input type="text" class="form-control form-control-sm d-none" id="floatingIncomeSource" maxlength="100" placeholder="Nguồn thu">
+              <div id="floatingRecurringFields" class="d-none mt-2">
+                <label class="form-label small text-muted">Tần suất</label>
+                <select class="form-select form-select-sm" id="floatingRecurringFrequency">
+                  <option value="daily">Hàng ngày</option>
+                  <option value="weekly">Hàng tuần</option>
+                  <option value="monthly" selected>Hàng tháng</option>
+                  <option value="yearly">Hàng năm</option>
+                </select>
+                <label class="form-label small text-muted mt-2">Ngày bắt đầu</label>
+                <input type="date" class="form-control form-control-sm" id="floatingRecurringStartDate">
+                <label class="form-label small text-muted mt-2">Ngày kết thúc (không bắt buộc)</label>
+                <input type="date" class="form-control form-control-sm" id="floatingRecurringEndDate">
+              </div>
             </div>
           </div>
           <div class="modal-footer border-0 pt-0">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
             <button type="button" class="btn btn-primary btn-sm" id="floatingConfirmSaveBtn">
-              <i class="fas fa-check me-1"></i>Lưu
+              <i class="fas fa-check me-1"></i><span id="floatingConfirmSaveLabel">Lưu</span>
             </button>
           </div>
         </div>
@@ -785,11 +805,23 @@
             document.getElementById(loadingId).remove();
             
             if (data.success) {
+              if (data.gemini_warning) {
+                addFloatingMessage('bot', '⚠️ ' + data.gemini_warning, 'system');
+              }
               // Kiểm tra xem có phải là query response không (is_query flag)
               if (data.is_query === true || data.response) {
                 // Đây là query response (info/help/greeting)
                 const message = data.response?.message || data.response || 'Đã xử lý';
-                addFloatingMessage('bot', formatMessage(message), 'success');
+                addFloatingMessage('bot', message, 'success');
+              } else if (data.requires_confirmation && data.recurring_preview) {
+                floatingCurrentParsedData = { ...data.recurring_preview };
+                showFloatingConfirmation(floatingCurrentParsedData);
+              } else if (data.requires_confirmation && data.expense_action_preview) {
+                floatingCurrentParsedData = { ...data.expense_action_preview };
+                showFloatingConfirmation(floatingCurrentParsedData);
+              } else if (data.requires_confirmation && data.income_preview) {
+                floatingCurrentParsedData = { ...data.income_preview, _type: 'income' };
+                showFloatingConfirmation(floatingCurrentParsedData);
               } else if (data.is_query === false) {
                 // Đây là create expense response - show confirmation
                 floatingCurrentParsedData = data;
@@ -815,7 +847,24 @@
         });
         
         // Format message (convert markdown-style to HTML)
-        function formatMessage(text) {
+        function formatMessage(text, allowMarkup = false) {
+          text = String(text).replace(/[&<>"']/g, function (character) {
+            return {
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#039;'
+            }[character];
+          });
+
+          if (allowMarkup) {
+            text = text
+              .replace(/&lt;strong&gt;/g, '<strong>')
+              .replace(/&lt;\/strong&gt;/g, '</strong>')
+              .replace(/&lt;br\s*\/?&gt;/g, '<br>');
+          }
+
           // Convert **text** to <strong>text</strong>
           text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
           // Convert newlines to <br>
@@ -835,7 +884,7 @@
           
           const contentDiv = document.createElement('div');
           contentDiv.className = 'message-content';
-          contentDiv.innerHTML = content;
+          contentDiv.innerHTML = formatMessage(content, type === 'bot');
           
           messageDiv.appendChild(contentDiv);
           chatMessages.appendChild(messageDiv);
@@ -847,14 +896,26 @@
         // Show confirmation modal
         function showFloatingConfirmation(data) {
           try {
-            const amount = new Intl.NumberFormat('vi-VN').format(data.amount);
-            document.getElementById('floatingPreviewAmount').textContent = amount + ' đ';
+            const isAction = data._type === 'expense_action';
+            const isDelete = isAction && data.action === 'delete';
+            const isRecurring = data._type === 'recurring_income' || data._type === 'recurring_expense';
+            const isIncome = data._type === 'income' || data._type === 'recurring_income';
+            document.getElementById('floatingConfirmTitle').textContent = isDelete ? 'Xác nhận xóa chi tiêu' : (isAction ? 'Xác nhận sửa chi tiêu' : (isRecurring ? (isIncome ? 'Xác nhận thu nhập định kỳ' : 'Xác nhận chi tiêu định kỳ') : (isIncome ? 'Xác nhận thu nhập' : 'Xác nhận chi tiêu')));
+            document.getElementById('floatingPreviewCategoryLabel').textContent = isIncome ? 'Nguồn thu:' : 'Danh mục:';
+            document.getElementById('floatingCategoryOverrideLabel').classList.toggle('d-none', isIncome);
+            document.getElementById('floatingCategoryOverride').classList.toggle('d-none', isIncome);
+            document.getElementById('floatingIncomeSource').classList.toggle('d-none', !isIncome);
+            document.getElementById('floatingConfirmSaveLabel').textContent = isIncome ? 'Lưu thu nhập' : 'Lưu';
+            document.getElementById('floatingPreviewAmount').value = data.amount || '';
             
-            let categoryText = data.category_name || data.category_hint || 'Chưa xác định';
-            if (!data.category_id) {
-              categoryText += ' <span class="badge bg-warning text-dark">Gợi ý</span>';
+            const categoryElement = document.getElementById('floatingPreviewCategory');
+            categoryElement.textContent = isIncome ? data.source_name : (data.category_name || data.category_hint || 'Chưa xác định');
+            if (!isIncome && !data.category_id) {
+              const suggestionBadge = document.createElement('span');
+              suggestionBadge.className = 'badge bg-warning text-dark ms-1';
+              suggestionBadge.textContent = 'Gợi ý';
+              categoryElement.appendChild(suggestionBadge);
             }
-            document.getElementById('floatingPreviewCategory').innerHTML = categoryText;
             
             // Handle date parsing safely
             let displayDate = 'Hôm nay';
@@ -866,9 +927,21 @@
                 console.warn('Date parse error:', e, data.date);
               }
             }
-            document.getElementById('floatingPreviewDate').textContent = displayDate;
-            document.getElementById('floatingPreviewDescription').textContent = data.description || data.original_text || '';
+            document.getElementById('floatingPreviewDate').value = data.date || data.start_date || new Date().toISOString().slice(0, 10);
+            document.getElementById('floatingPreviewDescription').value = data.description || data.original_text || '';
             document.getElementById('floatingCategoryOverride').value = '';
+            document.getElementById('floatingIncomeSource').value = data.source_name || data.description || '';
+            document.getElementById('floatingRecurringFields').classList.toggle('d-none', !isRecurring);
+            document.getElementById('floatingCategoryOverrideLabel').classList.toggle('d-none', isIncome || isDelete);
+            document.getElementById('floatingCategoryOverride').classList.toggle('d-none', isIncome || isDelete);
+            document.getElementById('floatingIncomeSource').classList.toggle('d-none', !isIncome || isDelete);
+            document.getElementById('floatingPreviewAmount').readOnly = isDelete;
+            document.getElementById('floatingPreviewDate').readOnly = isDelete;
+            document.getElementById('floatingPreviewDescription').readOnly = isDelete;
+            document.getElementById('floatingConfirmSaveLabel').textContent = isDelete ? 'Xóa giao dịch' : (isAction ? 'Lưu thay đổi' : (isIncome ? 'Lưu thu nhập' : 'Lưu'));
+            document.getElementById('floatingRecurringFrequency').value = data.frequency || 'monthly';
+            document.getElementById('floatingRecurringStartDate').value = data.start_date || new Date().toISOString().slice(0, 10);
+            document.getElementById('floatingRecurringEndDate').value = data.end_date || '';
             
             const modal = new bootstrap.Modal(document.getElementById('floatingConfirmModal'));
             modal.show();
@@ -910,25 +983,51 @@
           this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Lưu...';
           
           try {
+            const isAction = floatingCurrentParsedData._type === 'expense_action';
+            const isRecurring = floatingCurrentParsedData._type === 'recurring_income' || floatingCurrentParsedData._type === 'recurring_expense';
+            const isIncome = floatingCurrentParsedData._type === 'income' || floatingCurrentParsedData._type === 'recurring_income';
             const categoryOverride = document.getElementById('floatingCategoryOverride').value;
             const categoryId = categoryOverride || floatingCurrentParsedData.category_id;
             
             const expenseData = {
-              amount: floatingCurrentParsedData.amount,
-              description: floatingCurrentParsedData.description || floatingCurrentParsedData.original_text,
+              amount: document.getElementById('floatingPreviewAmount').value,
+              description: document.getElementById('floatingPreviewDescription').value,
               category_id: categoryId,
-              date: floatingCurrentParsedData.date
+              date: document.getElementById('floatingPreviewDate').value
+            };
+            const incomeData = {
+              amount: document.getElementById('floatingPreviewAmount').value,
+              description: document.getElementById('floatingPreviewDescription').value,
+              source_name: document.getElementById('floatingIncomeSource').value,
+              date: document.getElementById('floatingPreviewDate').value
+            };
+            const recurringData = {
+              amount: document.getElementById('floatingPreviewAmount').value,
+              name: document.getElementById('floatingPreviewDescription').value,
+              description: document.getElementById('floatingPreviewDescription').value,
+              category_id: categoryId,
+              source_name: document.getElementById('floatingIncomeSource').value,
+              frequency: document.getElementById('floatingRecurringFrequency').value,
+              start_date: document.getElementById('floatingRecurringStartDate').value,
+              end_date: document.getElementById('floatingRecurringEndDate').value || null,
+              transaction_type: floatingCurrentParsedData._type
+            };
+            const actionData = {
+              expense_id: floatingCurrentParsedData.expense_id,
+              action: floatingCurrentParsedData.action,
+              amount: document.getElementById('floatingPreviewAmount').value,
+              description: document.getElementById('floatingPreviewDescription').value,
+              category_id: categoryId,
+              date: document.getElementById('floatingPreviewDate').value
             };
             
-            console.log('Sending expense data:', expenseData);
-            
-            fetch("{% url 'ep1:save_expense_from_chat_api' %}", {
+            fetch(isAction ? "{% url 'ep1:manage_expense_from_chat_api' %}" : (isRecurring ? "{% url 'ep1:save_recurring_from_chat_api' %}" : (isIncome ? "{% url 'ep1:save_income_from_chat_api' %}" : "{% url 'ep1:save_expense_from_chat_api' %}")), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
               },
-              body: JSON.stringify(expenseData)
+              body: JSON.stringify(isAction ? actionData : (isRecurring ? recurringData : (isIncome ? incomeData : expenseData)))
             })
             .then(response => {
               console.log('Response status:', response.status);
@@ -939,13 +1038,13 @@
               if (data.success) {
                 bootstrap.Modal.getInstance(document.getElementById('floatingConfirmModal')).hide();
                 
-                let message = '✅ Đã lưu thành công!';
+                let message = isAction ? (actionData.action === 'delete' ? '✅ Đã xóa chi tiêu!' : '✅ Đã cập nhật chi tiêu!') : (isRecurring ? '✅ Đã lưu giao dịch định kỳ thành công!' : (isIncome ? '✅ Đã lưu thu nhập thành công!' : '✅ Đã lưu chi tiêu thành công!'));
                 if (data.warning) {
                   message += '<br><small>' + data.warning + '</small>';
                 }
                 addFloatingMessage('bot', message, 'success');
 
-                if (window.refreshExpenseListUI) {
+                if (!isIncome && window.refreshExpenseListUI) {
                   window.refreshExpenseListUI();
                 }
 
@@ -963,13 +1062,13 @@
             })
             .finally(() => {
               this.disabled = false;
-              this.innerHTML = '<i class="fas fa-check me-1"></i>Lưu';
+              this.innerHTML = '<i class="fas fa-check me-1"></i><span id="floatingConfirmSaveLabel">Lưu</span>';
             });
           } catch (error) {
             console.error('Error preparing data:', error);
             addFloatingMessage('bot', '❌ Lỗi chuẩn bị dữ liệu: ' + error.message, 'error');
             this.disabled = false;
-            this.innerHTML = '<i class="fas fa-check me-1"></i>Lưu';
+            this.innerHTML = '<i class="fas fa-check me-1"></i><span id="floatingConfirmSaveLabel">Lưu</span>';
           }
         });
       })();

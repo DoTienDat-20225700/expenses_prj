@@ -1,6 +1,8 @@
 import csv
 import threading
 import os
+import logging
+import re
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -13,9 +15,12 @@ from django.db.models import Sum, Count, Q
 from django.contrib import messages
 from datetime import timedelta
 from django.utils import timezone
+from decouple import config
 from .models import *
 from .form import *
 from .ml_utils import predict_category, train_model, get_model_path
+
+logger = logging.getLogger(__name__)
 
 
 def register(request):
@@ -1371,6 +1376,7 @@ def generate_recurring_expenses(request):
     ).select_related('category')
     
     generated_count = 0
+    generated_income_count = 0
     
     # Process each due recurring expense
     for recurring in due_recurrings:
@@ -1394,10 +1400,32 @@ def generate_recurring_expenses(request):
         # Update next_due_date for next occurrence
         recurring.advance_next_due_date()
         recurring.save()
+
+    due_incomes = RecurringIncome.objects.filter(
+        user=user,
+        is_active=True,
+        next_due_date__lte=today,
+    ).select_related('source')
+    for recurring_income in due_incomes:
+        if recurring_income.is_expired():
+            recurring_income.is_active = False
+            recurring_income.save()
+            continue
+
+        Income.objects.create(
+            user=user,
+            source=recurring_income.source,
+            amount=recurring_income.amount,
+            description=f"[Định kỳ] {recurring_income.description or recurring_income.name}",
+            date=recurring_income.next_due_date,
+        )
+        generated_income_count += 1
+        recurring_income.advance_next_due_date()
+        recurring_income.save()
     
     # Notify user of results
-    if generated_count > 0:
-        messages.success(request, f'Đã tạo {generated_count} chi tiêu từ các mẫu định kỳ.')
+    if generated_count > 0 or generated_income_count > 0:
+        messages.success(request, f'Đã tạo {generated_count} chi tiêu và {generated_income_count} thu nhập từ các mẫu định kỳ.')
     else:
         messages.info(request, 'Không có chi tiêu định kỳ nào đến hạn.')
     
@@ -1708,6 +1736,88 @@ def chat_assistant(request):
     return render(request, 'ep1/chat_assistant.html', context)
 
 
+def _recurring_chat_preview(text, structured, user, intent):
+    from datetime import date
+    from app_expenses.utils.nlp_parser import ExpenseNLPParser
+
+    amount = structured.get('amount')
+    if not amount:
+        amount = ExpenseNLPParser()._extract_amount(text.lower())
+    if not amount:
+        return None
+
+    frequency = structured.get('frequency')
+    if frequency not in {'daily', 'weekly', 'monthly', 'yearly'}:
+        frequency_map = {
+            'ngày': 'daily', 'hàng ngày': 'daily', 'mỗi ngày': 'daily',
+            'tuần': 'weekly', 'hàng tuần': 'weekly', 'mỗi tuần': 'weekly',
+            'tháng': 'monthly', 'hàng tháng': 'monthly', 'mỗi tháng': 'monthly',
+            'năm': 'yearly', 'hàng năm': 'yearly', 'mỗi năm': 'yearly',
+        }
+        frequency = next((value for key, value in frequency_map.items() if key in text.lower()), 'monthly')
+
+    date_value = structured.get('date')
+    try:
+        start_date = date.fromisoformat(date_value) if date_value else timezone.now().date()
+    except (TypeError, ValueError):
+        start_date = timezone.now().date()
+
+    description = structured.get('description') or text.strip()
+    category_hint = structured.get('category_hint')
+    category = None
+    if category_hint:
+        category = Category.objects.filter(user=user, name__icontains=category_hint).first()
+
+    return {
+        'amount': amount,
+        'description': description,
+        'name': description[:200],
+        'category_id': category.id if category else None,
+        'category_name': category.name if category else category_hint,
+        'source_name': structured.get('source_name') or description[:100],
+        'frequency': frequency,
+        'start_date': start_date.isoformat(),
+        'end_date': structured.get('end_date'),
+        '_type': 'recurring_income' if intent == 'CREATE_RECURRING_INCOME' else 'recurring_expense',
+    }
+
+
+def _chat_expense_action_preview(text, user, intent):
+    """Find one user-owned expense for an explicit edit/delete confirmation."""
+    from app_expenses.utils.nlp_parser import ExpenseNLPParser
+
+    expenses = Expense.objects.filter(user=user).select_related('category')
+    amount = ExpenseNLPParser()._extract_amount(text.lower())
+    if amount:
+        expenses = expenses.filter(amount=amount)
+
+    search_terms = re.sub(
+        r'\b(sửa|sửa khoản chi|sửa chi tiêu|đổi|cập nhật|xóa|xóa khoản chi|'
+        r'xóa chi tiêu|xóa giao dịch|bỏ|khoản|chi tiêu|giao dịch|giúp|tôi|cho tôi)\b',
+        ' ', text.lower()
+    )
+    meaningful_terms = [term for term in search_terms.split() if len(term) > 2]
+    if meaningful_terms:
+        term_query = Q()
+        for term in meaningful_terms:
+            term_query |= Q(description__icontains=term) | Q(category__name__icontains=term)
+        expenses = expenses.filter(term_query)
+
+    expense = expenses.order_by('-date', '-id').first()
+    if not expense:
+        return None
+    return {
+        'expense_id': expense.id,
+        'amount': float(expense.amount),
+        'description': expense.description or '',
+        'date': expense.date.isoformat(),
+        'category_id': expense.category_id,
+        'category_name': expense.category.name if expense.category else 'Khác',
+        'action': 'delete' if intent == 'DELETE_EXPENSE' else 'edit',
+        '_type': 'expense_action',
+    }
+
+
 @login_required
 def parse_expense_api(request):
     """
@@ -1727,14 +1837,102 @@ def parse_expense_api(request):
     
     if not text:
         return JsonResponse({'success': False, 'error': 'Vui lòng nhập nội dung'}, status=400)
+
+    now = timezone.now().timestamp()
+    rate_limit = config('CHAT_RATE_LIMIT', default='10', cast=int)
+    rate_window = config('CHAT_RATE_WINDOW_SECONDS', default='60', cast=int)
+    request_times = [
+        timestamp for timestamp in request.session.get('chat_request_times', [])
+        if now - timestamp < rate_window
+    ]
+    if len(request_times) >= rate_limit:
+        retry_after = max(1, int(rate_window - (now - request_times[0])))
+        response = JsonResponse({
+            'success': False,
+            'error': f'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau {retry_after} giây.',
+            'retry_after': retry_after,
+        }, status=429)
+        response['Retry-After'] = str(retry_after)
+        return response
+    request_times.append(now)
+    request.session['chat_request_times'] = request_times
     
     try:
         # Phân tích intent
         from app_expenses.utils.chat_intent import process_chat_input
-        result = process_chat_input(text, request.user)
+        chat_history = request.session.get('chat_history', [])
+        result = process_chat_input(text, request.user, history=chat_history)
+        chat_history.append(text)
+        request.session['chat_history'] = chat_history[-6:]
+        logger.info(
+            'Chat classified: user_id=%s intent=%s confidence=%.2f',
+            request.user.id,
+            result['intent'],
+            result['confidence'],
+        )
         
         intent = result['intent']
         confidence = result['confidence']
+
+        if intent in {'EDIT_EXPENSE', 'DELETE_EXPENSE'}:
+            preview = _chat_expense_action_preview(text, request.user, intent)
+            if not preview:
+                return JsonResponse({
+                    'success': False,
+                    'intent': intent,
+                    'error': 'Không tìm thấy khoản chi phù hợp để xử lý.',
+                }, status=404)
+            return JsonResponse({
+                'success': True,
+                'intent': intent,
+                'confidence': confidence,
+                'requires_confirmation': True,
+                'expense_action_preview': preview,
+                'gemini_warning': result.get('gemini_error'),
+            })
+
+        if intent in {'CREATE_RECURRING_EXPENSE', 'CREATE_RECURRING_INCOME'}:
+            preview = _recurring_chat_preview(
+                text, result.get('structured', {}), request.user, intent
+            )
+            if not preview:
+                return JsonResponse({
+                    'success': False,
+                    'intent': intent,
+                    'error': 'Không tìm thấy số tiền cho giao dịch định kỳ.',
+                }, status=400)
+            return JsonResponse({
+                'success': True,
+                'intent': intent,
+                'confidence': confidence,
+                'requires_confirmation': True,
+                'recurring_preview': preview,
+                'gemini_warning': result.get('gemini_error'),
+            })
+
+        if intent == 'CREATE_INCOME':
+            response = result['response']
+            if response.get('type') == 'error':
+                return JsonResponse({
+                    'success': False,
+                    'intent': intent,
+                    'confidence': confidence,
+                    'error': response['message'],
+                }, status=400)
+            return JsonResponse({
+                'success': True,
+                'intent': intent,
+                'confidence': confidence,
+                'is_query': False,
+                'requires_confirmation': True,
+                'income_preview': {
+                    'amount': response['amount'],
+                    'description': response['description'],
+                    'source_name': response['source_name'],
+                    'date': response['date'],
+                },
+                'gemini_warning': result.get('gemini_error'),
+            })
         
         # Nếu là query intent hoặc OUT_OF_SCOPE, trả về response luôn
         if result['response'] is not None:
@@ -1743,7 +1941,8 @@ def parse_expense_api(request):
                 'intent': intent,
                 'confidence': confidence,
                 'response': result['response'],
-                'is_query': True  # Flag để frontend biết đây là query
+                'is_query': True,
+                'gemini_warning': result.get('gemini_error'),
             })
         
         # Nếu là CREATE_EXPENSE, parse như cũ
@@ -1776,17 +1975,167 @@ def parse_expense_api(request):
         expense_result['intent'] = intent
         expense_result['confidence'] = confidence
         expense_result['is_query'] = False  # Flag để frontend biết đây là expense
+        expense_result['gemini_warning'] = result.get('gemini_error')
         
         return JsonResponse(expense_result)
         
     except Exception as e:
         import traceback
         error_msg = str(e)
-        traceback.print_exc()  # Log stack trace
+        logger.exception('Chat processing failed: user_id=%s', request.user.id)
         return JsonResponse({
             'success': False,
             'error': f'Lỗi xử lý: {error_msg}'
         }, status=500)
+
+
+@login_required
+def save_income_from_chat_api(request):
+    """Lưu thu nhập sau khi người dùng xác nhận preview từ chatbot."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    import json
+    from datetime import datetime
+    from decimal import Decimal
+    from app_expenses.models import IncomeSource, Income
+
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', '')))
+        description = str(data.get('description', '')).strip()[:500]
+        source_name = str(data.get('source_name', 'Khác')).strip()[:100] or 'Khác'
+        date_str = data.get('date')
+        if amount <= 0 or not date_str:
+            return JsonResponse({'success': False, 'error': 'Dữ liệu thu nhập không hợp lệ'}, status=400)
+        income_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except (json.JSONDecodeError, TypeError, ValueError, ArithmeticError):
+        return JsonResponse({'success': False, 'error': 'Dữ liệu thu nhập không hợp lệ'}, status=400)
+
+    income_source, _ = IncomeSource.objects.get_or_create(
+        user=request.user,
+        name=source_name,
+    )
+    income = Income.objects.create(
+        user=request.user,
+        source=income_source,
+        amount=amount,
+        description=description,
+        date=income_date,
+    )
+    return JsonResponse({'success': True, 'income_id': income.id})
+
+
+@login_required
+def save_recurring_from_chat_api(request):
+    """Lưu mẫu chi tiêu hoặc thu nhập định kỳ sau khi người dùng xác nhận."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    import json
+    from datetime import datetime, timedelta
+    from decimal import Decimal
+    from dateutil.relativedelta import relativedelta
+
+    try:
+        data = json.loads(request.body)
+        amount = Decimal(str(data.get('amount', '')))
+        name = str(data.get('name') or data.get('description') or '').strip()[:200]
+        frequency = data.get('frequency')
+        start_date = datetime.strptime(data.get('start_date', ''), '%Y-%m-%d').date()
+        end_date_value = data.get('end_date')
+        end_date = datetime.strptime(end_date_value, '%Y-%m-%d').date() if end_date_value else None
+        transaction_type = data.get('transaction_type')
+        if amount <= 0 or not name or frequency not in {'daily', 'weekly', 'monthly', 'yearly'}:
+            raise ValueError
+        if end_date and end_date <= start_date:
+            raise ValueError
+    except (json.JSONDecodeError, TypeError, ValueError, ArithmeticError):
+        return JsonResponse({'success': False, 'error': 'Dữ liệu định kỳ không hợp lệ'}, status=400)
+
+    next_due_date = start_date + {
+        'daily': timedelta(days=1),
+        'weekly': timedelta(weeks=1),
+        'monthly': relativedelta(months=1),
+        'yearly': relativedelta(years=1),
+    }[frequency]
+
+    if transaction_type == 'recurring_income':
+        source_name = str(data.get('source_name') or name).strip()[:100]
+        source, _ = IncomeSource.objects.get_or_create(user=request.user, name=source_name)
+        recurring = RecurringIncome.objects.create(
+            user=request.user,
+            source=source,
+            name=name,
+            amount=amount,
+            frequency=frequency,
+            start_date=start_date,
+            end_date=end_date,
+            next_due_date=next_due_date,
+            description=data.get('description', '')[:500],
+        )
+    else:
+        category = None
+        category_id = data.get('category_id')
+        if category_id:
+            category = Category.objects.filter(id=category_id, user=request.user).first()
+        recurring = RecurringExpense.objects.create(
+            user=request.user,
+            name=name,
+            amount=amount,
+            category=category,
+            frequency=frequency,
+            start_date=start_date,
+            end_date=end_date,
+            next_due_date=next_due_date,
+            description=data.get('description', '')[:500],
+        )
+
+    return JsonResponse({'success': True, 'recurring_id': recurring.id})
+
+
+@login_required
+def manage_expense_from_chat_api(request):
+    """Edit or delete a user-owned expense after chatbot confirmation."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
+
+    import json
+    from datetime import datetime
+    from decimal import Decimal
+
+    try:
+        data = json.loads(request.body)
+        expense = Expense.objects.get(pk=data.get('expense_id'), user=request.user)
+        action = data.get('action')
+        if action not in {'edit', 'delete'}:
+            raise ValueError
+    except (json.JSONDecodeError, TypeError, ValueError, Expense.DoesNotExist):
+        return JsonResponse({'success': False, 'error': 'Giao dịch không hợp lệ'}, status=400)
+
+    if action == 'delete':
+        expense.delete()
+        logger.info('Chat expense deleted: user_id=%s expense_id=%s', request.user.id, data.get('expense_id'))
+        return JsonResponse({'success': True, 'action': 'delete'})
+
+    try:
+        amount = Decimal(str(data.get('amount', expense.amount)))
+        date_value = datetime.strptime(data.get('date', expense.date.isoformat()), '%Y-%m-%d').date()
+        description = str(data.get('description', expense.description or '')).strip()[:500]
+        if amount <= 0 or not description:
+            raise ValueError
+        category_id = data.get('category_id')
+        category = Category.objects.filter(id=category_id, user=request.user).first() if category_id else None
+        expense.amount = amount
+        expense.date = date_value
+        expense.description = description
+        expense.category = category
+        expense.save(update_fields=['amount', 'date', 'description', 'category'])
+    except (TypeError, ValueError, ArithmeticError):
+        return JsonResponse({'success': False, 'error': 'Dữ liệu cập nhật không hợp lệ'}, status=400)
+
+    logger.info('Chat expense edited: user_id=%s expense_id=%s', request.user.id, expense.id)
+    return JsonResponse({'success': True, 'action': 'edit', 'expense_id': expense.id})
 
 
 @login_required
@@ -1924,7 +2273,13 @@ def chat_history_api(request):
     API để lấy lịch sử chat (các expense gần đây)
     GET: /api/chat/history/?limit=10
     """
-    limit = int(request.GET.get('limit', 10))
+    try:
+        limit = int(request.GET.get('limit', 10))
+    except (TypeError, ValueError):
+        return JsonResponse({'success': False, 'error': 'limit phải là số nguyên'}, status=400)
+
+    if not 1 <= limit <= 50:
+        return JsonResponse({'success': False, 'error': 'limit phải nằm trong khoảng 1 đến 50'}, status=400)
     
     expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')[:limit]
     

@@ -3,10 +3,13 @@ Chat Intent Detection và Query Handler
 Phân tích câu hỏi/yêu cầu của user và xử lý
 """
 import re
+import logging
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 class ChatIntentDetector:
@@ -15,6 +18,10 @@ class ChatIntentDetector:
     Các intent:
     - CREATE_EXPENSE: Tạo chi tiêu mới
     - CREATE_INCOME: Tạo thu nhập nhanh
+    - CREATE_RECURRING_EXPENSE: Tạo chi tiêu định kỳ
+    - CREATE_RECURRING_INCOME: Tạo thu nhập định kỳ
+    - EDIT_EXPENSE: Sửa chi tiêu
+    - DELETE_EXPENSE: Xóa chi tiêu
     - QUERY_EXPENSES: Hỏi về chi tiêu
     - QUERY_INCOME: Hỏi về thu nhập
     - QUERY_SAVINGS: Hỏi về tiết kiệm
@@ -42,7 +49,7 @@ class ChatIntentDetector:
         'giao dịch', 'transaction', 'tổng', 'số',
         'danh mục', 'category', 'ăn', 'uống', 'mua', 'shopping',
         'grab', 'taxi', 'xăng', 'cafe', 'gym', 'phone',
-        'tháng', 'tuần', 'ngày', 'hôm', 'năm',
+        'tháng', 'tuần', 'ngày', 'hôm', 'năm', 'định kỳ',
         'tư vấn', 'advice', 'khuyên', 'mẹo', 'tips',
         'báo cáo', 'report', 'phân tích', 'analyze',
         'so sánh', 'compare', 'top', 'lớn nhất',
@@ -77,16 +84,35 @@ class ChatIntentDetector:
     
     # Từ khóa cho mỗi intent
     INTENT_KEYWORDS = {
+        'EDIT_EXPENSE': {
+            'keywords': ['sửa chi tiêu', 'sửa khoản chi', 'đổi khoản chi', 'cập nhật chi tiêu'],
+            'patterns': [r'\bsửa\b', r'\bđổi\b', r'\bcập nhật\b'],
+        },
+        'DELETE_EXPENSE': {
+            'keywords': ['xóa chi tiêu', 'xóa khoản chi', 'xóa giao dịch', 'bỏ khoản chi'],
+            'patterns': [r'\bxóa\b', r'\bbỏ\b'],
+        },
         'CREATE_INCOME': {
             'keywords': ['nhận lương', 'được trả', 'thu được', 'kiếm được', 'nhận được tiền',
                         'thêm thu nhập', 'tạo thu nhập', 'thu', 'nhận tiền', 'được',
                         'nhận thưởng', 'nhận'],
             'patterns': [r'(thu|nhận|kiếm).*(được).*\d+', r'lương.*\d+', r'nhận\s*(thưởng|lương)'],
         },
+        'CREATE_RECURRING_INCOME': {
+            'keywords': ['thu nhập định kỳ', 'lương hàng tháng', 'lương mỗi tháng',
+                        'nhận lương mỗi', 'nhận lương hàng'],
+            'patterns': [r'(lương|thu nhập).*(mỗi|hàng)\s+(ngày|tuần|tháng|năm)'],
+        },
         'CREATE_EXPENSE': {
             'keywords': ['chi', 'mua', 'ăn', 'uống', 'đổ xăng', 'taxi', 'grab', 'hết', 
                         'trả tiền', 'thanh toán', 'vừa', 'mới', 'shopping'],
             'patterns': [r'\d+\s*[ktk]', r'\d+\s*triệu', r'\d+\s*nghìn', r'\d{3,}'],
+        },
+        'CREATE_RECURRING_EXPENSE': {
+            'keywords': ['chi định kỳ', 'mỗi tháng', 'mỗi tuần', 'mỗi ngày', 'mỗi năm',
+                        'hàng tháng', 'hàng tuần', 'hàng ngày', 'hàng năm', 'tiền nhà',
+                        'tiền điện', 'tiền nước'],
+            'patterns': [r'(mỗi|hàng)\s+(ngày|tuần|tháng|năm)'],
         },
         'QUERY_EXPENSES': {
             'keywords': ['bao nhiêu chi tiêu', 'tổng chi tiêu', 'chi bao nhiêu', 
@@ -169,11 +195,6 @@ class ChatIntentDetector:
         """
         text_lower = text.lower()
         
-        # Nếu có out of scope keywords, return False IMMEDIATELY (highest priority)
-        for keyword in self.OUT_OF_SCOPE_KEYWORDS:
-            if keyword in text_lower:
-                return False, f"Out of scope: {keyword}"
-        
         # Nếu có greeting keywords, assume là in scope (hỏi/chào chatbot)
         if any(word in text_lower for word in ['chào', 'hello', 'xin chào', 'hế lô']):
             return True, "Greeting"
@@ -186,6 +207,11 @@ class ChatIntentDetector:
         # Nếu có số tiền, assume là về chi tiêu
         if re.search(r'\d+\s*[ktk]|\d+\s*triệu|\d+\s*nghìn|\d{3,}', text):
             return True, "Detected amount"
+
+        # Chỉ coi câu là ngoài phạm vi khi không có tín hiệu tài chính rõ ràng.
+        for keyword in self.OUT_OF_SCOPE_KEYWORDS:
+            if keyword in text_lower:
+                return False, f"Out of scope: {keyword}"
         
         # Default: Out of scope
         return False, "No finance keywords detected"
@@ -201,6 +227,12 @@ class ChatIntentDetector:
             return 'OUT_OF_SCOPE', 0.9
         
         text = text.lower().strip()
+
+        if re.search(r'(mỗi|hàng)\s+(ngày|tuần|tháng|năm)|định kỳ', text):
+            if any(word in text for word in ['lương', 'thu nhập', 'nhận lương', 'tiền công']):
+                return 'CREATE_RECURRING_INCOME', 0.95
+            if re.search(r'\d+\s*(k|tr|triệu|nghìn|ngàn)|\d{3,}', text):
+                return 'CREATE_RECURRING_EXPENSE', 0.95
         
         # Check cho mỗi intent
         scores = {}
@@ -242,13 +274,23 @@ class ChatIntentDetector:
                 if 'vừa' in text and 'CREATE_EXPENSE' in scores:
                     scores['CREATE_EXPENSE'] = max(0, scores['CREATE_EXPENSE'] - 3)
         
-        # Nếu có question words với "chi" thì ưu tiên QUERY_EXPENSES hơn CREATE_EXPENSE
-        if any(word in text for word in ['bao nhiêu', 'tổng', 'có', 'đã', 'xem', 'list']):
-            if 'QUERY_EXPENSES' in scores and scores.get('QUERY_EXPENSES', 0) > 0:
-                scores['QUERY_EXPENSES'] += 3
+        # Câu hỏi về chi tiêu không được chuyển sang parser tạo giao dịch.
+        query_words = [
+            'bao nhiêu', 'tổng', 'có', 'đã', 'xem', 'list',
+            'như nào', 'như thế nào', 'ra sao', 'tình hình',
+        ]
+        has_expense_query_context = (
+            'chi tiêu' in text and (
+                any(word in text for word in query_words)
+                or any(word in text for word in ['hôm nay', 'tuần này', 'tháng này', 'năm nay'])
+            )
+        )
+        if any(word in text for word in query_words) or has_expense_query_context:
+            if 'QUERY_EXPENSES' in scores:
+                scores['QUERY_EXPENSES'] = max(scores['QUERY_EXPENSES'] + 3, 6)
             # Giảm score của CREATE_EXPENSE khi có question words
             if 'CREATE_EXPENSE' in scores:
-                scores['CREATE_EXPENSE'] = max(0, scores['CREATE_EXPENSE'] - 2)
+                scores['CREATE_EXPENSE'] = max(0, scores['CREATE_EXPENSE'] - 4)
         
         # Nếu có "lời khuyên", "nên", "advice", "tips", "mẹo", "tư vấn" thì ưu tiên FINANCIAL_ADVICE
         if any(word in text for word in ['lời khuyên', 'advice', 'tips', 'mẹo', 'nên', 'gợi ý', 'tư vấn']):
@@ -390,8 +432,8 @@ class ChatQueryHandler:
         
         savings_goals = SavingsGoal.objects.filter(user=self.user)
         
-        active_goals = savings_goals.filter(status='active')
-        completed_goals = savings_goals.filter(status='completed')
+        active_goals = savings_goals.filter(is_active=True, is_completed=False)
+        completed_goals = savings_goals.filter(is_completed=True)
         
         response = f"🐷 **Thông tin tiết kiệm:**\n\n"
         
@@ -407,10 +449,10 @@ class ChatQueryHandler:
                 response += "**📍 Mục tiêu đang theo dõi:**\n"
                 for goal in active_goals[:3]:
                     progress_pct = (goal.current_amount / goal.target_amount * 100) if goal.target_amount > 0 else 0
-                    response += f"\n• **{goal.name}**\n"
+                    response += f"\n• **{goal.goal_name}**\n"
                     response += f"  - Mục tiêu: {goal.target_amount:,.0f} đ\n"
                     response += f"  - Đã tiết kiệm: {goal.current_amount:,.0f} đ ({progress_pct:.1f}%)\n"
-                    response += f"  - Còn thiếu: {goal.target_amount - goal.current_amount:,.0f} đ\n"
+                    response += f"  - Còn thiếu: {goal.amount_remaining:,.0f} đ\n"
         
         return {
             'type': 'info',
@@ -605,9 +647,6 @@ Hãy thử hỏi tôi! 😊"""
     
     def handle_create_income(self, text):
         """Xử lý tạo thu nhập nhanh"""
-        from app_expenses.models import IncomeSource, Income
-        from datetime import datetime
-        
         # Extract amount
         amount = self._extract_amount(text)
         if not amount:
@@ -622,26 +661,15 @@ Hãy thử hỏi tôi! 😊"""
             desc = "Lương"
         elif 'bonus' in text.lower() or 'thưởng' in text.lower():
             desc = "Thưởng"
-        
-        # Get or create default income source
-        income_source, _ = IncomeSource.objects.get_or_create(
-            user=self.user,
-            name="Lương",
-            defaults={'is_recurring': False}
-        )
-        
-        # Create income
-        Income.objects.create(
-            user=self.user,
-            source=income_source,
-            amount=amount,
-            description=desc,
-            date=datetime.now().date()
-        )
-        
+
         return {
-            'type': 'success',
-            'message': f'✅ Đã thêm thu nhập: **{desc}** - **{amount:,.0f} đ**'
+            'type': 'income_preview',
+            'message': f'Xác nhận thêm thu nhập: **{desc}** - **{amount:,.0f} đ**',
+            'amount': amount,
+            'description': desc,
+            'source_name': desc,
+            'date': timezone.now().date().isoformat(),
+            'requires_confirmation': True,
         }
     
     def handle_top_expenses(self, text):
@@ -1089,24 +1117,22 @@ Hãy thử hỏi tôi! 😊"""
         
         # Pattern for amounts
         patterns = [
-            r'(\d+(?:\.\d+)?)\s*triệu',  # 10 triệu
-            r'(\d+(?:\.\d+)?)\s*tr',      # 10tr
-            r'(\d+)\s*[ktk]',              # 50k
-            r'(\d+)\s*nghìn',              # 50 nghìn
+            (r'(\d+(?:[.,]\d+)?)\s*(?:triệu|tr)', 1000000),  # 10 triệu / 10tr
+            (r'(\d+(?:[.,]\d+)?)\s*(?:nghìn|ngàn)', 1000),    # 50 nghìn / 50 ngàn
+            (r'(\d+(?:[.,]\d+)?)\s*k(?!\w)', 1000),           # 50k
             r'(\d{4,})',                    # 50000
         ]
         
-        for pattern in patterns:
+        for pattern_config in patterns:
+            if isinstance(pattern_config, tuple):
+                pattern, multiplier = pattern_config
+            else:
+                pattern, multiplier = pattern_config, 1
             match = re.search(pattern, text)
             if match:
-                amount = float(match.group(1))
-                
-                if 'triệu' in match.group(0) or 'tr' in match.group(0):
-                    amount *= 1000000
-                elif 'k' in match.group(0) or 'nghìn' in match.group(0):
-                    amount *= 1000
-                
-                return amount
+                amount = float(match.group(1).replace(',', '.')) * multiplier
+                if amount > 0:
+                    return amount
         
         return None
     
@@ -1132,7 +1158,16 @@ Hãy thử hỏi tôi! 😊"""
                 'label': 'hôm qua'
             }
         
-        # Tuần này
+        # Tuần trước / tuần này
+        if any(word in text for word in ['tuần trước', 'last week']):
+            end_of_week = today - timedelta(days=today.weekday() + 1)
+            start_of_week = end_of_week - timedelta(days=6)
+            return {
+                'start': start_of_week,
+                'end': end_of_week,
+                'label': 'tuần trước'
+            }
+
         if any(word in text for word in ['tuần này', 'tuần', 'week']):
             start_of_week = today - timedelta(days=today.weekday())
             return {
@@ -1141,7 +1176,17 @@ Hãy thử hỏi tôi! 😊"""
                 'label': 'tuần này'
             }
         
-        # Tháng này
+        # Tháng trước / tháng này
+        if any(word in text for word in ['tháng trước', 'last month']):
+            first_of_month = today.replace(day=1)
+            end_of_month = first_of_month - timedelta(days=1)
+            start_of_month = end_of_month.replace(day=1)
+            return {
+                'start': start_of_month,
+                'end': end_of_month,
+                'label': 'tháng trước'
+            }
+
         if any(word in text for word in ['tháng này', 'tháng', 'month']):
             start_of_month = today.replace(day=1)
             return {
@@ -1150,7 +1195,16 @@ Hãy thử hỏi tôi! 😊"""
                 'label': 'tháng này'
             }
         
-        # Năm nay
+        # Năm trước / năm nay
+        if any(word in text for word in ['năm trước', 'last year']):
+            start_of_year = today.replace(year=today.year - 1, month=1, day=1)
+            end_of_year = today.replace(year=today.year - 1, month=12, day=31)
+            return {
+                'start': start_of_year,
+                'end': end_of_year,
+                'label': 'năm trước'
+            }
+
         if any(word in text for word in ['năm nay', 'năm', 'year']):
             start_of_year = today.replace(month=1, day=1)
             return {
@@ -1171,7 +1225,7 @@ Hãy thử hỏi tôi! 😊"""
         return None
 
 
-def process_chat_input(text, user):
+def process_chat_input(text, user, history=None):
     """
     Main function để xử lý chat input
     Returns: {
@@ -1181,15 +1235,44 @@ def process_chat_input(text, user):
     }
     """
     detector = ChatIntentDetector()
-    intent, confidence = detector.detect_intent(text)
+    history = history or []
+    normalized_text = text.lower().strip()
+    if history and any(phrase in normalized_text for phrase in ['còn tháng trước', 'tháng trước thì sao', 'còn tuần trước', 'tuần trước thì sao']):
+        previous_text = history[-1].lower()
+        if 'chi tiêu' in previous_text or 'chi' in previous_text:
+            period = 'tháng trước' if 'tháng' in normalized_text else 'tuần trước'
+            text = f'chi tiêu {period}'
+    structured = {}
+    gemini_error = None
+    try:
+        from app_expenses.utils.gemini_service import analyze_chat_message
+        structured = analyze_chat_message(text, history=history)
+        intent = structured['intent']
+        confidence = structured['confidence']
+    except RuntimeError:
+        intent, confidence = detector.detect_intent(text)
+    except Exception as exc:
+        intent, confidence = detector.detect_intent(text)
+        gemini_error = str(exc)
+        logger.warning('Gemini classification failed; using local fallback: %s', type(exc).__name__)
+
+    # Preserve deterministic handling for clear financial queries even when
+    # the external model returns an unrelated intent.
+    local_intent, local_confidence = detector.detect_intent(text)
+    if local_intent in {'QUERY_EXPENSES', 'CREATE_RECURRING_EXPENSE', 'CREATE_RECURRING_INCOME'} and intent != local_intent:
+        intent, confidence = local_intent, local_confidence
+
+    result_data = {
+        'intent': intent,
+        'confidence': confidence,
+        'response': None,
+        'structured': structured,
+    }
+    if gemini_error:
+        result_data['gemini_error'] = 'Gemini tạm thời không khả dụng; đã dùng bộ phân tích dự phòng.'
     
-    if intent == 'CREATE_EXPENSE':
-        # Trả về None để view xử lý như cũ (parse expense)
-        return {
-            'intent': intent,
-            'confidence': confidence,
-            'response': None
-        }
+    if intent in {'CREATE_EXPENSE', 'CREATE_RECURRING_EXPENSE', 'CREATE_RECURRING_INCOME', 'EDIT_EXPENSE', 'DELETE_EXPENSE'}:
+        return result_data
     
     # Xử lý các intent khác
     handler = ChatQueryHandler(user)
@@ -1232,8 +1315,5 @@ def process_chat_input(text, user):
             'message': "🤔 Xin lỗi, tôi chưa hiểu ý bạn.\n\nGõ **'help'** hoặc **'giúp'** để xem hướng dẫn."
         }
     
-    return {
-        'intent': intent,
-        'confidence': confidence,
-        'response': response
-    }
+    result_data['response'] = response
+    return result_data

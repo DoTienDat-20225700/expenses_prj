@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Expense, SavingsGoal
+from .models import Category, Expense, RecurringExpense, RecurringIncome, SavingsGoal
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -13,6 +13,20 @@ class ExpenseAdmin(admin.ModelAdmin):
     list_filter = ('category', 'date', 'user')
     search_fields = ('description', 'category__name')
     date_hierarchy = 'date'
+
+
+@admin.register(RecurringExpense)
+class RecurringExpenseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'amount', 'frequency', 'next_due_date', 'is_active', 'user')
+    list_filter = ('frequency', 'is_active', 'user')
+    search_fields = ('name', 'description', 'user__username')
+
+
+@admin.register(RecurringIncome)
+class RecurringIncomeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'amount', 'frequency', 'next_due_date', 'is_active', 'user')
+    list_filter = ('frequency', 'is_active', 'user')
+    search_fields = ('name', 'description', 'user__username')
 
 @admin.register(SavingsGoal)
 class SavingsGoalAdmin(admin.ModelAdmin):

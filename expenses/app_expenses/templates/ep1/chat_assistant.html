@@ -52,7 +52,7 @@ endblock title %} {% block content %}
                   type="text"
                   class="form-control"
                   id="chatInput"
-                  placeholder="Nhập chi tiêu của bạn... (VD: Ăn sáng 50k)"
+                  placeholder="Nhập câu hỏi hoặc giao dịch..."
                   autocomplete="off"
                 />
 
@@ -106,7 +106,7 @@ endblock title %} {% block content %}
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header border-0">
-        <h5 class="modal-title">Xác nhận chi tiêu</h5>
+        <h5 class="modal-title" id="confirmTitle">Xác nhận chi tiêu</h5>
         <button
           type="button"
           class="btn-close"
@@ -117,25 +117,48 @@ endblock title %} {% block content %}
         <div class="expense-preview p-3 bg-light rounded">
           <div class="row mb-2">
             <div class="col-5 text-muted">Số tiền:</div>
-            <div class="col-7 fw-bold text-danger" id="previewAmount"></div>
+            <div class="col-7">
+              <input
+                type="number"
+                min="1"
+                step="0.01"
+                class="form-control form-control-sm"
+                id="previewAmount"
+              />
+            </div>
           </div>
           <div class="row mb-2">
-            <div class="col-5 text-muted">Danh mục:</div>
+            <div class="col-5 text-muted" id="previewCategoryLabel">
+              Danh mục:
+            </div>
             <div class="col-7" id="previewCategory"></div>
           </div>
           <div class="row mb-2">
             <div class="col-5 text-muted">Ngày:</div>
-            <div class="col-7" id="previewDate"></div>
+            <div class="col-7">
+              <input
+                type="date"
+                class="form-control form-control-sm"
+                id="previewDate"
+              />
+            </div>
           </div>
           <div class="row">
             <div class="col-5 text-muted">Mô tả:</div>
-            <div class="col-7" id="previewDescription"></div>
+            <div class="col-7">
+              <input
+                type="text"
+                maxlength="500"
+                class="form-control form-control-sm"
+                id="previewDescription"
+              />
+            </div>
           </div>
         </div>
 
         <!-- Edit Options -->
         <div class="mt-3">
-          <label class="form-label small text-muted"
+          <label class="form-label small text-muted" id="categoryOverrideLabel"
             >Chọn danh mục khác (nếu muốn):</label
           >
           <select class="form-select form-select-sm" id="categoryOverride">
@@ -144,6 +167,13 @@ endblock title %} {% block content %}
             <option value="{{ cat.id }}">{{ cat.name }}</option>
             {% endfor %}
           </select>
+          <input
+            type="text"
+            class="form-control form-control-sm d-none"
+            id="incomeSource"
+            maxlength="100"
+            placeholder="Nguồn thu"
+          />
         </div>
       </div>
       <div class="modal-footer border-0">
@@ -151,7 +181,8 @@ endblock title %} {% block content %}
           Hủy
         </button>
         <button type="button" class="btn btn-primary" id="confirmSaveBtn">
-          <i class="fas fa-check me-2"></i>Lưu chi tiêu
+          <i class="fas fa-check me-2"></i
+          ><span id="confirmSaveLabel">Lưu chi tiêu</span>
         </button>
       </div>
     </div>
@@ -236,6 +267,29 @@ endblock title %} {% block content %}
 <script>
   let currentParsedData = null;
 
+  function formatMessage(text, allowMarkup = false) {
+    text = String(text).replace(/[&<>"']/g, function (character) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      }[character];
+    });
+
+    if (allowMarkup) {
+      text = text
+        .replace(/&lt;strong&gt;/g, "<strong>")
+        .replace(/&lt;\/strong&gt;/g, "</strong>")
+        .replace(/&lt;br\s*\/?&gt;/g, "<br>");
+    }
+
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\n/g, "<br>");
+  }
+
   // Voice recognition removed — only text input supported now
 
   // Chat Form Submit
@@ -271,8 +325,14 @@ endblock title %} {% block content %}
         document.getElementById(loadingId).remove();
 
         if (data.success) {
+          if (data.gemini_warning) {
+            addMessage("bot", "⚠️ " + data.gemini_warning, "system");
+          }
           // If the parser thinks this is a query (not a create), render response
-          if (data.is_query) {
+          if (data.requires_confirmation && data.income_preview) {
+            currentParsedData = { ...data.income_preview, _type: "income" };
+            showConfirmation(currentParsedData);
+          } else if (data.is_query) {
             const resp = data.response;
             if (resp && resp.message) {
               addMessage("bot", resp.message);
@@ -280,6 +340,12 @@ endblock title %} {% block content %}
               addMessage("bot", "🤖 Đã xử lý. Không có dữ liệu trả về.");
             }
             currentParsedData = null;
+          } else if (
+            data.requires_confirmation &&
+            data.expense_action_preview
+          ) {
+            currentParsedData = { ...data.expense_action_preview };
+            showConfirmation(currentParsedData);
           } else {
             // CREATE_EXPENSE flow: show confirmation modal for saving
             currentParsedData = data;
@@ -311,7 +377,7 @@ endblock title %} {% block content %}
 
     const contentDiv = document.createElement("div");
     contentDiv.className = "message-content";
-    contentDiv.innerHTML = content;
+    contentDiv.innerHTML = formatMessage(content, type === "bot");
 
     messageDiv.appendChild(contentDiv);
     messagesDiv.appendChild(messageDiv);
@@ -381,29 +447,66 @@ endblock title %} {% block content %}
 
   // Show confirmation modal
   function showConfirmation(data) {
+    const isAction = data._type === "expense_action";
+    const isDelete = isAction && data.action === "delete";
+    const isIncome = data._type === "income";
+    document.getElementById("confirmTitle").textContent = isDelete
+      ? "Xác nhận xóa chi tiêu"
+      : isAction
+        ? "Xác nhận sửa chi tiêu"
+        : isIncome
+          ? "Xác nhận thu nhập"
+          : "Xác nhận chi tiêu";
+    document.getElementById("previewCategoryLabel").textContent = isIncome
+      ? "Nguồn thu:"
+      : "Danh mục:";
+    document
+      .getElementById("categoryOverrideLabel")
+      .classList.toggle("d-none", isIncome);
+    document
+      .getElementById("categoryOverride")
+      .classList.toggle("d-none", isIncome || isDelete);
+    document
+      .getElementById("incomeSource")
+      .classList.toggle("d-none", !isIncome);
+    document.getElementById("confirmSaveLabel").textContent = isDelete
+      ? "Xóa giao dịch"
+      : isAction
+        ? "Lưu thay đổi"
+        : isIncome
+          ? "Lưu thu nhập"
+          : "Lưu chi tiêu";
     // Format amount
-    const amount = new Intl.NumberFormat("vi-VN").format(data.amount);
-    document.getElementById("previewAmount").textContent = amount + " đ";
+    document.getElementById("previewAmount").value = data.amount || "";
 
     // Category
-    let categoryText =
-      data.category_name || data.category_hint || "Chưa xác định";
-    if (!data.category_id) {
-      categoryText += ' <span class="badge bg-warning text-dark">Gợi ý</span>';
+    const categoryElement = document.getElementById("previewCategory");
+    categoryElement.textContent = isIncome
+      ? data.source_name
+      : data.category_name || data.category_hint || "Chưa xác định";
+    if (!isIncome && !data.category_id) {
+      const suggestionBadge = document.createElement("span");
+      suggestionBadge.className = "badge bg-warning text-dark ms-1";
+      suggestionBadge.textContent = "Gợi ý";
+      categoryElement.appendChild(suggestionBadge);
     }
-    document.getElementById("previewCategory").innerHTML = categoryText;
 
     // Date
     const date = new Date(data.date);
-    document.getElementById("previewDate").textContent =
-      date.toLocaleDateString("vi-VN");
+    document.getElementById("previewDate").value =
+      data.date || new Date().toISOString().slice(0, 10);
 
     // Description
-    document.getElementById("previewDescription").textContent =
-      data.description || data.original_text;
+    document.getElementById("previewDescription").value =
+      data.description || data.original_text || "";
 
     // Reset category override
     document.getElementById("categoryOverride").value = "";
+    document.getElementById("incomeSource").value =
+      data.source_name || data.description || "";
+    document.getElementById("previewAmount").readOnly = isDelete;
+    document.getElementById("previewDate").readOnly = isDelete;
+    document.getElementById("previewDescription").readOnly = isDelete;
 
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById("confirmModal"));
@@ -416,6 +519,9 @@ endblock title %} {% block content %}
     .addEventListener("click", function () {
       if (!currentParsedData) return;
 
+      const isAction = currentParsedData._type === "expense_action";
+      const isIncome = currentParsedData._type === "income";
+
       this.disabled = true;
       this.innerHTML =
         '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
@@ -427,22 +533,44 @@ endblock title %} {% block content %}
 
       // Prepare data
       const expenseData = {
-        amount: currentParsedData.amount,
-        description:
-          currentParsedData.description || currentParsedData.original_text,
+        amount: document.getElementById("previewAmount").value,
+        description: document.getElementById("previewDescription").value,
         category_id: categoryId,
-        date: currentParsedData.date,
+        date: document.getElementById("previewDate").value,
+      };
+      const incomeData = {
+        amount: document.getElementById("previewAmount").value,
+        description: document.getElementById("previewDescription").value,
+        source_name: document.getElementById("incomeSource").value,
+        date: document.getElementById("previewDate").value,
+      };
+      const actionData = {
+        expense_id: currentParsedData.expense_id,
+        action: currentParsedData.action,
+        amount: document.getElementById("previewAmount").value,
+        description: document.getElementById("previewDescription").value,
+        category_id: categoryId,
+        date: document.getElementById("previewDate").value,
       };
 
       // Call save API
-      fetch("{% url 'ep1:save_expense_from_chat_api' %}", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": "{{ csrf_token }}",
+      fetch(
+        isAction
+          ? "{% url 'ep1:manage_expense_from_chat_api' %}"
+          : isIncome
+            ? "{% url 'ep1:save_income_from_chat_api' %}"
+            : "{% url 'ep1:save_expense_from_chat_api' %}",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify(
+            isAction ? actionData : isIncome ? incomeData : expenseData,
+          ),
         },
-        body: JSON.stringify(expenseData),
-      })
+      )
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
@@ -452,7 +580,13 @@ endblock title %} {% block content %}
             ).hide();
 
             // Show success message
-            let message = "✅ Đã lưu chi tiêu thành công!";
+            let message = isAction
+              ? actionData.action === "delete"
+                ? "✅ Đã xóa chi tiêu!"
+                : "✅ Đã cập nhật chi tiêu!"
+              : isIncome
+                ? "✅ Đã lưu thu nhập thành công!"
+                : "✅ Đã lưu chi tiêu thành công!";
             if (data.warning) {
               message += "<br><small>" + data.warning + "</small>";
             }
@@ -485,7 +619,10 @@ endblock title %} {% block content %}
         })
         .finally(() => {
           this.disabled = false;
-          this.innerHTML = '<i class="fas fa-check me-2"></i>Lưu chi tiêu';
+          this.innerHTML =
+            '<i class="fas fa-check me-2"></i><span id="confirmSaveLabel">' +
+            (isIncome ? "Lưu thu nhập" : "Lưu chi tiêu") +
+            "</span>";
         });
     });
 </script>

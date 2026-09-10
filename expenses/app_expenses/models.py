@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
+from django.utils import timezone
 from cloudinary.models import CloudinaryField
 import cloudinary.uploader
 
@@ -267,6 +268,38 @@ class Income(models.Model):
     
     def __str__(self):
         return f"{self.amount} - {self.source} - {self.date}"
+
+
+class RecurringIncome(models.Model):
+    """Mẫu thu nhập lặp lại, được sinh thành Income khi đến hạn."""
+    FREQUENCY_CHOICES = RecurringExpense.FREQUENCY_CHOICES
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Người dùng")
+    source = models.ForeignKey(IncomeSource, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Nguồn thu")
+    name = models.CharField("Tên khoản thu", max_length=200)
+    amount = models.DecimalField("Số tiền", max_digits=15, decimal_places=2)
+    frequency = models.CharField("Tần suất", max_length=10, choices=FREQUENCY_CHOICES, default='monthly')
+    start_date = models.DateField("Ngày bắt đầu")
+    end_date = models.DateField("Ngày kết thúc", null=True, blank=True)
+    next_due_date = models.DateField("Ngày đến hạn tiếp theo")
+    is_active = models.BooleanField("Đang hoạt động", default=True)
+    description = models.TextField("Ghi chú", blank=True, null=True)
+    created_at = models.DateTimeField("Ngày tạo", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Thu nhập định kỳ"
+        verbose_name_plural = "Thu nhập định kỳ"
+        ordering = ['-next_due_date']
+
+    def __str__(self):
+        return f"{self.name} - {self.get_frequency_display()}"
+
+    def is_expired(self):
+        return bool(self.end_date and timezone.now().date() > self.end_date)
+
+    def advance_next_due_date(self):
+        from .utils.recurring_utils import add_frequency_to_date
+        self.next_due_date = add_frequency_to_date(self.next_due_date, self.frequency)
 
 
 class SavingsGoal(models.Model):

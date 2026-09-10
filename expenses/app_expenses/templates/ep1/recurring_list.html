@@ -249,8 +249,7 @@
               {% if not show_history %}
               <td class="text-center text-muted">
                 <i class="far fa-calendar-alt me-1"></i>
-                {{ recurring.next_due_date|date:"d/m/Y" }} {% if
-                recurring.next_due_date < today %}
+                {{ recurring.next_due_date|date:"d/m/Y" }} {% if recurring.next_due_date < today %}
                 <span class="badge bg-danger ms-1">Quá hạn</span>
                 {% elif recurring.next_due_date == today %}
                 <span class="badge bg-warning text-dark ms-1">Đến hạn!</span>
@@ -339,8 +338,7 @@
 
             <li class="page-item active">
               <span class="page-link"
-                >Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages
-                }}</span
+                >Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span
               >
             </li>
 
