@@ -2504,3 +2504,87 @@ body.dark-mode:has([href*="dashboard"])::before {
   background: #101a20;
   opacity: 0.88 !important;
 }
+
+/* =========================================
+   AI CATEGORY SUGGESTION BOX
+   ========================================= */
+.ai-suggestion-box {
+  background: rgba(8, 127, 140, 0.08);
+  border: 1px solid rgba(8, 127, 140, 0.28) !important;
+  border-radius: var(--finance-radius);
+  color: var(--text-main);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ai-suggestion-badge {
+  background: var(--finance-accent) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.ai-suggested-name {
+  color: var(--finance-accent);
+  font-weight: 700;
+}
+
+.btn-accept-ai {
+  background: var(--finance-accent) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--finance-accent) !important;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  min-height: auto;
+  font-weight: 600;
+}
+
+.btn-accept-ai:hover,
+.btn-accept-ai:focus-visible {
+  background: var(--finance-accent-hover, #066570) !important;
+  color: #ffffff !important;
+  outline: 2px solid var(--finance-accent);
+  outline-offset: 1px;
+}
+
+.btn-dismiss-ai {
+  background: transparent !important;
+  color: var(--text-muted, #64748b) !important;
+  border: 1px solid var(--border-color, #cbd5e1) !important;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  min-height: auto;
+}
+
+.btn-dismiss-ai:hover,
+.btn-dismiss-ai:focus-visible {
+  background: rgba(100, 116, 139, 0.1) !important;
+  color: var(--text-main) !important;
+  outline: 2px solid var(--text-muted);
+  outline-offset: 1px;
+}
+
+body.dark-mode .ai-suggestion-box {
+  background: rgba(85, 194, 194, 0.12);
+  border-color: rgba(85, 194, 194, 0.35) !important;
+}
+
+body.dark-mode .ai-suggestion-badge {
+  background: var(--finance-accent) !important;
+  color: #101a20 !important;
+}
+
+body.dark-mode .ai-suggested-name {
+  color: var(--finance-accent);
+}
+
+body.dark-mode .btn-accept-ai {
+  background: var(--finance-accent) !important;
+  color: #101a20 !important;
+}
+
+body.dark-mode .btn-dismiss-ai {
+  color: #94a3b8 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}

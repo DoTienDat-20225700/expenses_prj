@@ -75,45 +75,51 @@
 
             <td class="text-center">
               {% if not u.is_superuser %}
+              {% if u.is_active %}
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#lockUserModal"
+                data-user-id="{{ u.id }}"
+                data-username="{{ u.username }}"
+                data-action-url="{% url 'ep1:toggle_user_status' u.id %}"
+                title="Khóa tài khoản"
+                aria-label="Khóa tài khoản {{ u.username }}"
+              >
+                <i class="fas fa-lock"></i> Khóa
+              </button>
+              {% else %}
               <form
                 method="post"
                 action="{% url 'ep1:toggle_user_status' u.id %}"
                 class="d-inline"
               >
-                {% csrf_token %} {% if u.is_active %}
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-danger"
-                  title="Khóa tài khoản"
-                  onclick="return confirm('Bạn có chắc muốn KHÓA tài khoản này? User sẽ không thể đăng nhập được nữa.')"
-                >
-                  <i class="fas fa-lock"></i> Khóa
-                </button>
-                {% else %}
+                {% csrf_token %}
                 <button
                   type="submit"
                   class="btn btn-sm btn-outline-success"
                   title="Mở khóa tài khoản"
+                  aria-label="Mở khóa tài khoản {{ u.username }}"
                 >
                   <i class="fas fa-unlock"></i> Mở lại
                 </button>
-                {% endif %}
               </form>
-              <form
-                method="post"
-                action="{% url 'ep1:delete_user' u.id %}"
-                class="d-inline ms-1"
+              {% endif %}
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-danger ms-1"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteUserModal"
+                data-user-id="{{ u.id }}"
+                data-username="{{ u.username }}"
+                data-action-url="{% url 'ep1:delete_user' u.id %}"
+                title="Xóa vĩnh viễn"
+                aria-label="Xóa vĩnh viễn tài khoản {{ u.username }}"
               >
-                {% csrf_token %}
-                <button
-                  type="submit"
-                  class="btn btn-sm btn-outline-danger"
-                  title="Xóa vĩnh viễn"
-                  onclick="return confirm('CẢNH BÁO: Hành động này KHÔNG THỂ hoàn tác!\n\nToàn bộ dữ liệu của user {{ u.username }} (Chi tiêu, Ngân sách, Hồ sơ...) sẽ bị XÓA SẠCH.\n\nBạn có chắc chắn muốn xóa?');"
-                >
-                  <i class="fas fa-trash"></i>
-                </button>
-              </form>
+                <i class="fas fa-trash"></i>
+              </button>
               {% else %}
               <button
                 class="btn btn-sm btn-secondary"
@@ -131,4 +137,139 @@
     </div>
   </div>
 </div>
+
+<!-- Modal xác nhận khóa tài khoản -->
+<div
+  class="modal fade"
+  id="lockUserModal"
+  tabindex="-1"
+  aria-labelledby="lockUserModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fs-6" id="lockUserModalLabel">
+          <i class="fas fa-lock me-2"></i>Xác nhận khóa tài khoản
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Đóng"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Bạn có chắc chắn muốn <strong>KHÓA</strong> tài khoản của người dùng
+          <strong id="lockUsername" class="text-danger"></strong>?
+        </p>
+        <p class="text-muted small mb-0">
+          Người dùng này sẽ không thể đăng nhập vào hệ thống cho đến khi được mở khóa lại.
+        </p>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+        <form id="lockUserForm" method="post" action="" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-warning btn-sm">
+            <i class="fas fa-lock me-1"></i>Khóa tài khoản
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cảnh báo xóa vĩnh viễn tài khoản -->
+<div
+  class="modal fade"
+  id="deleteUserModal"
+  tabindex="-1"
+  aria-labelledby="deleteUserModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fs-6" id="deleteUserModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>Cảnh báo: Xóa vĩnh viễn tài khoản
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Đóng"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="alert alert-danger mb-3 py-2 px-3 small">
+          <i class="fas fa-exclamation-circle me-1"></i>
+          <strong>CẢNH BÁO:</strong> Hành động này <strong>KHÔNG THỂ</strong> hoàn tác!
+        </div>
+        <p class="mb-2">
+          Toàn bộ dữ liệu của người dùng <strong id="deleteUsername" class="text-danger"></strong> (Chi tiêu, Ngân sách, Thu nhập, Hồ sơ...) sẽ bị <strong>XÓA SẠCH</strong> khỏi cơ sở dữ liệu.
+        </p>
+        <p class="mb-0 text-muted small">
+          Bạn có chắc chắn muốn tiếp tục thực hiện xóa vĩnh viễn không?
+        </p>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+        <form id="deleteUserForm" method="post" action="" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash me-1"></i>Xác nhận xóa vĩnh viễn
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var lockModal = document.getElementById("lockUserModal");
+    if (lockModal) {
+      lockModal.addEventListener("show.bs.modal", function (event) {
+        var btn = event.relatedTarget;
+        var username = btn.getAttribute("data-username") || "";
+        var actionUrl = btn.getAttribute("data-action-url") || "";
+
+        var nameEl = document.getElementById("lockUsername");
+        if (nameEl) nameEl.textContent = username;
+
+        var formEl = document.getElementById("lockUserForm");
+        if (formEl) formEl.setAttribute("action", actionUrl);
+      });
+    }
+
+    var deleteModal = document.getElementById("deleteUserModal");
+    if (deleteModal) {
+      deleteModal.addEventListener("show.bs.modal", function (event) {
+        var btn = event.relatedTarget;
+        var username = btn.getAttribute("data-username") || "";
+        var actionUrl = btn.getAttribute("data-action-url") || "";
+
+        var nameEl = document.getElementById("deleteUsername");
+        if (nameEl) nameEl.textContent = username;
+
+        var formEl = document.getElementById("deleteUserForm");
+        if (formEl) formEl.setAttribute("action", actionUrl);
+      });
+    }
+  });
+</script>
 {% endblock %}

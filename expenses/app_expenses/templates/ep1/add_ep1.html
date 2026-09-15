@@ -76,6 +76,55 @@
               {% endfor %}
             </select>
             <div class="invalid-feedback">Vui lòng chọn danh mục</div>
+
+            <!-- AI Category Suggestion Box -->
+            <div
+              id="aiSuggestionBox"
+              class="ai-suggestion-box d-none mt-2 p-2 px-3 rounded-3 border"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <div
+                class="d-flex flex-wrap align-items-center justify-content-between gap-2"
+              >
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge rounded-pill ai-suggestion-badge">
+                    <i class="fas fa-robot me-1"></i> AI gợi ý
+                  </span>
+                  <span
+                    class="ai-suggestion-message small"
+                    id="aiSuggestionMessage"
+                  >
+                    AI đề xuất:
+                    <strong
+                      id="aiSuggestedCategoryName"
+                      class="ai-suggested-name"
+                    ></strong>
+                  </span>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                  <button
+                    type="button"
+                    id="btnAcceptSuggestion"
+                    class="btn btn-sm btn-accept-ai"
+                    aria-label="Áp dụng gợi ý danh mục này"
+                    title="Chọn danh mục theo gợi ý của AI"
+                  >
+                    <i class="fas fa-check me-1"></i> Áp dụng
+                  </button>
+                  <button
+                    type="button"
+                    id="btnDismissSuggestion"
+                    class="btn btn-sm btn-dismiss-ai"
+                    aria-label="Bỏ qua gợi ý danh mục của AI"
+                    title="Giữ nguyên lựa chọn hiện tại"
+                  >
+                    <i class="fas fa-times me-1"></i> Bỏ qua
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -97,7 +146,7 @@
 
 <script>
   /* Tự động thêm dấu phẩy mỗi 3 chữ số khi nhập
-       Loại bỏ dấu phẩy khi submit form để gửi về backend giá trị số thuần */
+     Loại bỏ dấu phẩy khi submit form để gửi về backend giá trị số thuần */
   (function () {
     "use strict";
 
@@ -118,79 +167,185 @@
   })();
 
   document.addEventListener("DOMContentLoaded", function () {
-    const input = document.getElementById("id_amount");
-
-    function formatNumberWithCommas(value) {
-      return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-
-    input.addEventListener("input", function () {
-      let value = this.value.replace(/,/g, "");
-      if (isNaN(value)) {
-        this.value = "";
-        return;
-      }
-      this.value = formatNumberWithCommas(value);
-    });
-
-    const form = input.closest("form");
-    form.addEventListener("submit", function () {
-      input.value = input.value.replace(/,/g, "");
-    });
-  });
-</script>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
     const amountInput = document.getElementById("id_amount");
     const descInput = document.getElementById("id_description");
     const categorySelect = document.getElementById("id_category");
+    const aiSuggestionBox = document.getElementById("aiSuggestionBox");
+    const aiSuggestedCategoryName = document.getElementById(
+      "aiSuggestedCategoryName",
+    );
+    const aiSuggestionMessage = document.getElementById("aiSuggestionMessage");
+    const btnAcceptSuggestion = document.getElementById("btnAcceptSuggestion");
+    const btnDismissSuggestion = document.getElementById(
+      "btnDismissSuggestion",
+    );
 
-    // --- 1. Logic Format tiền tệ (Giữ nguyên cũ) ---
+    // --- 1. Logic Format tiền tệ ---
     function formatNumberWithCommas(value) {
       return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
-    amountInput.addEventListener("input", function () {
-      let value = this.value.replace(/,/g, "");
-      if (!isNaN(value) && value.length > 0) {
-        this.value = formatNumberWithCommas(value);
+
+    if (amountInput) {
+      amountInput.addEventListener("input", function () {
+        let value = this.value.replace(/,/g, "");
+        if (!isNaN(value) && value.length > 0) {
+          this.value = formatNumberWithCommas(value);
+        } else if (isNaN(value)) {
+          this.value = "";
+        }
+      });
+
+      const form = amountInput.closest("form");
+      if (form) {
+        form.addEventListener("submit", function () {
+          amountInput.value = amountInput.value.replace(/,/g, "");
+        });
       }
-    });
-    const form = amountInput.closest("form");
-    form.addEventListener("submit", function () {
-      amountInput.value = amountInput.value.replace(/,/g, "");
-    });
+    }
 
-    // --- 2. Logic AI Gợi ý danh mục (MỚI) ---
+    // --- 2. Logic AI Gợi ý danh mục (Accessible & User-Controlled) ---
     let timeout = null;
-    descInput.addEventListener("input", function () {
-      const text = this.value;
+    let pendingSuggestedId = null;
+    let pendingSuggestedName = "";
+    let userDismissedId = null;
+    let feedbackTimer = null;
 
-      // Chỉ gọi AI khi gõ xong 500ms để tránh spam server
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        if (text.length > 2) {
-          // Chỉ dự đoán khi có trên 2 ký tự
+    function hideSuggestionBox() {
+      if (aiSuggestionBox) {
+        aiSuggestionBox.classList.add("d-none");
+      }
+      pendingSuggestedId = null;
+      pendingSuggestedName = "";
+    }
+
+    // Khi user tự tay chọn danh mục thủ công
+    if (categorySelect) {
+      categorySelect.addEventListener("change", function () {
+        hideSuggestionBox();
+      });
+    }
+
+    // Lắng nghe nhập liệu mô tả
+    if (descInput && categorySelect && aiSuggestionBox) {
+      descInput.addEventListener("input", function () {
+        const text = this.value.trim();
+
+        clearTimeout(timeout);
+
+        // Nếu mô tả quá ngắn hoặc bị xóa, ẩn gợi ý
+        if (text.length <= 2) {
+          hideSuggestionBox();
+          userDismissedId = null;
+          return;
+        }
+
+        timeout = setTimeout(() => {
           fetch(
             `{% url "ep1:predict_category" %}?description=${encodeURIComponent(text)}`,
           )
             .then((response) => response.json())
             .then((data) => {
-              if (data.category_id) {
-                // Tự động chọn danh mục
-                categorySelect.value = data.category_id;
-
-                // Tạo hiệu ứng nhấp nháy nhẹ để báo user biết AI đã chọn
-                categorySelect.style.transition = "background-color 0.3s";
-                categorySelect.style.backgroundColor = "#d1fae5"; // Màu xanh nhạt
-                setTimeout(() => {
-                  categorySelect.style.backgroundColor = "";
-                }, 500);
+              // 1. Kiểm tra nếu AI không trả suggestion
+              if (!data || !data.category_id) {
+                hideSuggestionBox();
+                return;
               }
+
+              const suggestedId = String(data.category_id);
+
+              // Tìm option tương ứng trong select
+              const matchingOption = Array.from(categorySelect.options).find(
+                (opt) => opt.value === suggestedId,
+              );
+
+              if (!matchingOption) {
+                hideSuggestionBox();
+                return;
+              }
+
+              const suggestedName = matchingOption.textContent.trim();
+
+              // 2. Kiểm tra nếu suggestion trùng với category hiện tại
+              if (categorySelect.value === suggestedId) {
+                hideSuggestionBox();
+                return;
+              }
+
+              // 3. Kiểm tra nếu user đã bấm Bỏ qua danh mục này trong cùng phiên nhập
+              if (userDismissedId === suggestedId) {
+                return;
+              }
+
+              // 4. Hiển thị gợi ý rõ ràng và không tự động đổi select
+              pendingSuggestedId = suggestedId;
+              pendingSuggestedName = suggestedName;
+
+              clearTimeout(feedbackTimer);
+              if (aiSuggestedCategoryName) {
+                aiSuggestedCategoryName.textContent = suggestedName;
+              }
+              if (aiSuggestionMessage) {
+                aiSuggestionMessage.innerHTML = `AI đề xuất: <strong id="aiSuggestedCategoryName" class="ai-suggested-name">${suggestedName}</strong>`;
+              }
+
+              if (btnAcceptSuggestion) {
+                btnAcceptSuggestion.setAttribute(
+                  "aria-label",
+                  `Áp dụng gợi ý danh mục ${suggestedName}`,
+                );
+                btnAcceptSuggestion.classList.remove("d-none");
+              }
+              if (btnDismissSuggestion) {
+                btnDismissSuggestion.classList.remove("d-none");
+              }
+
+              aiSuggestionBox.classList.remove("d-none");
+            })
+            .catch((err) => {
+              console.error("Lỗi dự đoán danh mục:", err);
+              hideSuggestionBox();
             });
-        }
-      }, 500);
-    });
+        }, 500);
+      });
+
+      // Xử lý khi nhấn nút Áp dụng (Accept)
+      if (btnAcceptSuggestion) {
+        btnAcceptSuggestion.addEventListener("click", function () {
+          if (!pendingSuggestedId) return;
+
+          // Cập nhật giá trị vào select
+          categorySelect.value = pendingSuggestedId;
+          categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
+
+          // Cung cấp feedback rõ ràng cho Screen Reader & Visual User
+          const appliedName = pendingSuggestedName;
+          if (aiSuggestionMessage) {
+            aiSuggestionMessage.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đã chọn danh mục: <strong>${appliedName}</strong></span>`;
+          }
+
+          // Ẩn 2 nút thao tác
+          btnAcceptSuggestion.classList.add("d-none");
+          btnDismissSuggestion.classList.add("d-none");
+
+          // Tự động ẩn box sau 2.5s
+          feedbackTimer = setTimeout(() => {
+            hideSuggestionBox();
+          }, 2500);
+
+          // Focus về select để keyboard user có thể tiếp tục
+          categorySelect.focus();
+        });
+      }
+
+      // Xử lý khi nhấn nút Bỏ qua (Dismiss)
+      if (btnDismissSuggestion) {
+        btnDismissSuggestion.addEventListener("click", function () {
+          userDismissedId = pendingSuggestedId;
+          hideSuggestionBox();
+          categorySelect.focus();
+        });
+      }
+    }
   });
 </script>
 {% endblock %}
