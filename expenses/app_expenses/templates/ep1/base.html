@@ -12,7 +12,9 @@
       name="keywords"
       content="quản lý chi tiêu, quản lý tài chính, thu nhập, ngân sách, tiết kiệm, money manager"
     />
-    <title>MoneyManager</title>
+    <title>
+      {% block title %}MoneyManager{% endblock %}
+    </title>
     <link rel="icon" type="image/png" href="{% static 'ep1/img/logo.png' %}" />
 
     <link
@@ -204,7 +206,7 @@
       </div>
     </nav>
 
-    <div class="container main-container fade-in mt-4">
+    <main class="container main-container fade-in mt-4" id="main-content">
       {% if messages %}
       <div class="row justify-content-center mb-4">
         <div class="col-lg-8">
@@ -236,7 +238,7 @@
         </div>
       </div>
       {% endif %} {% block content %}{% endblock content %}
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -292,10 +294,14 @@
             input.type = "text";
             icon.classList.remove("fa-eye");
             icon.classList.add("fa-eye-slash");
+            button.setAttribute("aria-label", "Ẩn mật khẩu");
+            button.setAttribute("aria-pressed", "true");
           } else {
             input.type = "password";
             icon.classList.remove("fa-eye-slash");
             icon.classList.add("fa-eye");
+            button.setAttribute("aria-label", "Hiện mật khẩu");
+            button.setAttribute("aria-pressed", "false");
           }
         };
 
@@ -413,24 +419,24 @@
           </div>
           <div class="modal-body">
             <div class="expense-preview p-2 rounded small">
-              <div class="row mb-1">
-                <div class="col-5 text-muted">Số tiền:</div>
+              <div class="row mb-1 align-items-center">
+                <label for="floatingPreviewAmount" class="col-5 text-muted mb-0">Số tiền:</label>
                 <div class="col-7">
                   <input type="number" min="1" step="0.01" class="form-control form-control-sm" id="floatingPreviewAmount">
                 </div>
               </div>
-              <div class="row mb-1">
-                <div class="col-5 text-muted" id="floatingPreviewCategoryLabel">Danh mục:</div>
-                <div class="col-7" id="floatingPreviewCategory"></div>
+              <div class="row mb-1 align-items-center">
+                <label id="floatingPreviewCategoryLabel" class="col-5 text-muted mb-0">Danh mục:</label>
+                <div class="col-7" id="floatingPreviewCategory" aria-live="polite"></div>
               </div>
-              <div class="row mb-1">
-                <div class="col-5 text-muted">Ngày:</div>
+              <div class="row mb-1 align-items-center">
+                <label for="floatingPreviewDate" class="col-5 text-muted mb-0">Ngày:</label>
                 <div class="col-7">
                   <input type="date" class="form-control form-control-sm" id="floatingPreviewDate">
                 </div>
               </div>
-              <div class="row">
-                <div class="col-5 text-muted">Mô tả:</div>
+              <div class="row align-items-center">
+                <label for="floatingPreviewDescription" class="col-5 text-muted mb-0">Mô tả:</label>
                 <div class="col-7">
                   <input type="text" maxlength="500" class="form-control form-control-sm" id="floatingPreviewDescription">
                 </div>
@@ -438,25 +444,26 @@
             </div>
             
             <div class="mt-2">
-              <label class="form-label small text-muted" id="floatingCategoryOverrideLabel">Chọn danh mục khác:</label>
+              <label for="floatingCategoryOverride" class="form-label small text-muted" id="floatingCategoryOverrideLabel">Chọn danh mục khác:</label>
               <select class="form-select form-select-sm" id="floatingCategoryOverride">
                 <option value="">-- Giữ nguyên --</option>
                 {% for cat in user.category_set.all %}
                 <option value="{{ cat.id }}">{{ cat.name }}</option>
                 {% endfor %}
               </select>
+              <label for="floatingIncomeSource" class="visually-hidden">Nguồn thu</label>
               <input type="text" class="form-control form-control-sm d-none" id="floatingIncomeSource" maxlength="100" placeholder="Nguồn thu">
               <div id="floatingRecurringFields" class="d-none mt-2">
-                <label class="form-label small text-muted">Tần suất</label>
+                <label for="floatingRecurringFrequency" class="form-label small text-muted">Tần suất</label>
                 <select class="form-select form-select-sm" id="floatingRecurringFrequency">
                   <option value="daily">Hàng ngày</option>
                   <option value="weekly">Hàng tuần</option>
                   <option value="monthly" selected>Hàng tháng</option>
                   <option value="yearly">Hàng năm</option>
                 </select>
-                <label class="form-label small text-muted mt-2">Ngày bắt đầu</label>
+                <label for="floatingRecurringStartDate" class="form-label small text-muted mt-2">Ngày bắt đầu</label>
                 <input type="date" class="form-control form-control-sm" id="floatingRecurringStartDate">
-                <label class="form-label small text-muted mt-2">Ngày kết thúc (không bắt buộc)</label>
+                <label for="floatingRecurringEndDate" class="form-label small text-muted mt-2">Ngày kết thúc (không bắt buộc)</label>
                 <input type="date" class="form-control form-control-sm" id="floatingRecurringEndDate">
               </div>
             </div>

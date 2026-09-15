@@ -1019,6 +1019,36 @@ body.dark-mode .login-error-alert i {
 /* =========================================
    12. UTILITY CLASSES FOR INLINE STYLES
    ========================================= */
+
+/* Skip navigation link — hidden visually until keyboard focused */
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: var(--finance-accent, #087f8c);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 0.15s ease;
+  /* keeps it in tab order while hidden */
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 3px solid rgba(8, 127, 140, 0.5);
+  outline-offset: 2px;
+}
+
+body.dark-mode .skip-link {
+  background: var(--finance-accent, #55c2c2);
+  color: var(--finance-ink, #101a20);
+}
+
 /* Main body with padding-top for fixed navbar */
 .main-body {
   padding-top: 90px;
@@ -1042,6 +1072,17 @@ body.dark-mode .login-error-alert i {
 
 body.dark-mode .navbar-toggler-custom {
   filter: brightness(0) invert(1);
+}
+
+/* Password visibility toggle accessible focus */
+.password-toggle {
+  text-decoration: none;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--finance-primary, #087f8c);
+  outline-offset: 1px;
+  border-radius: 4px;
 }
 
 .navbar-toggler:focus {

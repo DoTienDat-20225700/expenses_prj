@@ -1,5 +1,6 @@
-{% extends "ep1/base.html" %} {% load static %} {% block title %}Trợ lý ảo{%
-endblock title %} {% block content %}
+{% extends "ep1/base.html" %} {% load static %}
+{% block title %}Trợ lý AI — MoneyManager{% endblock %}
+{% block content %}
 <div class="container py-4 chat-assistant-container">
   <div class="row justify-content-center">
     <div class="col-lg-8">
@@ -73,8 +74,8 @@ endblock title %} {% block content %}
         <div class="card-body">
           <h6 class="text-muted mb-3">Chi tiêu gần đây</h6>
           <div id="recentExpenses" class="small">
-            {% if recent_expenses %} {% for expense in
-            recent_expenses|slice:":5" %}
+            {% if recent_expenses %}
+            {% for expense in recent_expenses|slice:":5" %}
             <div class="d-flex justify-content-between py-2 border-bottom">
               <div>
                 <span class="text-muted">{{ expense.date|date:"d/m" }}</span>
