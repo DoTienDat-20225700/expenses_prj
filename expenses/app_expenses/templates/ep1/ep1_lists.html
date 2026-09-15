@@ -197,7 +197,7 @@
   </div>
 
   <div class="card border-0 shadow-sm">
-    <div class="table-responsive">
+    <div class="table-responsive" tabindex="0" aria-label="Bảng chi tiêu, vuốt ngang để xem thêm cột">
       <table class="table table-hover align-middle mb-0">
         <thead>
           <tr>
@@ -482,3 +482,7 @@
 </script>
 
 {% endblock content %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock extra_scripts %}

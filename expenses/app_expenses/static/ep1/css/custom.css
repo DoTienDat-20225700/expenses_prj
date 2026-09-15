@@ -3,8 +3,7 @@
    Style: Clean, Modern, Finance-focused
    ========================================================= */
 
-/* 1. IMPORT FONT (Hiện đại & Sắc nét hơn) */
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+/* 1. FONT: Plus Jakarta Sans được load qua <link> trong base.html (không dùng @import để tránh render-blocking kép) */
 
 /* 2. CẤU HÌNH BIẾN MÀU & HIỆU ỨNG (CANONICAL DESIGN TOKENS) */
 :root {
@@ -245,7 +244,7 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-attachment: fixed; /* Parallax effect trên desktop */
   color: var(--text-main);
   transition: background-color 0.2s ease, color 0.2s ease;
   padding-bottom: 3rem;
@@ -739,6 +738,33 @@ body.dark-mode .table-secondary {
 .table-responsive {
   border-radius: 20px;
   background: transparent !important;
+  /* Đảm bảo position context cho ::after indicator */
+  position: relative;
+}
+
+/* ─── Scroll fade-right indicator (CSS-only, no JS) ─────────────────
+   Kỹ thuật: ::after tạo gradient overlay ở cạnh phải.
+   Dùng scroll-driven animation (Chrome 115+) để tự ẩn khi đã scroll hết.
+   Trên browser cũ: indicator luôn hiển thị trên mobile (chấp nhận được).
+   pointer-events: none → không che nội dung bên dưới, keyboard nav OK. */
+.table-responsive::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 60px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(var(--table-fade-rgb, 255, 255, 255), 0.85) 100%
+  );
+  border-radius: 0 20px 20px 0;
+  pointer-events: none;
+  /* Ẩn trên desktop — chỉ hiện khi có scroll */
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 1;
 }
 
 /* =========================================
@@ -1376,7 +1402,7 @@ body:has(.dashboard-shell) {
   background-image: url("../img/bg.png");
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
+  background-attachment: fixed; /* Parallax effect trên desktop */
 }
 
 body:has(.dashboard-shell)::before {
@@ -1907,7 +1933,17 @@ body {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-attachment: fixed; /* Parallax effect trên desktop */
+}
+
+/* Mobile: tắt background-attachment: fixed để tránh scroll jank trên iOS/Android.
+   background-attachment: fixed không được hỗ trợ tốt trên mobile và gây repaint
+   toàn bộ background mỗi frame scroll (perf issue nghiêm trọng trên iOS Safari). */
+@media (max-width: 768px) {
+  body,
+  body:has(.dashboard-shell) {
+    background-attachment: scroll;
+  }
 }
 
 body::before {
@@ -2090,16 +2126,67 @@ body.dark-mode .dropdown-menu {
     padding: 1rem;
   }
 
+  /* Giữ min-width để table không bị vỡ cột.
+     table-responsive container xử lý scroll ngang. */
   .table {
     min-width: 620px;
   }
 
+  /* ─── Table scroll container mobile ────────────────────────────── */
   .table-responsive {
     border-radius: 10px;
+    /* iOS smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Scroll snap để cảm giác "sticky" khi vuốt */
+    scroll-behavior: smooth;
+    /* Đảm bảo chỉ table scroll, không phải body */
+    overflow-x: auto;
+  }
+
+  /* Hiển thị fade-right indicator trên mobile.
+     RGB 255,255,255 = nền card trắng (light mode).
+     Dùng --table-fade-rgb để dark mode có thể override. */
+  .table-responsive::after {
+    opacity: 1;
+    /* --table-fade-rgb được set ở :root và dark-mode */
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(var(--table-fade-rgb, 255, 255, 255), 0.9) 100%
+    );
   }
 
   .navbar-collapse {
     padding-top: 0.75rem;
+  }
+}
+
+/* ─── Dark mode: điều chỉnh màu fade gradient ───────────────────────
+   Nền card dark mode ≈ #17252d (rgb 23,37,45).
+   Override --table-fade-rgb để gradient khớp với nền tối. */
+body.dark-mode .table-responsive::after {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(23, 37, 45, 0.92) 100%
+  );
+}
+
+/* Khi user đã scroll đến cuối table → ẩn fade indicator.
+   Dùng animation-timeline: scroll() (Chrome 115+, Firefox 110+).
+   Trên Safari/browser cũ: indicator vẫn hiển thị — acceptable. */
+@supports (animation-timeline: scroll()) {
+  @media (max-width: 768px) {
+    .table-responsive::after {
+      animation: table-fade-hide linear both;
+      animation-timeline: scroll(self inline);
+      animation-range: 80% 100%;
+    }
+
+    @keyframes table-fade-hide {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
   }
 }
 
@@ -2114,6 +2201,13 @@ body.dark-mode .dropdown-menu {
 :focus-visible {
   outline: 3px solid rgba(8, 127, 140, 0.32);
   outline-offset: 2px;
+}
+
+/* Keyboard focus trên table-responsive scroll container.
+   Dùng box-shadow thay outline để không bị cắt bởi border-radius. */
+.table-responsive:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.36);
 }
 
 .main-container {
