@@ -12,7 +12,8 @@
 
       <form method="post" novalidate>
         {% csrf_token %} {% if form.non_field_errors %}
-        <div class="alert alert-danger py-2 small">
+        <div class="alert alert-danger login-error-alert py-2 small" role="alert">
+          <i class="fas fa-circle-exclamation me-2" aria-hidden="true"></i>
           {{ form.non_field_errors|join:", " }}
         </div>
         {% endif %}

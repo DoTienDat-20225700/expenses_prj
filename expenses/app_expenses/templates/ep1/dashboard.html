@@ -1,19 +1,24 @@
 {% extends "ep1/base.html" %} {% load static %} {% load humanize %} {% load
 widget_tweaks %} {% block content %}
 
-<div class="row g-4">
+<div class="row g-4 dashboard-shell">
   {% if active_announcements %}
   <div class="col-12">
     {% for announcement in active_announcements %}
     <div
-      class="alert alert-{{ announcement.priority }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center"
+      class="alert dashboard-announcement dashboard-announcement-{{ announcement.priority }} alert-{{ announcement.priority }} alert-dismissible fade show shadow-sm border-0 d-flex align-items-center"
       role="alert"
     >
       <i class="fas fa-bullhorn me-2 fs-5"></i>
       <div>
         <strong>{{ announcement.title }}</strong> - {{ announcement.content }}
       </div>
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+        aria-label="Đóng thông báo"
+      ></button>
     </div>
     {% endfor %}
   </div>
@@ -22,20 +27,28 @@ widget_tweaks %} {% block content %}
   <div
     class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3"
   >
-    <h3 class="fw-bold mb-0 text-main">
-      <i class="fas fa-chart-pie me-2 text-primary"></i>Tổng Quan Tài Chính
-    </h3>
+    <div class="dashboard-heading">
+      <h1 class="dashboard-title fw-bold mb-0 text-main">
+        <i class="fas fa-chart-pie me-2 text-primary" aria-hidden="true"></i
+        >Tổng Quan Tài Chính
+      </h1>
+      <p class="dashboard-subtitle mb-0">
+        Theo dõi dòng tiền, ngân sách và những khoản chi quan trọng nhất.
+      </p>
+    </div>
 
-    <form method="post" class="d-inline-block me-2">
+    <form method="post" class="budget-form d-inline-block me-2">
       {% csrf_token %}
       <div class="input-group input-group-sm d-inline-flex align-items-stretch">
-        <span class="input-group-text fw-bold">₫</span>
+        <label class="visually-hidden" for="id_total">Ngân sách tháng</label>
+        <span class="input-group-text fw-bold" aria-hidden="true">₫</span>
         {{ b_form.total }}
         <button
           name="budget_submit"
           class="btn btn-success"
           type="submit"
           title="Lưu ngân sách"
+          aria-label="Lưu ngân sách"
         >
           <i class="fas fa-check"></i>
         </button>
@@ -44,7 +57,7 @@ widget_tweaks %} {% block content %}
   </div>
 
   <div class="col-md-6 col-lg-3">
-    <div class="card h-100">
+    <div class="card h-100 metric-card metric-card-expense">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
@@ -58,12 +71,12 @@ widget_tweaks %} {% block content %}
           <div
             class="rounded-circle p-3 d-flex align-items-center justify-content-center balance-icon-container balance-icon-danger"
           >
-            <i class="fas fa-wallet text-danger fs-5"></i>
+            <i class="fas fa-wallet text-danger fs-5" aria-hidden="true"></i>
           </div>
         </div>
         <div class="d-flex align-items-center small text-muted">
-          <i class="fas fa-history me-1"></i>
-          Tổng ví:
+          <i class="fas fa-history me-1" aria-hidden="true"></i>
+          Tổng chi tiêu:
           <span id="dashTotalExpenses"
             >{{ total_expenses|floatformat:0|intcomma }}</span
           >
@@ -74,7 +87,7 @@ widget_tweaks %} {% block content %}
   </div>
 
   <div class="col-md-6 col-lg-3">
-    <div class="card h-100">
+    <div class="card h-100 metric-card metric-card-income">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
@@ -88,12 +101,15 @@ widget_tweaks %} {% block content %}
           <div
             class="rounded-circle p-3 d-flex align-items-center justify-content-center balance-icon-container balance-icon-success"
           >
-            <i class="fas fa-money-bill-wave text-success fs-5"></i>
+            <i
+              class="fas fa-money-bill-wave text-success fs-5"
+              aria-hidden="true"
+            ></i>
           </div>
         </div>
         <div class="d-flex align-items-center small text-muted">
-          <i class="fas fa-history me-1"></i>
-          Tổng ví:
+          <i class="fas fa-history me-1" aria-hidden="true"></i>
+          Tổng thu nhập:
           <span id="dashTotalIncome"
             >{{ total_income|floatformat:0|intcomma }}</span
           >
@@ -104,7 +120,7 @@ widget_tweaks %} {% block content %}
   </div>
 
   <div class="col-md-6 col-lg-3">
-    <div class="card h-100">
+    <div class="card h-100 metric-card metric-card-featured">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
@@ -125,16 +141,17 @@ widget_tweaks %} {% block content %}
             <i
               id="dashBalanceIcon"
               class="fas fa-piggy-bank {% if balance >= 0 %}text-success{% else %}text-danger{% endif %} fs-5"
+              aria-hidden="true"
             ></i>
           </div>
         </div>
-        <p class="small text-muted mb-0">Thu nhập - Chi tiêu</p>
+        <p class="small text-muted mb-0">Thu nhập trừ chi tiêu</p>
       </div>
     </div>
   </div>
 
   <div class="col-md-6 col-lg-3">
-    <div class="card h-100">
+    <div class="card h-100 metric-card metric-card-budget">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-start mb-2">
           <div>
@@ -148,7 +165,7 @@ widget_tweaks %} {% block content %}
           <div
             class="rounded-circle p-3 d-flex align-items-center justify-content-center balance-icon-container balance-icon-blue"
           >
-            <i class="fas fa-bullseye text-primary fs-5"></i>
+            <i class="fas fa-bullseye text-primary fs-5" aria-hidden="true"></i>
           </div>
         </div>
 
@@ -158,7 +175,8 @@ widget_tweaks %} {% block content %}
             id="dashBudgetProgress"
             class="progress-bar rounded-pill {% if budget_percentage > 100 %}bg-danger{% elif budget_percentage > 70 %}bg-warning{% else %}bg-primary{% endif %}"
             role="progressbar"
-            style="width: {{ budget_percentage|floatformat:0 }}%"
+            aria-label="Mức sử dụng ngân sách"
+            style="width: {% if budget_percentage > 100 %}100{% else %}{{ budget_percentage|floatformat:0 }}{% endif %}%"
             aria-valuenow="{{ budget_percentage|floatformat:0 }}"
             aria-valuemin="0"
             aria-valuemax="100"
@@ -166,58 +184,85 @@ widget_tweaks %} {% block content %}
         </div>
         <div class="d-flex justify-content-between small fw-bold">
           <span id="dashBudgetPercent" class="text-muted">
-            Đã tiêu: {{ budget_percentage|floatformat:0 }}%
+            Đã sử dụng: {{ budget_percentage|floatformat:0 }}%
           </span>
           <span
             id="dashBudgetRemaining"
             class="{% if budget_remaining >= 0 %}text-success{% else %}text-danger{% endif %}"
           >
-            Còn: {{ budget_remaining|floatformat:0|intcomma }}
+            Còn lại: {{ budget_remaining|floatformat:0|intcomma }}
           </span>
         </div>
         {% else %}
-        <p class="small text-muted mb-0 fst-italic">Chưa thiết lập ngân sách</p>
+        <p class="small text-muted mb-0 fst-italic">
+          Chưa thiết lập ngân sách tháng
+        </p>
         {% endif %}
       </div>
     </div>
   </div>
 
   <div class="col-lg-6">
-    <div class="card h-100">
+    <div class="card h-100 dashboard-panel">
       <div class="card-header border-0 pt-4">
-        <h5 class="fw-bold mb-0 text-main">
-          <i class="fas fa-chart-pie me-2 text-primary"></i>Phân Bố Chi Tiêu
-        </h5>
+        <h2 class="panel-title fw-bold mb-0 text-main">
+          <i class="fas fa-chart-pie me-2 text-primary" aria-hidden="true"></i
+          >Phân Bố Chi Tiêu
+        </h2>
       </div>
       <div class="card-body">
         <div class="chart-container-300">
-          <canvas id="categoryChart"></canvas>
+          <canvas
+            id="categoryChart"
+            role="img"
+            aria-label="Biểu đồ phân bố chi tiêu theo danh mục"
+          ></canvas>
+          <p
+            id="categoryChartSummary"
+            class="chart-status visually-hidden"
+            aria-live="polite"
+          >
+            Đang tải dữ liệu phân bố chi tiêu.
+          </p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="col-lg-6">
-    <div class="card h-100">
+    <div class="card h-100 dashboard-panel">
       <div class="card-header border-0 pt-4">
-        <h5 class="fw-bold mb-0 text-main">
-          <i class="fas fa-chart-area me-2 text-primary"></i>Xu Hướng 6 Tháng
-        </h5>
+        <h2 class="panel-title fw-bold mb-0 text-main">
+          <i class="fas fa-chart-area me-2 text-primary" aria-hidden="true"></i
+          >Xu Hướng 6 Tháng
+        </h2>
       </div>
       <div class="card-body">
         <div class="chart-container-300">
-          <canvas id="incomeExpenseChart"></canvas>
+          <canvas
+            id="incomeExpenseChart"
+            role="img"
+            aria-label="Biểu đồ xu hướng thu nhập và chi tiêu trong sáu tháng"
+          ></canvas>
+          <p
+            id="incomeExpenseChartSummary"
+            class="chart-status visually-hidden"
+            aria-live="polite"
+          >
+            Đang tải dữ liệu xu hướng thu nhập và chi tiêu.
+          </p>
         </div>
       </div>
     </div>
   </div>
 
   <div class="col-lg-6">
-    <div class="card h-100">
+    <div class="card h-100 dashboard-panel">
       <div class="card-header border-0 pt-4">
-        <h5 class="fw-bold mb-0 text-main">
-          <i class="fas fa-fire me-2 text-danger"></i>Top Danh Mục Tốn Kém
-        </h5>
+        <h2 class="panel-title fw-bold mb-0 text-main">
+          <i class="fas fa-fire me-2 text-danger" aria-hidden="true"></i>Danh
+          Mục Chi Nhiều Nhất
+        </h2>
       </div>
       <div id="dashTopCategories" class="card-body p-0">
         {% include "ep1/partials/dashboard_top_categories.html" with top_categories=top_categories %}
@@ -226,11 +271,12 @@ widget_tweaks %} {% block content %}
   </div>
 
   <div class="col-lg-6">
-    <div class="card h-100">
+    <div class="card h-100 dashboard-panel">
       <div class="card-header border-0 pt-4">
-        <h5 class="fw-bold mb-0 text-main">
-          <i class="fas fa-clock me-2 text-info"></i>Giao Dịch Mới Nhất
-        </h5>
+        <h2 class="panel-title fw-bold mb-0 text-main">
+          <i class="fas fa-clock me-2 text-info" aria-hidden="true"></i>Giao
+          Dịch Gần Đây
+        </h2>
       </div>
       <div id="dashRecentTransactions" class="card-body p-0">
         {% include "ep1/partials/dashboard_recent_transactions.html" with recent_expenses=recent_expenses recent_income=recent_income %}
@@ -240,12 +286,15 @@ widget_tweaks %} {% block content %}
 
   {% if upcoming_recurring %}
   <div class="col-12">
-    <div class="card">
+    <div class="card dashboard-panel">
       <div class="card-header border-0 pt-4">
-        <h5 class="fw-bold mb-0 text-main">
-          <i class="fas fa-calendar-alt me-2 text-warning"></i>Sắp Đến Hạn Thanh
-          Toán
-        </h5>
+        <h2 class="panel-title fw-bold mb-0 text-main">
+          <i
+            class="fas fa-calendar-alt me-2 text-warning"
+            aria-hidden="true"
+          ></i
+          >Khoản Thanh Toán Sắp Tới
+        </h2>
       </div>
       <div class="card-body">
         <div class="row g-3">
@@ -260,7 +309,7 @@ widget_tweaks %} {% block content %}
                   {{ recurring.amount|floatformat:0|intcomma }} ₫
                 </div>
                 <small class="text-muted">
-                  <i class="far fa-clock me-1"></i>{{ recurring.next_due_date|date:"d/m/Y" }}
+                  <i class="far fa-clock me-1" aria-hidden="true"></i>{{ recurring.next_due_date|date:"d/m/Y" }}
                 </small>
               </div>
               <span class="badge bg-warning text-dark shadow-sm">
@@ -276,9 +325,11 @@ widget_tweaks %} {% block content %}
   {% endif %}
 
   <div class="col-12">
-    <div class="card">
+    <div class="card dashboard-panel quick-actions-panel">
       <div class="card-body py-4">
-        <h5 class="fw-bold mb-4 text-center text-main">Thao Tác Nhanh</h5>
+        <h2 class="panel-title fw-bold mb-4 text-center text-main">
+          Thao Tác Nhanh
+        </h2>
         <div class="row g-3 justify-content-center">
           <div class="col-6 col-md-3 col-lg-2">
             <a
@@ -313,7 +364,7 @@ widget_tweaks %} {% block content %}
               class="btn btn-primary w-100 py-3 shadow-sm h-100 d-flex flex-column align-items-center justify-content-center gap-2"
             >
               <i class="fas fa-list-ul fs-4"></i>
-              <span>Chi Tiết</span>
+              <span>Xem Chi Tiêu</span>
             </a>
           </div>
         </div>
@@ -344,9 +395,61 @@ widget_tweaks %} {% block content %}
     }
 
     // 2. Biểu đồ Danh mục (Doughnut)
+    const chartColor = (token) =>
+      getComputedStyle(document.body).getPropertyValue(token).trim();
+    const categoryPalette = () => [
+      chartColor("--chart-category-1"),
+      chartColor("--chart-category-2"),
+      chartColor("--chart-category-3"),
+      chartColor("--chart-category-4"),
+      chartColor("--chart-category-5"),
+      chartColor("--chart-category-6"),
+      chartColor("--chart-category-7"),
+      chartColor("--chart-category-8"),
+      chartColor("--chart-category-9"),
+      chartColor("--chart-category-10"),
+    ];
+
+    function refreshChartTheme() {
+      const categoryChart = window.dashboardCategoryChart;
+      if (categoryChart) {
+        categoryChart.data.datasets[0].backgroundColor = categoryPalette();
+        categoryChart.update();
+      }
+
+      const incomeExpenseChart = window.dashboardIncomeExpenseChart;
+      if (incomeExpenseChart) {
+        const [income, expense] = incomeExpenseChart.data.datasets;
+        income.borderColor = chartColor("--chart-income");
+        income.backgroundColor = chartColor("--chart-income-fill");
+        income.pointBackgroundColor = chartColor("--chart-point");
+        income.pointBorderColor = chartColor("--chart-income");
+        expense.borderColor = chartColor("--chart-expense");
+        expense.backgroundColor = chartColor("--chart-expense-fill");
+        expense.pointBackgroundColor = chartColor("--chart-point");
+        expense.pointBorderColor = chartColor("--chart-expense");
+        incomeExpenseChart.options.scales.y.grid.color =
+          chartColor("--chart-grid");
+        incomeExpenseChart.update();
+      }
+    }
+
+    document.getElementById("theme-toggle")?.addEventListener("click", () => {
+      window.setTimeout(refreshChartTheme, 0);
+    });
+
     fetch("{% url 'ep1:chart_category' %}")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Category chart request failed");
+        return res.json();
+      })
       .then((data) => {
+        const summary = document.getElementById("categoryChartSummary");
+        if (summary) {
+          summary.textContent = data.labels.length
+            ? `Phân bố chi tiêu theo danh mục: ${data.labels.map((label, index) => `${label}: ${data.data[index]}`).join(", ")}.`
+            : "Chưa có dữ liệu phân bố chi tiêu.";
+        }
         const ctx = document.getElementById("categoryChart").getContext("2d");
         window.dashboardCategoryChart = new Chart(ctx, {
           type: "doughnut",
@@ -355,18 +458,7 @@ widget_tweaks %} {% block content %}
             datasets: [
               {
                 data: data.data,
-                backgroundColor: [
-                  "#10b981",
-                  "#3b82f6",
-                  "#f59e0b",
-                  "#ef4444",
-                  "#8b5cf6",
-                  "#ec4899",
-                  "#6366f1",
-                  "#14b8a6",
-                  "#f97316",
-                  "#64748b",
-                ],
+                backgroundColor: categoryPalette(),
                 borderWidth: 2,
                 borderColor: "transparent",
                 hoverOffset: 10,
@@ -387,12 +479,28 @@ widget_tweaks %} {% block content %}
             layout: { padding: 10 },
           },
         });
+      })
+      .catch(() => {
+        const summary = document.getElementById("categoryChartSummary");
+        if (summary) {
+          summary.textContent = "Không thể tải biểu đồ phân bố chi tiêu.";
+          summary.classList.remove("visually-hidden");
+        }
       });
 
     // 3. Biểu đồ Xu hướng (Line/Area)
     fetch("{% url 'ep1:chart_income_expense' %}")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Income expense chart request failed");
+        return res.json();
+      })
       .then((data) => {
+        const summary = document.getElementById("incomeExpenseChartSummary");
+        if (summary) {
+          summary.textContent = data.labels.length
+            ? `Xu hướng sáu tháng. Thu nhập: ${data.income.join(", ")}. Chi tiêu: ${data.expenses.join(", ")}.`
+            : "Chưa có dữ liệu xu hướng thu nhập và chi tiêu.";
+        }
         const ctx = document
           .getElementById("incomeExpenseChart")
           .getContext("2d");
@@ -407,25 +515,25 @@ widget_tweaks %} {% block content %}
               {
                 label: "Thu Nhập",
                 data: data.income,
-                borderColor: "#10b981",
-                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                borderColor: chartColor("--chart-income"),
+                backgroundColor: chartColor("--chart-income-fill"),
                 tension: 0.3,
                 fill: true,
                 pointRadius: 3,
-                pointBackgroundColor: "#fff",
-                pointBorderColor: "#10b981",
+                pointBackgroundColor: chartColor("--chart-point"),
+                pointBorderColor: chartColor("--chart-income"),
                 pointBorderWidth: 2,
               },
               {
                 label: "Chi Tiêu",
                 data: data.expenses,
-                borderColor: "#ef4444",
-                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                borderColor: chartColor("--chart-expense"),
+                backgroundColor: chartColor("--chart-expense-fill"),
                 tension: 0.3,
                 fill: true,
                 pointRadius: 3,
-                pointBackgroundColor: "#fff",
-                pointBorderColor: "#ef4444",
+                pointBackgroundColor: chartColor("--chart-point"),
+                pointBorderColor: chartColor("--chart-expense"),
                 pointBorderWidth: 2,
               },
             ],
@@ -445,7 +553,7 @@ widget_tweaks %} {% block content %}
             scales: {
               y: {
                 beginAtZero: true,
-                grid: { borderDash: [2, 4], color: "rgba(0,0,0,0.05)" },
+                grid: { borderDash: [2, 4], color: chartColor("--chart-grid") },
                 ticks: { padding: 10 },
               },
               x: {
@@ -454,6 +562,14 @@ widget_tweaks %} {% block content %}
             },
           },
         });
+      })
+      .catch(() => {
+        const summary = document.getElementById("incomeExpenseChartSummary");
+        if (summary) {
+          summary.textContent =
+            "Không thể tải biểu đồ xu hướng thu nhập và chi tiêu.";
+          summary.classList.remove("visually-hidden");
+        }
       });
 
     // Refresh dashboard UI (used after chat save)
@@ -533,7 +649,7 @@ widget_tweaks %} {% block content %}
           );
           if (budgetProgress && budgetPercent && budgetRemaining) {
             const percent = Math.round(data.summary.budget_percentage || 0);
-            budgetProgress.style.width = percent + "%";
+            budgetProgress.style.width = Math.min(percent, 100) + "%";
             budgetProgress.setAttribute("aria-valuenow", percent);
 
             budgetProgress.classList.remove(
@@ -549,10 +665,11 @@ widget_tweaks %} {% block content %}
               budgetProgress.classList.add("bg-primary");
             }
 
-            budgetPercent.textContent = "Đã tiêu: " + percent + "%";
+            budgetPercent.textContent = "Đã sử dụng: " + percent + "%";
 
             const remaining = data.summary.budget_remaining || 0;
-            budgetRemaining.textContent = "Còn: " + formatter.format(remaining);
+            budgetRemaining.textContent =
+              "Còn lại: " + formatter.format(remaining);
             budgetRemaining.classList.remove("text-success", "text-danger");
             budgetRemaining.classList.add(
               remaining >= 0 ? "text-success" : "text-danger",
