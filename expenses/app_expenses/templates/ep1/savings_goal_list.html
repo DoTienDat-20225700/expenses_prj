@@ -126,7 +126,8 @@
               <a
                 href="{% url 'ep1:delete_savings_goal' goal.pk %}"
                 class="btn btn-sm btn-outline-danger"
-                onclick="return confirm('Bạn có chắc muốn xóa mục tiêu này?');"
+                title="Xóa mục tiêu"
+                aria-label="Xóa mục tiêu {{ goal.goal_name }}"
               >
                 <i class="fas fa-trash"></i>
               </a>

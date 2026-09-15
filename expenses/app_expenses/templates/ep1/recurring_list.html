@@ -9,15 +9,14 @@
       </h2>
       <div>
         {% if not show_history %}
-        <a
-          href="{% url 'ep1:generate_recurring' %}"
-          class="btn btn-info me-2"
-          onclick="
-            return confirm('Tạo chi tiêu từ các template định kỳ đã đến hạn?');
-          "
+        <button
+          type="button"
+          class="btn btn-info me-2 text-white"
+          data-bs-toggle="modal"
+          data-bs-target="#generateRecurringModal"
         >
           <i class="fas fa-sync me-2"></i>Tạo Chi Tiêu
-        </a>
+        </button>
         {% endif %}
         <a href="{% url 'ep1:add_recurring' %}" class="btn btn-warning">
           <i class="fas fa-plus me-2"></i>Thêm Định Kỳ
@@ -276,21 +275,21 @@
               <td class="text-center">
                 <div class="btn-group">
                   {% if not show_history %}
-                  <a
-                    href="{% url 'ep1:toggle_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
+                  <button
+                    type="button"
                     class="btn btn-sm {% if recurring.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} border-0"
-                    data-bs-toggle="tooltip"
+                    data-bs-toggle="modal"
+                    data-bs-target="#toggleRecurringModal"
+                    data-recurring-name="{{ recurring.name }}"
+                    data-recurring-action="{% if recurring.is_active %}tạm dừng{% else %}kích hoạt{% endif %}"
+                    data-toggle-url="{% url 'ep1:toggle_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
                     title="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %}"
-                    onclick="
-                      return confirm(
-                        '{% if recurring.is_active %}Vô hiệu hóa{% else %}Kích hoạt{% endif %} chi tiêu định kỳ này?',
-                      );
-                    "
+                    aria-label="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %} {{ recurring.name }}"
                   >
                     <i
                       class="fas {% if recurring.is_active %}fa-pause{% else %}fa-play{% endif %}"
                     ></i>
-                  </a>
+                  </button>
                   {% endif %}
                   <a
                     href="{% url 'ep1:edit_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
@@ -378,11 +377,109 @@
   </div>
 </div>
 
+<!-- Modal xác nhận tạo chi tiêu định kỳ -->
+<div
+  class="modal fade"
+  id="generateRecurringModal"
+  tabindex="-1"
+  aria-labelledby="generateRecurringModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title fs-6" id="generateRecurringModalLabel">
+          <i class="fas fa-sync-alt me-2"></i>Tạo chi tiêu & thu nhập định kỳ
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Đóng"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Hệ thống sẽ quét và tự động tạo các bản ghi chi tiêu hoặc thu nhập từ các mẫu định kỳ đang hoạt động đã đến hạn tính đến hôm nay.
+        </p>
+        <p class="text-muted small mb-0">
+          Bạn có chắc chắn muốn tiến hành tạo ngay bây giờ không?
+        </p>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+        <a
+          href="{% url 'ep1:generate_recurring' %}"
+          class="btn btn-info btn-sm text-white"
+        >
+          <i class="fas fa-check me-1"></i>Xác nhận tạo
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xác nhận thay đổi trạng thái định kỳ -->
+<div
+  class="modal fade"
+  id="toggleRecurringModal"
+  tabindex="-1"
+  aria-labelledby="toggleRecurringModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title fs-6" id="toggleRecurringModalLabel">
+          <i class="fas fa-exchange-alt me-2"></i>Xác nhận thay đổi trạng thái
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Đóng"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Bạn có chắc chắn muốn <strong id="toggleRecurringAction"></strong> mục định kỳ
+          <strong id="toggleRecurringName" class="text-primary"></strong>?
+        </p>
+        <p class="text-muted small mb-0">
+          Khi tạm dừng, hệ thống sẽ không tự động sinh chi tiêu/thu nhập cho mục này khi đến hạn.
+        </p>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+        <a
+          id="confirmToggleRecurringLink"
+          href="#"
+          class="btn btn-warning btn-sm"
+        >
+          <i class="fas fa-check me-1"></i>Xác nhận
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // Add today's date for comparison in template
   var today = new Date('{{ today|date:"Y-m-d" }}');
 
-  // Initialize Bootstrap tooltips
+  // Initialize Bootstrap tooltips & dynamic modal handling
   document.addEventListener("DOMContentLoaded", function () {
     var tooltipTriggerList = [].slice.call(
       document.querySelectorAll('[data-bs-toggle="tooltip"]'),
@@ -390,6 +487,25 @@
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    var toggleModal = document.getElementById("toggleRecurringModal");
+    if (toggleModal) {
+      toggleModal.addEventListener("show.bs.modal", function (event) {
+        var btn = event.relatedTarget;
+        var name = btn.getAttribute("data-recurring-name") || "";
+        var action = btn.getAttribute("data-recurring-action") || "";
+        var toggleUrl = btn.getAttribute("data-toggle-url") || "#";
+
+        var nameEl = document.getElementById("toggleRecurringName");
+        if (nameEl) nameEl.textContent = name;
+
+        var actionEl = document.getElementById("toggleRecurringAction");
+        if (actionEl) actionEl.textContent = action;
+
+        var confirmLink = document.getElementById("confirmToggleRecurringLink");
+        if (confirmLink) confirmLink.setAttribute("href", toggleUrl);
+      });
+    }
   });
 </script>
 {% endblock content %}

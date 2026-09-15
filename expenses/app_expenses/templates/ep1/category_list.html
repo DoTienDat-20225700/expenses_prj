@@ -34,15 +34,19 @@
                     >
                       <i class="fas fa-pen"></i>
                     </a>
-                    <a
-                      href="{% url 'ep1:delete_category' cat.id %}"
+                    <button
+                      type="button"
                       class="btn btn-sm btn-outline-danger border-0"
-                      data-bs-toggle="tooltip"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteCategoryModal"
+                      data-category-id="{{ cat.id }}"
+                      data-category-name="{{ cat.name }}"
+                      data-delete-url="{% url 'ep1:delete_category' cat.id %}"
                       title="Xóa"
-                      onclick="return confirm('Bạn có chắc muốn xóa danh mục này?');"
+                      aria-label="Xóa danh mục {{ cat.name }}"
                     >
                       <i class="fas fa-trash"></i>
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -68,4 +72,78 @@
     </div>
   </div>
 </div>
+
+<!-- Modal xác nhận xóa danh mục -->
+<div
+  class="modal fade"
+  id="deleteCategoryModal"
+  tabindex="-1"
+  aria-labelledby="deleteCategoryModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fs-6" id="deleteCategoryModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa danh mục
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Đóng"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Bạn có chắc chắn muốn xóa danh mục
+          <strong id="deleteCategoryName" class="text-danger"></strong>?
+        </p>
+        <div class="alert alert-warning py-2 px-3 small mb-0">
+          <i class="fas fa-info-circle me-1"></i>Lưu ý: Không thể xóa danh mục nếu
+          đang có các khoản chi tiêu liên kết.
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+        <form
+          id="deleteCategoryForm"
+          method="post"
+          action=""
+          class="d-inline"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash me-1"></i>Xác nhận xóa
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var modal = document.getElementById("deleteCategoryModal");
+    if (modal) {
+      modal.addEventListener("show.bs.modal", function (event) {
+        var button = event.relatedTarget;
+        var catName = button.getAttribute("data-category-name") || "";
+        var deleteUrl = button.getAttribute("data-delete-url") || "";
+
+        var nameSpan = document.getElementById("deleteCategoryName");
+        if (nameSpan) nameSpan.textContent = catName;
+
+        var form = document.getElementById("deleteCategoryForm");
+        if (form) form.setAttribute("action", deleteUrl);
+      });
+    }
+  });
+</script>
 {% endblock content %}

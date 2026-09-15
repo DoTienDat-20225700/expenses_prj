@@ -121,14 +121,19 @@
                       class="fas fa-eye{% if not item.is_active %}-slash{% endif %}"
                     ></i>
                   </a>
-                  <a
-                    href="{% url 'ep1:delete_announcement' item.id %}"
+                  <button
+                    type="button"
                     class="btn btn-sm btn-outline-danger"
-                    onclick="return confirm('Xóa tin này?')"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteAnnouncementModal"
+                    data-announcement-id="{{ item.id }}"
+                    data-announcement-title="{{ item.title }}"
+                    data-delete-url="{% url 'ep1:delete_announcement' item.id %}"
                     title="Xóa"
+                    aria-label="Xóa thông báo {{ item.title }}"
                   >
                     <i class="fas fa-trash"></i>
-                  </a>
+                  </button>
                 </td>
               </tr>
               {% empty %}
@@ -145,4 +150,74 @@
     </div>
   </div>
 </div>
+
+<!-- Modal xác nhận xóa thông báo -->
+<div
+  class="modal fade"
+  id="deleteAnnouncementModal"
+  tabindex="-1"
+  aria-labelledby="deleteAnnouncementModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fs-6" id="deleteAnnouncementModalLabel">
+          <i class="fas fa-trash-alt me-2"></i>Xác nhận xóa thông báo
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Đóng"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Bạn có chắc chắn muốn xóa thông báo sau không?
+        </p>
+        <div class="border-start border-3 border-danger ps-3 py-2 bg-light rounded text-break" id="deleteAnnouncementTitle">
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+          Thông báo sau khi xóa sẽ không còn hiển thị với người dùng trên toàn hệ thống.
+        </p>
+      </div>
+      <div class="modal-footer bg-light">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          data-bs-dismiss="modal"
+        >
+          <i class="fas fa-times me-1"></i>Hủy
+        </button>
+        <a
+          id="confirmDeleteAnnouncementLink"
+          href="#"
+          class="btn btn-danger btn-sm"
+        >
+          <i class="fas fa-trash me-1"></i>Xác nhận xóa
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var modal = document.getElementById("deleteAnnouncementModal");
+    if (modal) {
+      modal.addEventListener("show.bs.modal", function (event) {
+        var btn = event.relatedTarget;
+        var title = btn.getAttribute("data-announcement-title") || "";
+        var deleteUrl = btn.getAttribute("data-delete-url") || "#";
+
+        var titleEl = document.getElementById("deleteAnnouncementTitle");
+        if (titleEl) titleEl.textContent = title;
+
+        var confirmLink = document.getElementById("confirmDeleteAnnouncementLink");
+        if (confirmLink) confirmLink.setAttribute("href", deleteUrl);
+      });
+    }
+  });
+</script>
 {% endblock %}
