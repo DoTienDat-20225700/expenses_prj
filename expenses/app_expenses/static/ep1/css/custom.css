@@ -6,31 +6,51 @@
 /* 1. IMPORT FONT (Hiện đại & Sắc nét hơn) */
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
-/* 2. CẤU HÌNH BIẾN MÀU & HIỆU ỨNG (VARIABLES) */
+/* 2. CẤU HÌNH BIẾN MÀU & HIỆU ỨNG (CANONICAL DESIGN TOKENS) */
 :root {
   --font-main: "Plus Jakarta Sans", sans-serif;
 
-  /* --- CHẾ ĐỘ SÁNG (LIGHT MODE) --- */
+  /* --- CANONICAL DESIGN TOKENS (FINANCE SYSTEM) --- */
+  --finance-accent: #087f8c;
+  --finance-accent-soft: rgba(8, 127, 140, 0.1);
+  --finance-coral: #d95d39;
+  --finance-ink: #17212b;
+  --finance-muted: #66727d;
+  --finance-line: #e4e9ed;
+  --finance-surface: rgba(255, 255, 255, 0.94);
+  --finance-radius: 10px;
+  --finance-shadow: 0 2px 10px rgba(23, 33, 43, 0.045);
+  --finance-shadow-hover: 0 8px 20px rgba(23, 33, 43, 0.09);
+  --finance-primary: var(--finance-accent);
+
+  /* --- BRAND / THEME COMPATIBILITY TOKENS --- */
   --primary: #10b981;
   /* Emerald 500 */
   --primary-hover: #059669;
   /* Emerald 600 */
 
-  /* Nền trang: Xanh mint cực nhạt tạo cảm giác tươi mới */
-  --bg-body: #f0fdf4;
-
-  /* Solid Backgrounds (Optimized for performance) */
-  --bg-card: rgba(255, 255, 255, 0.98);
+  /* --- TOKEN ALIASES (FORWARD COMPATIBILITY) --- */
+  --bg-body: #f4f7f8;
+  --bg-card: var(--finance-surface);
   --bg-glass-heavy: rgba(255, 255, 255, 1);
-  --glass-border: 1px solid rgba(226, 232, 240, 0.8);
+  --glass-border: 1px solid var(--finance-line);
 
-  --text-main: #0f172a;
-  /* Slate 900 */
-  --text-muted: #475569; /* Đậm hơn chút so với 64748b */
-  /* Slate 500 */
-  --border-color: rgba(226, 232, 240, 0.8);
-  --input-bg: rgba(255, 255, 255, 0.8); /* Tăng opacity input */
+  --text-main: var(--finance-ink);
+  --text-muted: var(--finance-muted);
+  --text-primary: var(--finance-ink);
+  --border-color: var(--finance-line);
+  --input-bg: rgba(255, 255, 255, 0.82);
 
+  /* --- DASHBOARD ALIASES (Single Source of Truth) --- */
+  --dashboard-ink: var(--finance-ink);
+  --dashboard-muted: var(--finance-muted);
+  --dashboard-line: var(--finance-line);
+  --dashboard-surface: var(--finance-surface);
+  --dashboard-page: #f4f7f8;
+  --dashboard-accent: var(--finance-accent);
+  --dashboard-coral: var(--finance-coral);
+
+  /* --- CHART.JS PRESERVED VARIABLES --- */
   --chart-income: #047857;
   --chart-income-fill: rgba(16, 185, 129, 0.14);
   --chart-expense: #dc2626;
@@ -48,42 +68,48 @@
   --chart-category-9: #c2410c;
   --chart-category-10: #475569;
 
-  /* Colored Shadows (Bóng đổ màu) - Bí quyết của giao diện xịn */
-  --shadow-sm: 0 4px 6px -1px rgba(16, 185, 129, 0.05),
-    0 2px 4px -1px rgba(16, 185, 129, 0.03);
-  --shadow-md: 0 10px 15px -3px rgba(16, 185, 129, 0.08),
-    0 4px 6px -2px rgba(16, 185, 129, 0.04);
-  --shadow-lg: 0 20px 25px -5px rgba(16, 185, 129, 0.1),
-    0 10px 10px -5px rgba(16, 185, 129, 0.04);
-  --shadow-hover: 0 20px 40px -5px rgba(16, 185, 129, 0.2);
+  /* --- SHADOWS --- */
+  --shadow-sm: var(--finance-shadow);
+  --shadow-md: 0 5px 18px rgba(23, 33, 43, 0.05);
+  --shadow-lg: 0 12px 28px rgba(23, 33, 43, 0.12);
+  --shadow-hover: var(--finance-shadow-hover);
 
-  /* Navbar Gradient */
-  --navbar-bg: rgba(255, 255, 255, 0.9); /* Tăng opacity navbar */
-  --navbar-text: #0f172a;
+  /* --- NAVBAR --- */
+  --navbar-bg: rgba(255, 255, 255, 0.9);
+  --navbar-text: var(--finance-ink);
 }
 
-/* --- CHẾ ĐỘ TỐI (DARK MODE) --- */
+/* --- CHẾ ĐỘ TỐI (DARK MODE TOKENS) --- */
 body.dark-mode {
-  /* Đảm bảo nền tối phủ lên ảnh đủ tốt */
+  /* Canonical Finance Dark Tokens */
+  --finance-ink: #f3f7f8;
+  --finance-muted: #aab9c2;
+  --finance-line: #30414a;
+  --finance-surface: rgba(23, 37, 45, 0.94);
+  --finance-accent: #55c2c2;
+  --finance-accent-soft: rgba(85, 194, 194, 0.13);
+  --finance-coral: #ff9070;
+  --finance-primary: var(--finance-accent);
+
+  /* Emerald Dark Tokens */
   --primary: #34d399;
-  /* Emerald 400 (Sáng hơn để nổi trên nền tối) */
   --primary-hover: #10b981;
 
-  /* Nền trang: Xanh đen sâu thẳm (Deep Slate/Navy) */
-  --bg-body: #0f172a;
-
-  /* Dark Solid */
-  --bg-card: rgba(15, 23, 42, 0.98);
+  /* Aliases */
+  --bg-body: #101a20;
+  --bg-card: var(--finance-surface);
   --bg-glass-heavy: rgba(15, 23, 42, 1);
-  --glass-border: 1px solid rgba(51, 65, 85, 0.8);
+  --glass-border: 1px solid var(--finance-line);
 
-  --text-main: #f8fafc;
-  /* Slate 50 */
-  --text-muted: #94a3b8;
-  /* Slate 400 */
-  --border-color: rgba(51, 65, 85, 0.5);
-  --input-bg: rgba(15, 23, 42, 0.5);
+  --text-main: var(--finance-ink);
+  --text-muted: var(--finance-muted);
+  --text-primary: var(--finance-ink);
+  --border-color: var(--finance-line);
+  --input-bg: rgba(23, 37, 45, 0.86);
 
+  --dashboard-page: #101a20;
+
+  /* Chart Dark Tokens */
   --chart-income: #34d399;
   --chart-income-fill: rgba(52, 211, 153, 0.18);
   --chart-expense: #fb7185;
@@ -107,8 +133,8 @@ body.dark-mode {
   --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.4);
   --shadow-hover: 0 25px 50px rgba(0, 0, 0, 0.5);
 
-  --navbar-bg: rgba(15, 23, 42, 0.7);
-  --navbar-text: #f8fafc;
+  --navbar-bg: rgba(16, 26, 32, 0.9);
+  --navbar-text: var(--finance-ink);
 }
 
 /* Fix placeholder visibility in Dark Mode */
@@ -190,25 +216,27 @@ body.dark-mode ::-webkit-scrollbar-thumb {
    ========================================= */
 .navbar {
   background: var(--navbar-bg) !important;
-  border-bottom: var(--glass-border);
-  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--finance-line);
+  padding: 0.55rem 0;
+  min-height: 68px;
   transition: box-shadow 0.2s ease;
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.06);
+  box-shadow: 0 4px 16px rgba(23, 33, 43, 0.06);
+  backdrop-filter: blur(12px);
 }
 
 /* Shadow khi scroll */
 .navbar.scrolled {
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 6px 20px rgba(23, 33, 43, 0.1);
 }
 
 .navbar-brand {
   font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--primary) !important;
-  font-size: 1.5rem;
+  letter-spacing: -0.035em;
+  color: var(--finance-accent) !important;
+  font-size: 1.18rem !important;
   transition: opacity 0.2s ease;
 }
 
@@ -216,39 +244,32 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   opacity: 0.85;
 }
 
-/* Nav Links - Simplified */
+/* Nav Links - Standardized */
 .nav-link {
-  color: var(--navbar-text) !important;
-  font-weight: 600;
-  border-radius: 12px;
-  padding: 0.6rem 1.2rem !important;
-  margin: 0 4px;
+  color: var(--finance-ink) !important;
+  font-weight: 700;
+  font-size: 0.84rem;
+  border-radius: 9px;
+  padding: 0.55rem 0.72rem !important;
+  margin: 0 2px;
   position: relative;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
-.nav-link:hover {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--primary) !important;
-}
-
-/* Active state với indicator đơn giản */
+.nav-link:hover,
 .nav-link.active {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--primary) !important;
-  position: relative;
+  background: var(--finance-accent-soft);
+  color: var(--finance-accent) !important;
+}
+
+.nav-link i {
+  width: 1rem;
+  text-align: center;
+  opacity: 0.75;
 }
 
 .nav-link.active::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40%;
-  height: 3px;
-  background: var(--primary);
-  border-radius: 2px;
+  display: none;
 }
 
 /* Dropdown trong Navbar */
@@ -415,34 +436,43 @@ body.dark-mode ::-webkit-scrollbar-thumb {
    5. MODERN CARDS (THẺ KÍNH)
    ========================================= */
 .card {
-  background: var(--bg-card);
-  border: var(--glass-border);
-  border-radius: 20px;
-  box-shadow: var(--shadow-md);
-  transition: box-shadow 0.2s ease;
+  background: var(--finance-surface);
+  border: 1px solid var(--finance-line);
+  border-radius: var(--finance-radius);
+  box-shadow: var(--finance-shadow);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
   overflow: hidden;
 }
 
 /* Simplified hover effect */
 .card:hover {
-  box-shadow: var(--shadow-lg);
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(8, 127, 140, 0.24);
+  box-shadow: var(--finance-shadow-hover);
 }
 
 .card-header {
   background: transparent;
-  /* Header trong suốt */
-  border-bottom: 1px solid var(--border-color);
-  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--finance-line);
+  padding: 1.15rem 1.35rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--finance-ink);
   display: flex;
   align-items: center;
 }
 
 .card-body {
   padding: 1.5rem;
-  color: var(--text-main);
+  color: var(--finance-ink);
+}
+
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card h5,
+.card h6 {
+  color: var(--finance-ink);
+  letter-spacing: -0.025em;
 }
 
 .dashboard-title {
@@ -477,55 +507,56 @@ body.dark-mode ::-webkit-scrollbar-thumb {
    ========================================= */
 .form-control,
 .form-select {
-  background-color: var(--input-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  /* Input bo tròn */
-  padding: 0.75rem 1rem;
-  color: var(--text-main);
-  transition: all 0.2s;
+  background-color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--finance-line);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  min-height: 42px;
+  padding: 0.65rem 0.95rem;
+  color: var(--finance-ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-control:focus,
 .form-select:focus {
-  background-color: var(--bg-body);
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
-  /* Glow xanh khi focus */
-  color: var(--text-main);
+  background-color: #fff;
+  border-color: var(--finance-accent);
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.13);
+  color: var(--finance-ink);
 }
 
 /* Input Group Text (Icon trong ô nhập) */
 .input-group-text {
-  background-color: var(--input-bg);
-  border-color: var(--border-color);
-  color: var(--text-muted);
-  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--finance-line);
+  color: var(--finance-muted);
+  border-radius: 8px;
 }
 
 /* =========================================
    7. BUTTONS (NÚT BẤM)
    ========================================= */
 .btn {
-  border-radius: 12px;
-  font-weight: 600;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 0.84rem;
+  min-height: 40px;
   padding: 0.6rem 1.25rem;
-  letter-spacing: 0.3px;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.2px;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    var(--primary-hover) 100%
-  ) !important;
-  border: none !important;
-  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+.btn-primary,
+.btn-success {
+  background: var(--finance-accent) !important;
+  border-color: var(--finance-accent) !important;
+  color: #ffffff !important;
 }
 
-.btn-primary:hover {
-  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+.btn-primary:hover,
+.btn-success:hover {
+  background: #066c76 !important;
+  border-color: #066c76 !important;
 }
 
 .btn-secondary,
@@ -547,23 +578,12 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   border: none !important;
 }
 
-/* Override Bootstrap Primary Button to match Theme (Emerald) */
-.btn-primary {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-}
-.btn-primary:hover {
-  background-color: var(--primary-hover) !important;
-  border-color: var(--primary-hover) !important;
-}
-
 .btn-outline-primary {
-  color: var(--primary) !important;
-  border-color: var(--primary) !important;
+  color: var(--finance-accent) !important;
+  border-color: var(--finance-accent) !important;
 }
 .btn-outline-primary:hover {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
+  background: var(--finance-accent) !important;
   color: #fff !important;
 }
 
@@ -1219,10 +1239,6 @@ body.dark-mode .card.bg-light .text-muted {
   color: #94a3b8 !important;
 }
 
-body.dark-mode .progress {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
 body.dark-mode .table {
   color: var(--text-main);
   border-color: rgba(255, 255, 255, 0.1);
@@ -1772,16 +1788,6 @@ body:has(.dashboard-shell) .budget-progress-container {
 /* =========================================
    SHARED FINANCE UI - ALL APPLICATION PAGES
    ========================================= */
-:root {
-  --finance-ink: #17212b;
-  --finance-muted: #66727d;
-  --finance-line: #e4e9ed;
-  --finance-surface: rgba(255, 255, 255, 0.94);
-  --finance-accent: #087f8c;
-  --finance-accent-soft: rgba(8, 127, 140, 0.1);
-  --finance-coral: #d95d39;
-}
-
 body {
   background-image: url("../img/bg.png");
   background-size: cover;
@@ -1796,61 +1802,10 @@ body::before {
 }
 
 .main-container {
-  max-width: 1240px;
+  max-width: 1220px;
   padding-bottom: 2rem;
 }
 
-.navbar {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border-bottom: 1px solid var(--finance-line);
-  box-shadow: 0 4px 16px rgba(23, 33, 43, 0.06);
-  backdrop-filter: blur(12px);
-}
-
-.navbar-brand {
-  color: var(--finance-accent) !important;
-}
-
-.nav-link {
-  color: var(--finance-ink) !important;
-  border-radius: 9px;
-}
-
-.nav-link:hover,
-.nav-link.active {
-  background: var(--finance-accent-soft);
-  color: var(--finance-accent) !important;
-}
-
-.card {
-  background: var(--finance-surface);
-  border: 1px solid var(--finance-line);
-  border-radius: 14px;
-  box-shadow: 0 5px 18px rgba(23, 33, 43, 0.05);
-}
-
-.card:hover {
-  border-color: rgba(8, 127, 140, 0.24);
-  box-shadow: 0 8px 22px rgba(23, 33, 43, 0.08);
-}
-
-.card-header {
-  background: transparent;
-  border-bottom: 1px solid var(--finance-line);
-  color: var(--finance-ink);
-  padding: 1.15rem 1.35rem;
-}
-
-.card-body {
-  color: var(--finance-ink);
-}
-
-.card h1,
-.card h2,
-.card h3,
-.card h4,
-.card h5,
-.card h6,
 .main-container > .row > .col-12 > h1,
 .main-container > .row > .col-12 > h2 {
   color: var(--finance-ink);
@@ -1859,48 +1814,6 @@ body::before {
 
 .text-muted {
   color: var(--finance-muted) !important;
-}
-
-.form-control,
-.form-select,
-.input-group-text {
-  background-color: rgba(255, 255, 255, 0.82);
-  border-color: var(--finance-line);
-  color: var(--finance-ink);
-  border-radius: 9px;
-}
-
-.form-control:focus,
-.form-select:focus {
-  background-color: #fff;
-  border-color: var(--finance-accent);
-  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.13);
-}
-
-.btn {
-  border-radius: 9px;
-}
-
-.btn-primary,
-.btn-success {
-  background: var(--finance-accent) !important;
-  border-color: var(--finance-accent) !important;
-}
-
-.btn-primary:hover,
-.btn-success:hover {
-  background: #066c76 !important;
-  border-color: #066c76 !important;
-}
-
-.btn-outline-primary {
-  color: var(--finance-accent) !important;
-  border-color: var(--finance-accent) !important;
-}
-
-.btn-outline-primary:hover {
-  background: var(--finance-accent) !important;
-  color: #fff !important;
 }
 
 .table {
@@ -1988,16 +1901,6 @@ body::before {
 .dropdown-item.active {
   background: var(--finance-accent-soft);
   color: var(--finance-accent) !important;
-}
-
-body.dark-mode {
-  --finance-ink: #f3f7f8;
-  --finance-muted: #aab9c2;
-  --finance-line: #30414a;
-  --finance-surface: rgba(23, 37, 45, 0.94);
-  --finance-accent: #55c2c2;
-  --finance-accent-soft: rgba(85, 194, 194, 0.13);
-  --finance-coral: #ff9070;
 }
 
 body.dark-mode::before {
@@ -2089,12 +1992,6 @@ body.dark-mode .dropdown-menu {
 /* =========================================
    PRODUCTION FINANCE POLISH
    ========================================= */
-:root {
-  --finance-radius: 10px;
-  --finance-shadow: 0 2px 10px rgba(23, 33, 43, 0.045);
-  --finance-shadow-hover: 0 8px 20px rgba(23, 33, 43, 0.09);
-}
-
 ::selection {
   background: rgba(8, 127, 140, 0.2);
   color: var(--finance-ink);
@@ -2109,16 +2006,6 @@ body.dark-mode .dropdown-menu {
   padding-top: 0.5rem;
 }
 
-.navbar {
-  min-height: 68px;
-  padding: 0.55rem 0;
-}
-
-.navbar-brand {
-  font-size: 1.18rem !important;
-  letter-spacing: -0.035em;
-}
-
 .navbar-brand img {
   border-radius: 9px;
   box-shadow: 0 2px 8px rgba(8, 127, 140, 0.16);
@@ -2126,23 +2013,6 @@ body.dark-mode .dropdown-menu {
 
 .navbar-nav {
   gap: 0.2rem !important;
-}
-
-.nav-link {
-  font-size: 0.84rem;
-  font-weight: 700;
-  padding: 0.55rem 0.72rem !important;
-  transition: background-color 160ms ease, color 160ms ease;
-}
-
-.nav-link i {
-  width: 1rem;
-  text-align: center;
-  opacity: 0.75;
-}
-
-.nav-link.active::after {
-  display: none;
 }
 
 .btn-user-profile {
@@ -2159,7 +2029,6 @@ body.dark-mode .dropdown-menu {
   background: rgba(255, 255, 255, 0.55) !important;
 }
 
-.card,
 .dashboard-panel,
 .metric-card {
   border-radius: var(--finance-radius);
@@ -2167,7 +2036,6 @@ body.dark-mode .dropdown-menu {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.card:hover,
 .dashboard-panel:hover,
 .metric-card:hover {
   box-shadow: var(--finance-shadow-hover);
@@ -2254,19 +2122,6 @@ body.dark-mode .dropdown-menu {
   font-size: 0.78rem;
   font-weight: 700;
   margin-bottom: 0.4rem;
-}
-
-.form-control,
-.form-select {
-  min-height: 42px;
-  font-size: 0.88rem;
-}
-
-.btn {
-  font-size: 0.84rem;
-  font-weight: 700;
-  min-height: 40px;
-  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .btn:active {
