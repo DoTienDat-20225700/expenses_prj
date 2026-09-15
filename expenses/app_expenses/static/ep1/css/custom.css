@@ -154,6 +154,87 @@ body.dark-mode :-ms-input-placeholder {
   color: rgba(255, 255, 255, 0.4) !important;
 }
 
+/* --- OS PREFERENCE BASELINE DARK MODE (prefers-color-scheme: dark) ---
+   Áp dụng khi OS bật Dark Mode và user chưa chọn "light" thủ công (CSS-only / No-JS baseline) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Canonical Finance Dark Tokens */
+    --finance-ink: #f3f7f8;
+    --finance-muted: #aab9c2;
+    --finance-line: #30414a;
+    --finance-surface: rgba(23, 37, 45, 0.94);
+    --finance-accent: #55c2c2;
+    --finance-accent-soft: rgba(85, 194, 194, 0.13);
+    --finance-coral: #ff9070;
+    --finance-primary: var(--finance-accent);
+
+    /* Emerald Dark Tokens */
+    --primary: #34d399;
+    --primary-hover: #10b981;
+
+    /* Aliases */
+    --bg-body: #101a20;
+    --bg-card: var(--finance-surface);
+    --bg-glass-heavy: rgba(15, 23, 42, 1);
+    --glass-border: 1px solid var(--finance-line);
+
+    --text-main: var(--finance-ink);
+    --text-muted: var(--finance-muted);
+    --text-primary: var(--finance-ink);
+    --border-color: var(--finance-line);
+    --input-bg: rgba(23, 37, 45, 0.86);
+
+    --dashboard-page: #101a20;
+
+    /* Chart Dark Tokens */
+    --chart-income: #34d399;
+    --chart-income-fill: rgba(52, 211, 153, 0.18);
+    --chart-expense: #fb7185;
+    --chart-expense-fill: rgba(251, 113, 133, 0.18);
+    --chart-grid: rgba(148, 163, 184, 0.24);
+    --chart-point: #0f172a;
+    --chart-category-1: #34d399;
+    --chart-category-2: #60a5fa;
+    --chart-category-3: #fbbf24;
+    --chart-category-4: #fb7185;
+    --chart-category-5: #a78bfa;
+    --chart-category-6: #f472b6;
+    --chart-category-7: #818cf8;
+    --chart-category-8: #2dd4bf;
+    --chart-category-9: #fb923c;
+    --chart-category-10: #94a3b8;
+
+    /* Dark Shadows */
+    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 25px 50px rgba(0, 0, 0, 0.5);
+
+    --navbar-bg: rgba(16, 26, 32, 0.9);
+    --navbar-text: var(--finance-ink);
+  }
+
+  :root:not([data-theme="light"]) ::-webkit-input-placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+  :root:not([data-theme="light"]) :-moz-placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+  :root:not([data-theme="light"]) ::-moz-placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+  :root:not([data-theme="light"]) :-ms-input-placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+  :root:not([data-theme="light"]) .btn-close {
+    filter: invert(1);
+  }
+  :root:not([data-theme="light"]) input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
+  }
+}
+
 /* =========================================
    3. BASE STYLES & BACKGROUND
    ========================================= */
@@ -355,18 +436,30 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 .theme-toggle-btn {
   background: var(--input-bg) !important;
   border: 1px solid var(--border-color) !important;
-  border-radius: 12px !important;
-  width: 44px;
-  height: 44px;
-  display: flex;
+  border-radius: 50% !important;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .theme-toggle-btn:hover {
   background: rgba(16, 185, 129, 0.08) !important;
   border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--finance-accent) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.25) !important;
 }
 
 .theme-toggle-btn i {
@@ -1076,10 +1169,12 @@ body.dark-mode .skip-link {
 
 /* Theme toggle button styling */
 .theme-toggle-btn {
-  border-radius: 50%;
+  border-radius: 50% !important;
   width: 40px;
   height: 40px;
-  display: flex;
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
@@ -1207,7 +1302,7 @@ body.dark-mode .progress {
 
 /* AI Suggestions gradient header */
 .bg-ai-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--finance-accent) 0%, var(--primary-hover) 100%);
 }
 
 /* Scrollable category selector */
@@ -1673,7 +1768,7 @@ body.dark-mode .badge.bg-warning {
 }
 
 body.dark-mode .chat-messages-bg {
-  background-color: #1e293b;
+  background-color: var(--bg-body);
 }
 
 .voice-status-hidden {
@@ -2022,11 +2117,33 @@ body.dark-mode .dropdown-menu {
 }
 
 .theme-toggle-btn {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   padding: 0 !important;
   border: 1px solid var(--finance-line) !important;
+  border-radius: 50% !important;
   background: rgba(255, 255, 255, 0.55) !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(8, 127, 140, 0.1) !important;
+  border-color: var(--finance-accent) !important;
+  color: var(--finance-accent) !important;
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--finance-accent) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.25) !important;
 }
 
 .dashboard-panel,
@@ -2150,6 +2267,12 @@ body.dark-mode .dropdown-menu {
 body.dark-mode .btn-user-profile,
 body.dark-mode .theme-toggle-btn {
   background: rgba(23, 37, 45, 0.72) !important;
+}
+
+body.dark-mode .theme-toggle-btn:hover {
+  background: rgba(85, 194, 194, 0.16) !important;
+  border-color: var(--finance-accent) !important;
+  color: var(--finance-accent) !important;
 }
 
 body.dark-mode .navbar-brand img {

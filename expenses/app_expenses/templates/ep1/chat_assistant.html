@@ -212,12 +212,13 @@
   }
 
   .bot-message .message-content {
-    background-color: white;
-    border: 1px solid #dee2e6;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
   }
 
   .user-message .message-content {
-    background-color: #0d6efd;
+    background-color: var(--finance-accent);
     color: white;
   }
 
@@ -226,10 +227,40 @@
     text-decoration: underline;
   }
 
+  body.dark-mode .modal-content {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+  }
+
+  body.dark-mode .modal-header,
+  body.dark-mode .modal-footer {
+    border-color: var(--border-color);
+  }
+
+  body.dark-mode .modal-body .expense-preview {
+    background-color: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+  }
+
+  body.dark-mode .modal-body .form-control,
+  body.dark-mode .modal-body .form-select {
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    border-color: var(--border-color);
+  }
+
   .system-message .message-content {
     background-color: #d1ecf1;
     border: 1px solid #bee5eb;
     color: #0c5460;
+  }
+
+  body.dark-mode .system-message .message-content {
+    background-color: rgba(8, 127, 140, 0.2);
+    border-color: rgba(8, 127, 140, 0.4);
+    color: var(--text-main);
   }
 
   .error-message .message-content {
@@ -238,10 +269,22 @@
     color: #721c24;
   }
 
+  body.dark-mode .error-message .message-content {
+    background-color: rgba(220, 38, 38, 0.2);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #fca5a5;
+  }
+
   .success-message .message-content {
     background-color: #d4edda;
     border: 1px solid #c3e6cb;
     color: #155724;
+  }
+
+  body.dark-mode .success-message .message-content {
+    background-color: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #86efac;
   }
 
   @keyframes blink {

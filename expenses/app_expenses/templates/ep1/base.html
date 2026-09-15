@@ -31,6 +31,20 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="{% static 'ep1/css/custom.css' %}" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          var mql = window.matchMedia('(prefers-color-scheme: dark)');
+          if (saved === 'dark' || (!saved && mql.matches)) {
+            document.documentElement.classList.add('dark-mode');
+            if (document.body) { document.body.classList.add('dark-mode'); }
+          } else if (saved === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body class="main-body">
@@ -142,9 +156,11 @@
 
             <li class="nav-item ms-lg-2">
               <button
-                class="btn nav-link px-3 border-0 theme-toggle-btn"
+                type="button"
+                class="btn nav-link p-0 border-0 theme-toggle-btn"
                 id="theme-toggle"
-                title="Đổi giao diện"
+                aria-label="Chuyển sang giao diện tối"
+                title="Chuyển sang giao diện tối"
               >
                 <i class="fas fa-moon fs-5" id="theme-icon"></i>
               </button>
@@ -253,34 +269,77 @@
           return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
-        // Xử lý Dark Mode
+        // Xử lý Dark Mode (Hỗ trợ OS preference + localStorage override)
         const toggleBtn = document.getElementById("theme-toggle");
         const icon = document.getElementById("theme-icon");
         const body = document.body;
-        const currentTheme = localStorage.getItem("theme");
+        const html = document.documentElement;
+        const mql = window.matchMedia("(prefers-color-scheme: dark)");
 
-        // Function to update icon without animation
         function updateIcon(isDark) {
-          if (isDark) {
-            icon.classList.remove("fa-moon");
-            icon.classList.add("fa-sun");
-          } else {
-            icon.classList.remove("fa-sun");
-            icon.classList.add("fa-moon");
+          if (icon) {
+            if (isDark) {
+              icon.classList.remove("fa-moon");
+              icon.classList.add("fa-sun");
+            } else {
+              icon.classList.remove("fa-sun");
+              icon.classList.add("fa-moon");
+            }
+          }
+          if (toggleBtn) {
+            const labelText = isDark
+              ? "Chuyển sang giao diện sáng"
+              : "Chuyển sang giao diện tối";
+            toggleBtn.setAttribute("aria-label", labelText);
+            toggleBtn.setAttribute("title", labelText);
           }
         }
 
-        if (currentTheme === "dark") {
-          body.classList.add("dark-mode");
-          updateIcon(true);
+        function applyTheme(theme) {
+          if (theme === "dark") {
+            body.classList.add("dark-mode");
+            html.classList.add("dark-mode");
+            html.removeAttribute("data-theme");
+            updateIcon(true);
+          } else if (theme === "light") {
+            body.classList.remove("dark-mode");
+            html.classList.remove("dark-mode");
+            html.setAttribute("data-theme", "light");
+            updateIcon(false);
+          } else {
+            // Theo OS preference khi chưa có lựa chọn thủ công
+            html.removeAttribute("data-theme");
+            if (mql.matches) {
+              body.classList.add("dark-mode");
+              html.classList.add("dark-mode");
+              updateIcon(true);
+            } else {
+              body.classList.remove("dark-mode");
+              html.classList.remove("dark-mode");
+              updateIcon(false);
+            }
+          }
         }
 
-        toggleBtn.addEventListener("click", function () {
-          body.classList.toggle("dark-mode");
-          const isDark = body.classList.contains("dark-mode");
-          localStorage.setItem("theme", isDark ? "dark" : "light");
-          updateIcon(isDark);
+        // Áp dụng theme ban đầu
+        const savedTheme = localStorage.getItem("theme");
+        applyTheme(savedTheme);
+
+        // Lắng nghe thay đổi OS preference (khi user chưa set thủ công trong localStorage)
+        mql.addEventListener("change", function (e) {
+          if (!localStorage.getItem("theme")) {
+            applyTheme(null);
+          }
         });
+
+        if (toggleBtn) {
+          toggleBtn.addEventListener("click", function () {
+            const isCurrentlyDark = body.classList.contains("dark-mode");
+            const newTheme = isCurrentlyDark ? "light" : "dark";
+            localStorage.setItem("theme", newTheme);
+            applyTheme(newTheme);
+          });
+        }
 
         // Xử lý ẩn/hiện mật khẩu
         window.togglePassword = function (button) {
@@ -491,11 +550,11 @@
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--finance-accent) 0%, var(--primary-hover) 100%);
         border: none;
         color: white;
         font-size: 24px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 12px rgba(8, 127, 140, 0.25);
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
@@ -553,7 +612,7 @@
       }
       
       .chat-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, var(--finance-accent) 0%, var(--primary-hover) 100%);
         padding: 15px;
         display: flex;
         justify-content: space-between;
@@ -616,7 +675,7 @@
       }
       
       .user-message .message-content {
-        background: #0d6efd;
+        background: var(--finance-accent);
         color: white;
       }
       
@@ -665,24 +724,41 @@
         }
       }
       
-      /* Dark mode support */
+      /* Dark mode support - using canonical MoneyManager tokens */
+      body.dark-mode .chat-box,
       .dark-mode .chat-box {
-        background: #2d3748;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
       }
       
+      body.dark-mode .chat-messages,
       .dark-mode .chat-messages {
-        background: #1a202c;
+        background: var(--bg-body);
       }
       
+      body.dark-mode .chat-input-area,
       .dark-mode .chat-input-area {
-        background: #2d3748;
-        border-top-color: #4a5568;
+        background: var(--bg-card);
+        border-top-color: var(--border-color);
+      }
+
+      body.dark-mode #floatingChatInput,
+      .dark-mode #floatingChatInput {
+        background-color: var(--input-bg);
+        color: var(--text-main);
+        border-color: var(--border-color);
       }
       
+      body.dark-mode .bot-message .message-content,
       .dark-mode .bot-message .message-content {
-        background: #374151;
-        border-color: #4b5563;
-        color: #e5e7eb;
+        background: var(--bg-card);
+        border-color: var(--border-color);
+        color: var(--text-main);
+      }
+
+      body.dark-mode .bot-message .message-content .text-muted,
+      .dark-mode .bot-message .message-content .text-muted {
+        color: var(--text-muted) !important;
       }
 
       /* Chat confirmation modal follows the active theme */
@@ -717,20 +793,20 @@
       }
 
       body.dark-mode .floating-confirm-modal {
-        background: #111827;
-        color: #e5e7eb;
-        border-color: #374151;
+        background: var(--bg-card);
+        color: var(--text-main);
+        border-color: var(--border-color);
       }
 
       body.dark-mode .floating-confirm-modal .modal-header,
       body.dark-mode .floating-confirm-modal .modal-footer {
-        border-color: #374151 !important;
+        border-color: var(--border-color) !important;
       }
 
       body.dark-mode .floating-confirm-modal .modal-title,
       body.dark-mode .floating-confirm-modal .form-label,
       body.dark-mode .floating-confirm-modal .text-muted {
-        color: #e5e7eb !important;
+        color: var(--text-main) !important;
       }
 
       body.dark-mode .floating-confirm-modal .btn-close {
@@ -738,15 +814,15 @@
       }
 
       body.dark-mode .floating-confirm-modal .expense-preview {
-        background: rgba(15, 23, 42, 0.88);
-        border-color: #374151;
-        color: #e5e7eb;
+        background: rgba(0, 0, 0, 0.25);
+        border-color: var(--border-color);
+        color: var(--text-main);
       }
 
       body.dark-mode .floating-confirm-modal .form-select {
-        background-color: #0f172a;
-        color: #e5e7eb;
-        border-color: #374151;
+        background-color: var(--input-bg);
+        color: var(--text-main);
+        border-color: var(--border-color);
       }
 
       .floating-confirm-backdrop {
