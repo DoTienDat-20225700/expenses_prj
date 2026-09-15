@@ -28,6 +28,22 @@ class ExpenseForm(forms.ModelForm):
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True, label="Email")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["username"].error_messages["required"] = (
+            "Vui lòng nhập tên đăng nhập."
+        )
+        self.fields["email"].error_messages["required"] = (
+            "Vui lòng nhập email."
+        )
+        self.fields["password1"].error_messages["required"] = (
+            "Vui lòng nhập mật khẩu."
+        )
+        self.fields["password2"].error_messages["required"] = (
+            "Vui lòng nhập lại mật khẩu."
+        )
+
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
@@ -35,6 +51,16 @@ class RegisterForm(UserCreationForm):
 User = get_user_model()
 
 class UserLoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["username"].error_messages["required"] = (
+            "Vui lòng nhập tên đăng nhập."
+        )
+        self.fields["password"].error_messages["required"] = (
+            "Vui lòng nhập mật khẩu."
+        )
+
     def clean(self):
         username = self.cleaned_data.get('username')
         password = self.cleaned_data.get('password')

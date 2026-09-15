@@ -253,6 +253,20 @@ class ChatIntentDetector:
                     score += 2
             
             scores[intent] = score
+
+        # Các cụm đặc trưng phải thắng các từ khóa chung như "tổng" hoặc "chi".
+        priority_phrases = {
+            'tổng quan': 'QUERY_SUMMARY',
+            'tóm tắt': 'QUERY_SUMMARY',
+            'báo cáo tháng': 'MONTHLY_REPORT',
+            'báo cáo chi tiết': 'MONTHLY_REPORT',
+            'danh mục chi tiêu': 'QUERY_CATEGORIES',
+            'tư vấn': 'FINANCIAL_ADVICE',
+            'lời khuyên': 'FINANCIAL_ADVICE',
+        }
+        for phrase, priority_intent in priority_phrases.items():
+            if phrase in text:
+                scores[priority_intent] += 8
         
         # Special rules để tránh false positives
         
@@ -616,27 +630,34 @@ Ví dụ: "Chi tiêu tháng này bao nhiêu?" hoặc "Gõ 'help' để xem hư�
    • "Ăn sáng 50k" - Chi tiêu
    • "Nhận lương 10 triệu" - Thu nhập
    • "Mua đồ 200 nghìn hôm qua"
+    • "Tiền điện 500k mỗi tháng" - Chi tiêu định kỳ
+    • "Lương 15 triệu mỗi tháng" - Thu nhập định kỳ
 
-**2. Tra cứu:**
+**2. Sửa hoặc xóa:**
+    • "Sửa khoản chi cafe"
+    • "Xóa giao dịch tiền điện"
+    • Chatbot luôn hỏi xác nhận trước khi thay đổi dữ liệu.
+
+**3. Tra cứu:**
    • "Tổng chi tiêu hôm nay?"
    • "Thu nhập tháng này?"
    • "Top chi tiêu lớn nhất?"
    • "Giao dịch gần đây?"
    • "Tìm chi tiêu đổ xăng"
 
-**3. Phân tích:**
+**4. Phân tích:**
    • "So sánh tháng này với tháng trước"
    • "Báo cáo tháng chi tiết"
    • "Tổng quan tài chính"
    • "Danh mục chi tiêu"
 
-**4. Lời khuyên:**
+**5. Lời khuyên:**
    • "Tư vấn tiết kiệm"
    • "Nên làm gì để giảm chi tiêu?"
 
-**5. Thời gian:**
+**6. Thời gian:**
    • Hôm nay, hôm qua
-   • Tuần/tháng/năm này
+    • Tuần/tháng/năm này hoặc kỳ trước
 
 Hãy thử hỏi tôi! 😊"""
         
@@ -1259,7 +1280,14 @@ def process_chat_input(text, user, history=None):
     # Preserve deterministic handling for clear financial queries even when
     # the external model returns an unrelated intent.
     local_intent, local_confidence = detector.detect_intent(text)
-    if local_intent in {'QUERY_EXPENSES', 'CREATE_RECURRING_EXPENSE', 'CREATE_RECURRING_INCOME'} and intent != local_intent:
+    reliable_local_intents = {
+        'QUERY_EXPENSES', 'QUERY_INCOME', 'QUERY_SAVINGS', 'QUERY_BUDGET',
+        'QUERY_SUMMARY', 'TOP_EXPENSES', 'SEARCH_EXPENSES',
+        'RECENT_TRANSACTIONS', 'COMPARE_PERIODS', 'FINANCIAL_ADVICE',
+        'QUERY_CATEGORIES', 'MONTHLY_REPORT', 'EDIT_EXPENSE', 'DELETE_EXPENSE',
+        'CREATE_RECURRING_EXPENSE', 'CREATE_RECURRING_INCOME',
+    }
+    if local_intent in reliable_local_intents and intent != local_intent:
         intent, confidence = local_intent, local_confidence
 
     result_data = {

@@ -58,6 +58,38 @@ class ChatbotRegressionTests(TestCase):
 
 		self.assertEqual(intent, 'QUERY_EXPENSES')
 
+	def test_help_examples_cover_all_supported_chat_intents(self):
+		examples = {
+			'Ăn sáng 50k': 'CREATE_EXPENSE',
+			'Nhận lương 10 triệu': 'CREATE_INCOME',
+			'Tiền điện 500k mỗi tháng': 'CREATE_RECURRING_EXPENSE',
+			'Lương 15 triệu mỗi tháng': 'CREATE_RECURRING_INCOME',
+			'Tổng chi tiêu hôm nay?': 'QUERY_EXPENSES',
+			'Thu nhập tháng này?': 'QUERY_INCOME',
+			'Top chi tiêu lớn nhất?': 'TOP_EXPENSES',
+			'Giao dịch gần đây?': 'RECENT_TRANSACTIONS',
+			'Tìm chi tiêu đổ xăng': 'SEARCH_EXPENSES',
+			'So sánh tháng này với tháng trước': 'COMPARE_PERIODS',
+			'Báo cáo tháng chi tiết': 'MONTHLY_REPORT',
+			'Tổng quan tài chính': 'QUERY_SUMMARY',
+			'Danh mục chi tiêu': 'QUERY_CATEGORIES',
+			'Tư vấn tiết kiệm': 'FINANCIAL_ADVICE',
+			'Sửa khoản chi cafe': 'EDIT_EXPENSE',
+			'Xóa giao dịch tiền điện': 'DELETE_EXPENSE',
+		}
+
+		for text, expected_intent in examples.items():
+			with self.subTest(text=text):
+				intent, _ = ChatIntentDetector().detect_intent(text)
+				self.assertEqual(intent, expected_intent)
+
+	def test_help_response_lists_recurring_and_edit_delete_actions(self):
+		response = ChatQueryHandler(None).handle_help('help')
+
+		self.assertIn('Tiền điện 500k mỗi tháng', response['message'])
+		self.assertIn('Sửa khoản chi cafe', response['message'])
+		self.assertIn('Xóa giao dịch tiền điện', response['message'])
+
 	def test_natural_expense_question_api_does_not_require_amount(self):
 		user = get_user_model().objects.create_user(username='query-test')
 		self.client.force_login(user)
