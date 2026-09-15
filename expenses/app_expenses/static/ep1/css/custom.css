@@ -246,7 +246,7 @@ body {
   background-repeat: no-repeat;
   background-attachment: fixed; /* Parallax effect trên desktop */
   color: var(--text-main);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
   padding-bottom: 3rem;
   -webkit-font-smoothing: antialiased;
   /* Chữ sắc nét hơn trên Mac */
@@ -299,7 +299,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   border-bottom: 1px solid var(--finance-line);
   padding: 0.55rem 0;
   min-height: 68px;
-  transition: box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease-out;
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -317,7 +317,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   letter-spacing: -0.035em;
   color: var(--finance-accent) !important;
   font-size: 1.18rem !important;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease-out;
 }
 
 .navbar-brand:hover {
@@ -333,7 +333,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   padding: 0.55rem 0.72rem !important;
   margin: 0 2px;
   position: relative;
-  transition: background-color 160ms ease, color 160ms ease;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
 }
 
 .nav-link:hover,
@@ -354,7 +354,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 
 /* Dropdown trong Navbar */
 .navbar .nav-item.dropdown .dropdown-toggle::after {
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease-out;
   display: inline-block;
   margin-left: 0.4em;
   vertical-align: 0.1em;
@@ -368,15 +368,17 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 .navbar .dropdown-menu {
   min-width: 200px;
   margin-top: 0.5rem !important;
-  animation: navDropdownFade 0.15s ease;
+  animation: navDropdownFade 0.15s ease-out;
 }
 
 @keyframes navDropdownFade {
   from {
     opacity: 0;
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -414,7 +416,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   border: 1px solid var(--border-color);
   padding: 6px 14px !important;
   border-radius: 50px !important;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
 }
 
 .btn-user-profile:hover {
@@ -424,7 +426,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 
 /* Avatar - Simple hover */
 .avatar-img {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease-out;
 }
 
 .btn-user-profile:hover .avatar-img {
@@ -443,7 +445,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.15s ease-out, box-shadow 0.2s ease-out;
 }
 
 .theme-toggle-btn:hover {
@@ -462,7 +464,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
 }
 
 .theme-toggle-btn i {
-  transition: color 0.2s ease;
+  transition: color 0.2s ease-out;
 }
 
 .theme-toggle-btn:hover i {
@@ -477,15 +479,17 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 0.75rem;
   margin-top: 10px !important;
-  animation: dropdownFade 0.15s ease;
+  animation: dropdownFade 0.15s ease-out;
 }
 
 @keyframes dropdownFade {
   from {
     opacity: 0;
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -494,7 +498,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   padding: 0.75rem 1.2rem;
   font-weight: 500;
   color: var(--text-main);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.15s ease-out, color 0.15s ease-out;
   position: relative;
 }
 
@@ -507,7 +511,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   width: 3px;
   background: var(--primary);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease-out;
 }
 
 .dropdown-item:hover {
@@ -532,7 +536,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   border: 1px solid var(--finance-line);
   border-radius: var(--finance-radius);
   box-shadow: var(--finance-shadow);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
   overflow: hidden;
 }
 
@@ -606,7 +610,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   min-height: 42px;
   padding: 0.65rem 0.95rem;
   color: var(--finance-ink);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
 .form-control:focus,
@@ -635,7 +639,7 @@ body.dark-mode ::-webkit-scrollbar-thumb {
   min-height: 40px;
   padding: 0.6rem 1.25rem;
   letter-spacing: 0.2px;
-  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out, transform 160ms ease-out;
 }
 
 .btn-primary,
@@ -763,7 +767,7 @@ body.dark-mode .table-secondary {
   pointer-events: none;
   /* Ẩn trên desktop — chỉ hiện khi có scroll */
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.25s ease-out;
   z-index: 1;
 }
 
@@ -812,7 +816,7 @@ body.dark-mode .category-badge {
   border: 4px solid var(--bg-card);
   /* Viền tiệp màu nền */
   box-shadow: var(--shadow-md);
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease-out;
 }
 
 .avatar-wrapper:hover img {
@@ -924,7 +928,7 @@ body.dark-mode .modal-footer.bg-light {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease-out;
 }
 
 .btn-camera {
@@ -943,7 +947,7 @@ body.dark-mode .modal-footer.bg-light {
   font-size: 1.2rem;
   cursor: pointer;
   opacity: 0.1;
-  transition: all 0.3s ease;
+  transition: opacity 0.25s ease-out, background-color 0.25s ease-out;
   z-index: 10;
 }
 
@@ -994,22 +998,248 @@ body:has([href*="dashboard"])::before {
 }
 
 /* =========================================
-   AUTH PAGES (LOGIN/REGISTER)
+   AUTH PAGES (LOGIN / REGISTER) — REDESIGN
+   Split-panel layout: brand left, form right.
+   Mobile: single column, form only.
    ========================================= */
-.auth-title {
-  color: var(--text-main) !important;
+
+/* ─── Page wrapper ──────────────────────── */
+.auth-page {
+  min-height: calc(100vh - 68px); /* trừ navbar height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+/* ─── Split container ───────────────────── */
+.auth-container {
+  display: flex;
+  width: 100%;
+  max-width: 860px;
+  min-height: 560px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(23, 33, 43, 0.12);
+}
+
+/* ─── Brand panel (left) ────────────────── */
+.auth-brand-panel {
+  flex: 0 0 42%;
+  background: linear-gradient(
+    160deg,
+    #087f8c 0%,
+    #066c76 55%,
+    #054f57 100%
+  );
+  padding: 3rem 2.5rem;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle texture overlay */
+.auth-brand-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle at 80% 20%,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+.auth-brand-content {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-brand-logo {
+  width: 52px;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.auth-brand-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.auth-brand-tagline {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.55;
+  margin-bottom: 2rem;
+  font-weight: 500;
+}
+
+.auth-brand-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.auth-brand-features li {
+  font-size: 0.83rem;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500;
+}
+
+.auth-brand-features li i {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* ─── Form panel (right) ────────────────── */
+.auth-form-panel {
+  flex: 1;
+  background: var(--bg-glass-heavy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 2.5rem;
+}
+
+.auth-form-inner {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ─── Form header ───────────────────────── */
+.auth-form-header {
+  margin-bottom: 1.75rem;
+}
+
+.auth-app-label {
+  font-size: 0.78rem;
   font-weight: 700;
+  color: var(--finance-accent);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
 }
 
-.auth-subtitle {
-  color: var(--text-muted) !important;
+.auth-form-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--finance-ink);
+  letter-spacing: -0.03em;
+  margin-bottom: 0.3rem;
+  line-height: 1.15;
 }
 
-.auth-header-icon {
-  color: var(--primary) !important;
-  font-size: 3rem;
+.auth-form-subtitle {
+  font-size: 0.875rem;
+  color: var(--finance-muted);
+  margin-bottom: 0;
+  font-weight: 500;
 }
 
+/* ─── Form controls ─────────────────────── */
+.auth-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--finance-ink);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.01em;
+}
+
+.auth-input {
+  font-size: 0.9rem !important;
+  min-height: 44px !important;
+  border-color: var(--finance-line) !important;
+  background-color: var(--input-bg) !important;
+  color: var(--finance-ink) !important;
+}
+
+.auth-input:focus {
+  border-color: var(--finance-accent) !important;
+  box-shadow: 0 0 0 3px rgba(8, 127, 140, 0.13) !important;
+  background-color: #fff !important;
+}
+
+/* ─── Forgot password link ──────────────── */
+.auth-forgot-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--finance-muted);
+  text-decoration: none;
+  transition: color 0.15s ease-out;
+}
+
+.auth-forgot-link:hover {
+  color: var(--finance-accent);
+}
+
+/* ─── Submit button ─────────────────────── */
+.auth-submit-btn {
+  background: var(--finance-accent) !important;
+  border: none !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  min-height: 46px !important;
+  border-radius: 9px !important;
+  letter-spacing: 0.01em;
+  transition: background-color 160ms ease-out, box-shadow 160ms ease-out, transform 120ms ease-out !important;
+}
+
+.auth-submit-btn:hover {
+  background: #066c76 !important;
+  box-shadow: 0 4px 16px rgba(8, 127, 140, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.auth-submit-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+}
+
+/* ─── Switch link (login ↔ register) ────── */
+.auth-switch-text {
+  text-align: center;
+  font-size: 0.83rem;
+  color: var(--finance-muted);
+  margin-top: 1.25rem;
+  margin-bottom: 0;
+}
+
+.auth-switch-link {
+  font-weight: 700;
+  color: var(--finance-accent);
+  text-decoration: none;
+  margin-left: 0.3rem;
+  transition: color 0.15s ease-out;
+}
+
+.auth-switch-link:hover {
+  color: #066c76;
+  text-decoration: underline;
+}
+
+/* ─── Error alert ───────────────────────── */
 .login-error-alert {
   background: #ffe4df !important;
   border: 1px solid #e09a8f !important;
@@ -1018,10 +1248,28 @@ body:has([href*="dashboard"])::before {
   font-size: 0.86rem !important;
   font-weight: 700;
   line-height: 1.45;
+  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
 .login-error-alert i {
   color: #c43d2f;
+}
+
+/* ─── Dark mode ─────────────────────────── */
+body.dark-mode .auth-form-panel {
+  background: var(--bg-glass-heavy);
+}
+
+body.dark-mode .auth-input {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: var(--finance-line) !important;
+  color: var(--finance-ink) !important;
+}
+
+body.dark-mode .auth-input:focus {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--finance-accent) !important;
 }
 
 body.dark-mode .login-error-alert {
@@ -1035,24 +1283,56 @@ body.dark-mode .login-error-alert i {
   color: #ff9a90;
 }
 
-/* Performance fixes for auth pages */
-.auth-wrapper .card,
-.auth-card {
+/* ─── Disable hover transform on auth card ─ */
+.auth-container {
   transition: none !important;
-  transform: none !important;
-  animation: none !important;
 }
 
-.auth-wrapper .card:hover,
-.auth-card:hover {
-  transform: none !important;
-  box-shadow: var(--shadow-md) !important;
+/* ─── Mobile responsive ─────────────────── */
+@media (max-width: 640px) {
+  .auth-page {
+    padding: 1rem 0.75rem;
+    align-items: flex-start;
+    padding-top: 1.5rem;
+  }
+
+  .auth-container {
+    flex-direction: column;
+    border-radius: 12px;
+    min-height: unset;
+  }
+
+  /* Brand panel ẩn trên mobile nhỏ để tiết kiệm space */
+  .auth-brand-panel {
+    display: none;
+  }
+
+  .auth-form-panel {
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-form-inner {
+    max-width: 100%;
+  }
+
+  .auth-form-title {
+    font-size: 1.4rem;
+  }
 }
 
-/* Tắt fade-in animation trên auth pages */
-.auth-wrapper .fade-in {
-  animation: none !important;
-  opacity: 1 !important;
+@media (min-width: 641px) and (max-width: 768px) {
+  .auth-brand-panel {
+    flex: 0 0 38%;
+    padding: 2rem 1.5rem;
+  }
+
+  .auth-brand-features {
+    display: none; /* Ẩn features list khi panel hẹp */
+  }
+
+  .auth-form-panel {
+    padding: 2rem 1.5rem;
+  }
 }
 
 /* =========================================
@@ -1192,7 +1472,7 @@ body.dark-mode .login-error-alert i {
   border-radius: 8px;
   text-decoration: none;
   transform: translateY(-200%);
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease-out;
   /* keeps it in tab order while hidden */
 }
 
@@ -1323,7 +1603,7 @@ body.dark-mode .progress {
 }
 
 .progress-bar {
-  transition: width 0.6s ease;
+  transition: width 0.6s ease-out;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1600,7 +1880,7 @@ body:has(.dashboard-shell) .main-container {
   border-radius: 10px;
   box-shadow: none;
   font-size: 0.82rem;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out;
 }
 
 .quick-actions-panel .btn:hover,
@@ -2263,7 +2543,7 @@ body.dark-mode .table-responsive::after {
 .metric-card {
   border-radius: var(--finance-radius);
   box-shadow: var(--finance-shadow);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
 }
 
 .dashboard-panel:hover,
@@ -2456,8 +2736,8 @@ body.dark-mode .navbar-brand img {
 .theme-toggle-btn,
 .btn-user-profile,
 .dropdown-item {
-  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease,
-    box-shadow 160ms ease, opacity 160ms ease;
+  transition: background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out,
+    box-shadow 160ms ease-out, opacity 160ms ease-out;
 }
 
 .navbar-brand:hover,
@@ -2607,7 +2887,7 @@ body.dark-mode:has([href*="dashboard"])::before {
   border: 1px solid rgba(8, 127, 140, 0.28) !important;
   border-radius: var(--finance-radius);
   color: var(--text-main);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .ai-suggestion-badge {

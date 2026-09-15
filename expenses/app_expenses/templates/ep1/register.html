@@ -1,107 +1,124 @@
 {% extends 'ep1/base.html' %} {% load widget_tweaks %}
 {% block title %}Đăng ký — MoneyManager{% endblock %}
 {% block content %}
-<div class="auth-wrapper d-flex justify-content-center mt-5 pt-5">
-  <div class="col-md-6 col-lg-5">
-    <div class="card auth-card p-4 p-md-5">
-      <div class="text-center">
-        <div class="auth-header-icon">
-          <i class="fas fa-user-plus"></i>
-        </div>
-        <h3 class="auth-title">Tạo Tài Khoản</h3>
-        <p class="auth-subtitle">Quản lý tài chính thông minh</p>
-      </div>
 
-      <form method="post" novalidate>
-        {% csrf_token %} {% if form.non_field_errors %}
-        <div class="alert alert-danger py-2 small">
+<div class="auth-page">
+  <div class="auth-container">
+
+    <!-- Brand Panel (ẩn trên mobile) -->
+    <div class="auth-brand-panel" aria-hidden="true">
+      <div class="auth-brand-content">
+        <div class="auth-brand-logo">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <p class="auth-brand-name">MoneyManager</p>
+        <p class="auth-brand-tagline">Bắt đầu hành trình<br>quản lý tài chính của bạn.</p>
+        <ul class="auth-brand-features" aria-hidden="true">
+          <li><i class="fas fa-check-circle"></i> Hoàn toàn miễn phí</li>
+          <li><i class="fas fa-check-circle"></i> Dữ liệu bảo mật riêng tư</li>
+          <li><i class="fas fa-check-circle"></i> AI gợi ý danh mục tự động</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Form Panel -->
+    <div class="auth-form-panel">
+      <div class="auth-form-inner">
+
+        <!-- Header -->
+        <div class="auth-form-header">
+          <p class="auth-app-label">
+            <i class="fas fa-chart-line me-1" aria-hidden="true"></i>MoneyManager
+          </p>
+          <h1 class="auth-form-title">Tạo tài khoản</h1>
+          <p class="auth-form-subtitle">Chỉ mất 30 giây để bắt đầu</p>
+        </div>
+
+        <!-- Error -->
+        {% if form.non_field_errors %}
+        <div class="alert login-error-alert py-2 small" role="alert">
           {{ form.non_field_errors|join:", " }}
         </div>
         {% endif %}
 
-        <div class="mb-3">
-          <label for="id_username" class="form-label fw-bold small text-muted"
-            >Tên đăng nhập</label
-          >
-          {{ form.username|add_class:"form-control form-control-lg"|attr:"placeholder:Tên đăng nhập..." }}
-          <div class="text-danger small mt-1">{{ form.username.errors }}</div>
-        </div>
+        <!-- Form -->
+        <form method="post" novalidate>
+          {% csrf_token %}
 
-        <div class="mb-3">
-          <label for="id_email" class="form-label fw-bold small text-muted">Email</label>
-          {{ form.email|add_class:"form-control form-control-lg"|attr:"placeholder:name@example.com" }}
-          <div class="text-danger small mt-1">{{ form.email.errors }}</div>
-        </div>
+          <div class="mb-3">
+            <label for="id_username" class="auth-label">Tên đăng nhập</label>
+            {{ form.username|add_class:"form-control auth-input"|attr:"placeholder:Chọn username..." }}
+            <div class="text-danger small mt-1">{{ form.username.errors }}</div>
+          </div>
 
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="id_password1" class="form-label fw-bold small text-muted">Mật khẩu</label>
-            <div class="position-relative">
-              {{ form.password1|add_class:"form-control form-control-lg pe-5"|attr:"placeholder:••••••••" }}
-              <button
-                type="button"
-                class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-muted password-toggle"
-                onclick="togglePassword(this)"
-                aria-label="Hiện mật khẩu"
-                aria-pressed="false"
-                aria-controls="id_password1"
-              >
-                <i class="fas fa-eye" aria-hidden="true"></i>
-              </button>
+          <div class="mb-3">
+            <label for="id_email" class="auth-label">Email</label>
+            {{ form.email|add_class:"form-control auth-input"|attr:"placeholder:name@example.com" }}
+            <div class="text-danger small mt-1">{{ form.email.errors }}</div>
+          </div>
+
+          <div class="row g-3 mb-1">
+            <div class="col-md-6">
+              <label for="id_password1" class="auth-label">Mật khẩu</label>
+              <div class="position-relative">
+                {{ form.password1|add_class:"form-control auth-input pe-5"|attr:"placeholder:••••••••" }}
+                <button
+                  type="button"
+                  class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-muted password-toggle"
+                  onclick="togglePassword(this)"
+                  aria-label="Hiện mật khẩu"
+                  aria-pressed="false"
+                  aria-controls="id_password1"
+                >
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="id_password2" class="auth-label">Nhập lại mật khẩu</label>
+              <div class="position-relative">
+                {{ form.password2|add_class:"form-control auth-input pe-5"|attr:"placeholder:••••••••" }}
+                <button
+                  type="button"
+                  class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-muted password-toggle"
+                  onclick="togglePassword(this)"
+                  aria-label="Hiện mật khẩu"
+                  aria-pressed="false"
+                  aria-controls="id_password2"
+                >
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="col-md-6 mb-4">
-            <label for="id_password2" class="form-label fw-bold small text-muted"
-              >Nhập lại mật khẩu</label
-            >
-            <div class="position-relative">
-              {{ form.password2|add_class:"form-control form-control-lg pe-5"|attr:"placeholder:••••••••" }}
-              <button
-                type="button"
-                class="btn btn-link position-absolute top-50 end-0 translate-middle-y text-muted password-toggle"
-                onclick="togglePassword(this)"
-                aria-label="Hiện mật khẩu"
-                aria-pressed="false"
-                aria-controls="id_password2"
-              >
-                <i class="fas fa-eye" aria-hidden="true"></i>
-              </button>
-            </div>
+          {% if form.password1.errors or form.password2.errors %}
+          <div class="alert login-error-alert small p-2 mb-3">
+            <ul class="mb-0 ps-3">
+              {% for error in form.password1.errors %}<li>{{ error }}</li>{% endfor %}
+              {% for error in form.password2.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
           </div>
+          {% else %}
+          <div class="mb-4"></div>
+          {% endif %}
 
-          <div class="col-12">
-            {% if form.password1.errors or form.password2.errors %}
-            <div class="alert alert-danger small p-2">
-              <ul class="mb-0 ps-3">
-                {% for error in form.password1.errors %}
-                <li>{{ error }}</li>
-                {% endfor %} {% for error in form.password2.errors %}
-                <li>{{ error }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-            {% endif %}
-          </div>
-        </div>
+          <button type="submit" class="btn auth-submit-btn w-100">
+            <i class="fas fa-user-check me-2" aria-hidden="true"></i>
+            Tạo Tài Khoản
+          </button>
+        </form>
 
-        <button
-          type="submit"
-          class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm"
-        >
-          Đăng Ký Tài Khoản
-        </button>
-      </form>
+        <!-- Footer -->
+        <p class="auth-switch-text">
+          Đã có tài khoản?
+          <a href="{% url 'ep1:login' %}" class="auth-switch-link">Đăng nhập</a>
+        </p>
 
-      <div class="text-center mt-4">
-        <small class="text-muted">Đã là thành viên?</small>
-        <a
-          href="{% url 'ep1:login' %}"
-          class="fw-bold text-decoration-none text-primary ms-1"
-          >Đăng nhập</a
-        >
       </div>
     </div>
+
   </div>
 </div>
+
 {% endblock %}
