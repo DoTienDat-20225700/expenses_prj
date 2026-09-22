@@ -62,6 +62,10 @@ class Expense(models.Model):
         verbose_name = "Chi tiêu"
         verbose_name_plural = "Chi tiêu"
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['user', 'date'], name='expense_user_date_idx'),
+            models.Index(fields=['user', 'category'], name='expense_user_cat_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(amount__gt=0),
@@ -201,6 +205,9 @@ class RecurringExpense(models.Model):
         verbose_name = "Chi tiêu định kỳ"
         verbose_name_plural = "Chi tiêu định kỳ"
         ordering = ['-next_due_date']
+        indexes = [
+            models.Index(fields=['user', 'is_active', 'next_due_date'], name='rec_exp_user_act_due_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(amount__gt=0),
@@ -324,6 +331,10 @@ class Income(models.Model):
         verbose_name = "Thu nhập"
         verbose_name_plural = "Thu nhập"
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['user', 'date'], name='income_user_date_idx'),
+            models.Index(fields=['user', 'source'], name='income_user_source_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(amount__gt=0),
@@ -362,6 +373,9 @@ class RecurringIncome(models.Model):
         verbose_name = "Thu nhập định kỳ"
         verbose_name_plural = "Thu nhập định kỳ"
         ordering = ['-next_due_date']
+        indexes = [
+            models.Index(fields=['user', 'is_active', 'next_due_date'], name='rec_inc_user_act_due_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(amount__gt=0),
@@ -422,6 +436,9 @@ class SavingsGoal(models.Model):
         verbose_name = "Mục tiêu tiết kiệm"
         verbose_name_plural = "Mục tiêu tiết kiệm"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_active'], name='savings_user_act_idx'),
+        ]
         constraints = [
             models.CheckConstraint(
                 check=models.Q(target_amount__gt=0),

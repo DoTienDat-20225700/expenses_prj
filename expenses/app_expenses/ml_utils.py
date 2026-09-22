@@ -14,19 +14,24 @@ def get_model_path(user):
     return os.path.join(settings.BASE_DIR, filename)
 
 def train_model(user):
-    """Hàm huấn luyện AI"""    
-    expenses = Expense.objects.filter(user=user)
+    """Hàm huấn luyện AI (tối ưu memory và query bằng values_list)"""    
+    # Chỉ lấy các bản ghi có description và category trực tiếp từ DB dưới dạng raw tuple
+    raw_data = list(
+        Expense.objects.filter(
+            user=user,
+            category__isnull=False,
+        ).exclude(
+            description__isnull=True
+        ).exclude(
+            description=''
+        ).values_list('description', 'category_id')
+    )
     
-    data = []
-    for e in expenses:
-        if e.description and e.category:
-            data.append({'text': e.description, 'label': e.category.id})
-            
     # Cần ít nhất 3 mẫu dữ liệu để học
-    if len(data) < 3:
+    if len(raw_data) < 3:
         return None
 
-    df = pd.DataFrame(data)
+    df = pd.DataFrame(raw_data, columns=['text', 'label'])
 
     model = make_pipeline(CountVectorizer(), MultinomialNB())
     model.fit(df['text'], df['label'])

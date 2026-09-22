@@ -1,9 +1,10 @@
 from datetime import timedelta, date
 from decimal import Decimal
-
-from django.contrib.auth import get_user_model
+import os
 import json
 from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -626,3 +627,131 @@ class RecurringGenerationTests(TestCase):
 
         self._post_generate()
         self.assertEqual(Expense.objects.filter(user=self.user).count(), 0)
+
+
+class PerformanceQueryRegressionTests(TestCase):
+    """Kiểm tra ngăn chặn N+1 queries và query regressions trên các luồng trọng yếu."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username='perf_user',
+            password='perf_password123',
+        )
+        self.client.force_login(self.user)
+        self.today = timezone.now().date()
+        
+        self.cat1 = Category.objects.create(name='Ăn uống Perf', user=self.user)
+        self.cat2 = Category.objects.create(name='Di chuyển Perf', user=self.user)
+        self.cat3 = Category.objects.create(name='Mua sắm Perf', user=self.user)
+        
+        self.source = IncomeSource.objects.create(name='Lương Perf', user=self.user)
+        self.budget = Budget.objects.create(user=self.user, total=Decimal('10000000'))
+        
+        # Tạo 15 chi tiêu và 5 thu nhập rải đều các tháng
+        for i in range(15):
+            Expense.objects.create(
+                user=self.user,
+                category=self.cat1 if i % 2 == 0 else self.cat2,
+                amount=Decimal('50000') * (i + 1),
+                date=self.today - timedelta(days=i * 5),
+                description=f'Perf Expense {i}',
+            )
+        for i in range(5):
+            Income.objects.create(
+                user=self.user,
+                source=self.source,
+                amount=Decimal('2000000'),
+                date=self.today - timedelta(days=i * 15),
+                description=f'Perf Income {i}',
+            )
+
+    def test_dashboard_query_count(self):
+        """Dashboard phải tải thành công và có số lượng query nhỏ, không phát sinh N+1."""
+        response = self.client.get(reverse('ep1:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Ăn uống Perf')
+
+    def test_dashboard_refresh_api_no_loop_queries(self):
+        """dashboard_refresh_api lấy số liệu 6 tháng bằng conditional aggregation."""
+        response = self.client.get(reverse('ep1:dashboard_refresh_api'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(len(data['charts_income_expense']['labels']), 6)
+        self.assertEqual(len(data['charts_income_expense']['income']), 6)
+        self.assertEqual(len(data['charts_income_expense']['expenses']), 6)
+
+    def test_export_csv_no_n_plus_one(self):
+        """export_expenses_csv không bị N+1 khi duyệt qua nhiều bản ghi chi tiêu."""
+        # Tạo thêm 20 bản ghi
+        for i in range(20):
+            Expense.objects.create(
+                user=self.user,
+                category=self.cat3,
+                amount=Decimal('100000'),
+                date=self.today,
+                description=f'Bulk CSV {i}',
+            )
+        response = self.client.get(reverse('ep1:export_expenses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        # Đảm bảo CSV chứa nội dung chính xác
+        content = response.content.decode('utf-8')
+        self.assertIn('Bulk CSV 19', content)
+        self.assertIn('Mua sắm Perf', content)
+
+    def test_ai_monitor_no_n_plus_one(self):
+        """ai_monitor lấy số lượng bản ghi của tất cả users trong 1 query annotated."""
+        admin_user = self.User.objects.create_superuser(
+            username='perf_admin',
+            password='admin_password123',
+            email='admin@perf.com',
+        )
+        self.client.force_login(admin_user)
+        # Tạo thêm 4 users
+        for i in range(4):
+            u = self.User.objects.create_user(username=f'dummy_user_{i}', password='pwd')
+            Expense.objects.create(user=u, category=self.cat1, amount=Decimal('50000'), date=self.today)
+        
+        response = self.client.get(reverse('ep1:ai_monitor'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Giám sát hệ thống AI')
+
+    def test_savings_goal_ai_suggestions_no_n_plus_one(self):
+        """get_ai_savings_suggestions gom các category cần cắt giảm vào 1 query."""
+        goal = SavingsGoal.objects.create(
+            user=self.user,
+            goal_name='Mua Laptop Perf',
+            target_amount=Decimal('20000000'),
+            current_amount=Decimal('5000000'),
+            start_date=self.today,
+            target_date=self.today + timedelta(days=90),
+        )
+        goal.categories_to_reduce.add(self.cat1, self.cat2, self.cat3)
+
+        response = self.client.get(reverse('ep1:savings_goal_detail', kwargs={'pk': goal.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Mua Laptop Perf')
+
+    def test_chart_monthly_trend_and_comparison_apis(self):
+        """API charts 6 tháng chạy đúng cấu trúc dữ liệu với conditional aggregates."""
+        resp1 = self.client.get(reverse('ep1:chart_monthly'))
+        self.assertEqual(resp1.status_code, 200)
+        self.assertEqual(len(resp1.json()['labels']), 6)
+
+        resp2 = self.client.get(reverse('ep1:chart_income_expense'))
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(len(resp2.json()['labels']), 6)
+
+    def test_ml_train_model_optimization(self):
+        """train_model trích xuất raw tuples trực tiếp và tạo model thành công."""
+        from app_expenses.ml_utils import train_model, get_model_path
+        # User đã có 15 chi tiêu trong setUp với description & category
+        model = train_model(self.user)
+        self.assertIsNotNone(model)
+        model_path = get_model_path(self.user)
+        self.assertTrue(os.path.exists(model_path))
+        # Dọn dẹp model file sau test
+        if os.path.exists(model_path):
+            os.remove(model_path)

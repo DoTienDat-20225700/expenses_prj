@@ -41,31 +41,34 @@ def is_admin(user):
 
 @user_passes_test(is_admin)
 def admin_dashboard(request):
-    # 1. Thống kê User
-    total_users = User.objects.count()
-
-    # User mới trong 30 ngày qua
+    # 1. Thống kê User (gộp total và new_users thành 1 query)
     month_ago = timezone.now() - timedelta(days=30)
-    new_users = User.objects.filter(date_joined__gte=month_ago).count()
+    user_stats = User.objects.aggregate(
+        total_users=Count('id'),
+        new_users=Count('id', filter=Q(date_joined__gte=month_ago))
+    )
+    total_users = user_stats['total_users'] or 0
+    new_users = user_stats['new_users'] or 0
 
-    # 2. Thống kê Dòng tiền (Toàn hệ thống)
-    # Tổng số giao dịch chi tiêu
-    total_expenses_count = Expense.objects.count()
+    # 2. Thống kê Dòng tiền (Toàn hệ thống - gộp count và total sum)
+    expense_stats = Expense.objects.aggregate(
+        count=Count('id'),
+        total=Sum('amount')
+    )
+    total_expenses_count = expense_stats['count'] or 0
+    total_expenses = expense_stats['total'] or 0
     
-    # Tổng CHI TIÊU toàn hệ thống
-    total_expenses = Expense.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Tổng THU NHẬP toàn hệ thống
-    total_income = Income.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Số giao dịch thu nhập
-    total_income_count = Income.objects.count()
+    income_stats = Income.objects.aggregate(
+        count=Count('id'),
+        total=Sum('amount')
+    )
+    total_income_count = income_stats['count'] or 0
+    total_income = income_stats['total'] or 0
     
     # DÒNG TIỀN THỰC = Thu nhập - Chi tiêu
     net_cash_flow = total_income - total_expenses
 
     # 3. Top Danh mục phổ biến nhất hệ thống (theo số lượng giao dịch)
-    # Lấy tên danh mục và đếm số lần xuất hiện
     top_categories = Expense.objects.values('category__name') \
         .annotate(count=Count('id')) \
         .order_by('-count')[:5]  # Lấy top 5
@@ -134,21 +137,19 @@ def toggle_user_status(request, user_id):
 
 @user_passes_test(is_admin)
 def ai_monitor(request):
-    """Trang giám sát trạng thái Model AI của từng user"""
-    users = User.objects.all().order_by('-date_joined')
+    """Trang giám sát trạng thái Model AI của từng user (dùng annotate để tránh N+1)"""
+    users = User.objects.annotate(expense_count=Count('expense')).order_by('-date_joined')
     ai_stats = []
 
     for user in users:
         model_path = get_model_path(user)
         has_model = os.path.exists(model_path)
         model_size = 0
-        last_modified = None
 
         if has_model:
             # Lấy kích thước file (KB)
             model_size = round(os.path.getsize(model_path) / 1024, 2)
-            # Lấy số lượng dữ liệu đã học (Số bản ghi chi tiêu)
-            data_count = Expense.objects.filter(user=user).count()
+            data_count = user.expense_count
         else:
             data_count = 0
 
@@ -399,7 +400,6 @@ def ep1_lists(request):
 
     # Calculate totals
     filtered_total = expenses.aggregate(sum=Sum('amount'))['sum'] or 0
-    global_total = base_expenses.aggregate(sum=Sum('amount'))['sum'] or 0
     # Get top category
     global_category_data = base_expenses.values('category__name').annotate(total=Sum('amount')).order_by('-total')
     top_category_item = global_category_data.first()
@@ -586,7 +586,7 @@ def delete_ep1(request, pk):
 
 @login_required
 def export_expenses_csv(request):
-    base_expenses = Expense.objects.filter(user=request.user)
+    base_expenses = Expense.objects.filter(user=request.user).select_related('category')
     filtered_expenses = _apply_filters(base_expenses, request.GET)
     expenses = _apply_sorting(filtered_expenses, request.GET)
 
@@ -688,32 +688,23 @@ def dashboard(request):
     # Tháng trước
     first_day_last_month = (first_day_this_month - relativedelta(months=1))
     
-    # Tổng chi tiêu
-    total_expenses = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+    # Thống kê chi tiêu (gộp total, tháng này, tháng trước thành 1 query)
+    expense_stats = Expense.objects.filter(user=user).aggregate(
+        total=Sum('amount'),
+        this_month=Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
+        last_month=Sum('amount', filter=Q(date__gte=first_day_last_month, date__lt=first_day_this_month)),
+    )
+    total_expenses = expense_stats['total'] or 0
+    this_month_expenses = expense_stats['this_month'] or 0
+    last_month_expenses = expense_stats['last_month'] or 0
     
-    # Chi tiêu tháng này
-    this_month_expenses = Expense.objects.filter(
-        user=user, 
-        date__gte=first_day_this_month,
-        date__lt=first_day_next_month
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Chi tiêu tháng trước
-    last_month_expenses = Expense.objects.filter(
-        user=user,
-        date__gte=first_day_last_month,
-        date__lt=first_day_this_month
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Tổng thu nhập
-    total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Thu nhập tháng này
-    this_month_income = Income.objects.filter(
-        user=user,
-        date__gte=first_day_this_month,
-        date__lt=first_day_next_month
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    # Thống kê thu nhập (gộp total, tháng này thành 1 query)
+    income_stats = Income.objects.filter(user=user).aggregate(
+        total=Sum('amount'),
+        this_month=Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
+    )
+    total_income = income_stats['total'] or 0
+    this_month_income = income_stats['this_month'] or 0
     
     # Số dư
     balance = total_income - total_expenses
@@ -800,30 +791,32 @@ def chart_category_data(request):
 
 @login_required
 def chart_monthly_trend(request):
-    """API endpoint for monthly trend chart (last 6 months)"""
+    """API endpoint for monthly trend chart (last 6 months) using single conditional aggregate"""
     from dateutil.relativedelta import relativedelta
     user = request.user
     today = timezone.now().date()
     
-    # Lấy 6 tháng trước
-    months_data = []
+    month_ranges = []
+    agg_kwargs = {}
     for i in range(5, -1, -1):
         month_start = (today.replace(day=1) - relativedelta(months=i))
         month_end = (month_start + relativedelta(months=1))
-        
-        month_expenses = Expense.objects.filter(
-            user=user,
-            date__gte=month_start,
-            date__lt=month_end
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        months_data.append({
-            'label': month_start.strftime('%m/%Y'),
-            'value': float(month_expenses)
-        })
+        label = month_start.strftime('%m/%Y')
+        key = f'm_{i}'
+        month_ranges.append((label, key))
+        agg_kwargs[key] = Sum('amount', filter=Q(date__gte=month_start, date__lt=month_end))
     
-    labels = [item['label'] for item in months_data]
-    data = [item['value'] for item in months_data]
+    oldest_start = (today.replace(day=1) - relativedelta(months=5))
+    newest_end = (today.replace(day=1) + relativedelta(months=1))
+    
+    expense_agg = Expense.objects.filter(
+        user=user,
+        date__gte=oldest_start,
+        date__lt=newest_end,
+    ).aggregate(**agg_kwargs)
+    
+    labels = [label for label, key in month_ranges]
+    data = [float(expense_agg.get(key) or 0) for label, key in month_ranges]
     
     return JsonResponse({
         'labels': labels,
@@ -833,37 +826,41 @@ def chart_monthly_trend(request):
 
 @login_required
 def chart_expense_vs_income(request):
-    """API endpoint for income vs expense comparison (last 6 months)"""
+    """API endpoint for income vs expense comparison (last 6 months) using conditional aggregates"""
     from dateutil.relativedelta import relativedelta
     user = request.user
     today = timezone.now().date()
     
-    months_data = []
+    month_ranges = []
+    exp_agg_kwargs = {}
+    inc_agg_kwargs = {}
     for i in range(5, -1, -1):
         month_start = (today.replace(day=1) - relativedelta(months=i))
         month_end = (month_start + relativedelta(months=1))
-        
-        month_expenses = Expense.objects.filter(
-            user=user,
-            date__gte=month_start,
-            date__lt=month_end
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        month_income = Income.objects.filter(
-            user=user,
-            date__gte=month_start,
-            date__lt=month_end
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        months_data.append({
-            'label': month_start.strftime('%m/%Y'),
-            'expenses': float(month_expenses),
-            'income': float(month_income)
-        })
+        label = month_start.strftime('%m/%Y')
+        key = f'm_{i}'
+        month_ranges.append((label, key))
+        exp_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=month_start, date__lt=month_end))
+        inc_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=month_start, date__lt=month_end))
     
-    labels = [item['label'] for item in months_data]
-    expense_data = [item['expenses'] for item in months_data]
-    income_data = [item['income'] for item in months_data]
+    oldest_start = (today.replace(day=1) - relativedelta(months=5))
+    newest_end = (today.replace(day=1) + relativedelta(months=1))
+    
+    expense_agg = Expense.objects.filter(
+        user=user,
+        date__gte=oldest_start,
+        date__lt=newest_end,
+    ).aggregate(**exp_agg_kwargs)
+    
+    income_agg = Income.objects.filter(
+        user=user,
+        date__gte=oldest_start,
+        date__lt=newest_end,
+    ).aggregate(**inc_agg_kwargs)
+    
+    labels = [label for label, key in month_ranges]
+    expense_data = [float(expense_agg.get(key) or 0) for label, key in month_ranges]
+    income_data = [float(income_agg.get(key) or 0) for label, key in month_ranges]
     
     return JsonResponse({
         'labels': labels,
@@ -874,7 +871,7 @@ def chart_expense_vs_income(request):
 
 @login_required
 def dashboard_refresh_api(request):
-    """Return updated dashboard summary, lists, and chart data."""
+    """Return updated dashboard summary, lists, and chart data using conditional aggregates."""
     from dateutil.relativedelta import relativedelta
 
     user = request.user
@@ -883,19 +880,33 @@ def dashboard_refresh_api(request):
     first_day_this_month = today.replace(day=1)
     first_day_next_month = (first_day_this_month + relativedelta(months=1))
 
-    total_expenses = Expense.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
-    this_month_expenses = Expense.objects.filter(
-        user=user,
-        date__gte=first_day_this_month,
-        date__lt=first_day_next_month
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    # Xây dựng aggregated query cho 6 tháng + totals
+    exp_agg_kwargs = {
+        'total': Sum('amount'),
+        'this_month': Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
+    }
+    inc_agg_kwargs = {
+        'total': Sum('amount'),
+        'this_month': Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
+    }
+    month_ranges = []
+    for i in range(5, -1, -1):
+        m_start = (first_day_this_month - relativedelta(months=i))
+        m_end = (m_start + relativedelta(months=1))
+        label = m_start.strftime('%m/%Y')
+        key = f'm_{i}'
+        month_ranges.append((label, key))
+        exp_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=m_start, date__lt=m_end))
+        inc_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=m_start, date__lt=m_end))
 
-    total_income = Income.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
-    this_month_income = Income.objects.filter(
-        user=user,
-        date__gte=first_day_this_month,
-        date__lt=first_day_next_month
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    expense_agg = Expense.objects.filter(user=user).aggregate(**exp_agg_kwargs)
+    income_agg = Income.objects.filter(user=user).aggregate(**inc_agg_kwargs)
+
+    total_expenses = expense_agg['total'] or 0
+    this_month_expenses = expense_agg['this_month'] or 0
+
+    total_income = income_agg['total'] or 0
+    this_month_income = income_agg['this_month'] or 0
 
     balance = total_income - total_expenses
 
@@ -916,32 +927,9 @@ def dashboard_refresh_api(request):
     category_labels = [item['category__name'] or 'Không xác định' for item in category_data]
     category_values = [float(item['total']) for item in category_data]
 
-    months_data = []
-    for i in range(5, -1, -1):
-        month_start = (today.replace(day=1) - relativedelta(months=i))
-        month_end = (month_start + relativedelta(months=1))
-
-        month_expenses = Expense.objects.filter(
-            user=user,
-            date__gte=month_start,
-            date__lt=month_end
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-
-        month_income = Income.objects.filter(
-            user=user,
-            date__gte=month_start,
-            date__lt=month_end
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-
-        months_data.append({
-            'label': month_start.strftime('%m/%Y'),
-            'income': float(month_income),
-            'expenses': float(month_expenses),
-        })
-
-    income_labels = [item['label'] for item in months_data]
-    income_values = [item['income'] for item in months_data]
-    expense_values = [item['expenses'] for item in months_data]
+    income_labels = [label for label, key in month_ranges]
+    income_values = [float(income_agg.get(key) or 0) for label, key in month_ranges]
+    expense_values = [float(expense_agg.get(key) or 0) for label, key in month_ranges]
 
     top_categories_html = render_to_string(
         'ep1/partials/dashboard_top_categories.html',
@@ -1223,17 +1211,13 @@ def recurring_list(request):
     page_obj = paginator.get_page(page_number)
     
     
-    # Calculate counts for badges
-    active_count = RecurringExpense.objects.filter(
-        user=request.user
-    ).filter(
-        Q(end_date__isnull=True) | Q(end_date__gte=today)
-    ).count()
-    
-    expired_count = RecurringExpense.objects.filter(
-        user=request.user,
-        end_date__lt=today
-    ).count()
+    # Calculate counts for badges with single conditional aggregation
+    counts = RecurringExpense.objects.filter(user=request.user).aggregate(
+        active=Count('id', filter=Q(end_date__isnull=True) | Q(end_date__gte=today)),
+        expired=Count('id', filter=Q(end_date__lt=today)),
+    )
+    active_count = counts['active'] or 0
+    expired_count = counts['expired'] or 0
     
     context = {
         'recurrings': page_obj,
@@ -1510,10 +1494,10 @@ def savings_goal_list(request):
     """Hiển thị danh sách mục tiêu tiết kiệm"""
     goals = SavingsGoal.objects.filter(user=request.user).order_by('-created_at')
     
-    # Cập nhật trạng thái cho tất cả mục tiêu
+    # Cập nhật trạng thái chỉ khi mục tiêu chuyển từ chưa hoàn thành sang hoàn thành
     for goal in goals:
-        if goal.check_completion():
-            goal.save()
+        if not goal.is_completed and goal.check_completion():
+            goal.save(update_fields=['is_completed'])
     
     context = {
         'goals': goals,
@@ -1587,9 +1571,9 @@ def savings_goal_detail(request, pk):
     """Chi tiết mục tiêu với gợi ý AI"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
     
-    # Cập nhật trạng thái hoàn thành
-    if goal.check_completion():
-        goal.save()
+    # Cập nhật trạng thái hoàn thành chỉ khi có thay đổi
+    if not goal.is_completed and goal.check_completion():
+        goal.save(update_fields=['is_completed'])
     
     # Lấy gợi ý AI
     ai_suggestions = get_ai_savings_suggestions(request.user, goal)
@@ -1678,16 +1662,20 @@ def get_ai_savings_suggestions(user, goal):
     total_spent_30days = recent_expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
     daily_avg_spending = total_spent_30days / 30 if total_spent_30days > 0 else Decimal('0')
     
-    # Phân tích từng danh mục được chọn để cắt giảm
-    categories_to_reduce = goal.categories_to_reduce.all()
+    # Phân tích từng danh mục được chọn để cắt giảm (gom thành 1 query duy nhất)
+    categories_to_reduce = list(goal.categories_to_reduce.all())
     
-    if categories_to_reduce.exists():
+    if categories_to_reduce:
         total_reducible = Decimal('0')
+        cat_ids = [c.id for c in categories_to_reduce]
+        
+        cat_totals_query = recent_expenses.filter(category_id__in=cat_ids).values('category_id').annotate(
+            cat_total=Sum('amount')
+        )
+        totals_by_cat_id = {item['category_id']: (item['cat_total'] or Decimal('0')) for item in cat_totals_query}
         
         for category in categories_to_reduce:
-            # Chi tiêu của category này trong 30 ngày
-            cat_expenses = recent_expenses.filter(category=category)
-            cat_total = cat_expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
+            cat_total = totals_by_cat_id.get(category.id, Decimal('0'))
             cat_daily_avg = cat_total / 30
             
             # Gợi ý cắt giảm 50-70% (có thể điều chỉnh)
@@ -1794,8 +1782,8 @@ def chat_assistant(request):
     # Lấy các category của user để hiển thị
     categories = Category.objects.filter(user=request.user)
     
-    # Lấy 10 chi tiêu gần nhất để hiển thị context
-    recent_expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')[:10]
+    # Lấy 10 chi tiêu gần nhất để hiển thị context (với select_related để tránh N+1)
+    recent_expenses = Expense.objects.filter(user=request.user).select_related('category').order_by('-date', '-id')[:10]
     
     context = {
         'categories': categories,
@@ -2313,27 +2301,6 @@ def save_expense_from_chat_api(request):
             'success': False,
             'error': f'Lỗi lưu chi tiêu: {str(e)}'
         }, status=500)
-        budget = Budget.objects.get(user=request.user)
-        current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        if current_total > budget.total:
-            over_amount = current_total - budget.total
-            warning_message = f'⚠️ Bạn đã vượt quá ngân sách {over_amount:,.0f} ₫!'
-    except Budget.DoesNotExist:
-        pass
-    
-    # Train model trong background
-    try:
-        thread = threading.Thread(target=train_model, args=(request.user,))
-        thread.start()
-    except Exception as e:
-        print(f"Lỗi chạy background task: {e}")
-    
-    return JsonResponse({
-        'success': True,
-        'expense_id': expense.id,
-        'warning': warning_message
-    })
 
 
 @login_required
@@ -2350,7 +2317,7 @@ def chat_history_api(request):
     if not 1 <= limit <= 50:
         return JsonResponse({'success': False, 'error': 'limit phải nằm trong khoảng 1 đến 50'}, status=400)
     
-    expenses = Expense.objects.filter(user=request.user).order_by('-date', '-id')[:limit]
+    expenses = Expense.objects.filter(user=request.user).select_related('category').order_by('-date', '-id')[:limit]
     
     data = []
     for expense in expenses:
@@ -2363,4 +2330,3 @@ def chat_history_api(request):
         })
     
     return JsonResponse({'success': True, 'expenses': data})
-    return redirect('ep1:recurring_list')
