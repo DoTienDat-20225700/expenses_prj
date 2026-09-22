@@ -1,14 +1,21 @@
-from datetime import timedelta
+from datetime import timedelta, date
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 import json
 from unittest.mock import patch
 
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from app_expenses.models import Expense, Income, RecurringIncome, RecurringExpense, SavingsGoal
+from app_expenses.models import (
+    Budget, Category, Expense, Income, IncomeSource,
+    RecurringExpense, RecurringIncome, SavingsGoal,
+)
+from app_expenses.form import ExpenseForm, IncomeForm, RecurringExpenseForm, SavingsGoalForm
 from app_expenses.utils.chat_intent import ChatIntentDetector, ChatQueryHandler
 from app_expenses.utils.nlp_parser import ExpenseNLPParser
 
@@ -309,3 +316,313 @@ class ChatbotRegressionTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertTrue(response.json()['success'])
 		self.assertEqual(Income.objects.filter(user=user).count(), 1)
+
+
+# ============================================================================
+# Phase 2 — Data Integrity Tests
+# ============================================================================
+
+class DataIntegrityTests(TestCase):
+    """Tests cho monetary field validation và DB constraints."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='integrity-user', password='pass')
+        self.cat = Category.objects.create(name='Test Cat', user=self.user)
+
+    # ── Amount validation at model level ─────────────────────────────────────
+
+    def test_expense_negative_amount_rejected_by_validator(self):
+        """Model validator phải từ chối amount âm."""
+        expense = Expense(
+            user=self.user,
+            amount=Decimal('-100'),
+            date=date.today(),
+        )
+        with self.assertRaises(ValidationError):
+            expense.full_clean()
+
+    def test_expense_zero_amount_rejected_by_validator(self):
+        """Model validator phải từ chối amount = 0."""
+        expense = Expense(
+            user=self.user,
+            amount=Decimal('0'),
+            date=date.today(),
+        )
+        with self.assertRaises(ValidationError):
+            expense.full_clean()
+
+    def test_expense_valid_amount_accepted(self):
+        """Amount > 0 phải được chấp nhận."""
+        expense = Expense(
+            user=self.user,
+            amount=Decimal('50000'),
+            category=self.cat,
+            date=date.today(),
+        )
+        expense.full_clean()  # should not raise
+
+    def test_income_negative_amount_rejected(self):
+        """Income không được có amount âm."""
+        income = Income(
+            user=self.user,
+            amount=Decimal('-1'),
+            date=date.today(),
+        )
+        with self.assertRaises(ValidationError):
+            income.full_clean()
+
+    def test_budget_negative_total_rejected(self):
+        """Budget không được có total âm."""
+        budget = Budget(user=self.user, total=Decimal('-1'))
+        with self.assertRaises(ValidationError):
+            budget.full_clean()
+
+    def test_budget_zero_total_accepted(self):
+        """Budget total = 0 hợp lệ (chưa đặt ngân sách)."""
+        budget = Budget(user=self.user, total=Decimal('0'))
+        budget.full_clean()  # should not raise
+
+    # ── DB-level CheckConstraint ──────────────────────────────────────────────
+
+    def test_expense_negative_amount_blocked_by_db_constraint(self):
+        """DB CheckConstraint phải chặn insert amount âm ngay cả khi bypass ORM validator."""
+        with self.assertRaises(Exception):  # IntegrityError hoặc ValidationError
+            # Dùng bulk_create để bypass model.full_clean()
+            Expense.objects.bulk_create([
+                Expense(user=self.user, amount=Decimal('-1'), date=date.today())
+            ])
+
+    # ── Form-level validation ─────────────────────────────────────────────────
+
+    def test_expense_form_rejects_negative_amount(self):
+        """ExpenseForm phải từ chối amount âm."""
+        form = ExpenseForm(
+            data={'amount': '-100', 'date': str(date.today()), 'category': ''},
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('amount', form.errors)
+
+    def test_expense_form_rejects_zero_amount(self):
+        """ExpenseForm phải từ chối amount = 0."""
+        form = ExpenseForm(
+            data={'amount': '0', 'date': str(date.today()), 'category': ''},
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('amount', form.errors)
+
+    def test_expense_form_accepts_valid_amount(self):
+        """ExpenseForm chấp nhận amount > 0."""
+        form = ExpenseForm(
+            data={'amount': '50000', 'date': str(date.today()), 'category': ''},
+            user=self.user,
+        )
+        # category có thể rỗng (null=True) nên form valid
+        self.assertNotIn('amount', form.errors)
+
+    def test_income_form_rejects_negative_amount(self):
+        """IncomeForm phải từ chối amount âm."""
+        form = IncomeForm(
+            data={'amount': '-1', 'date': str(date.today()), 'source': ''},
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('amount', form.errors)
+
+    # ── SavingsGoal category ownership ───────────────────────────────────────
+
+    def test_savings_goal_form_rejects_other_user_category(self):
+        """SavingsGoalForm phải từ chối category của user khác."""
+        User = get_user_model()
+        other_user = User.objects.create_user(username='other-owner', password='pass')
+        other_cat = Category.objects.create(name='Other Cat', user=other_user)
+
+        today = date.today()
+        form = SavingsGoalForm(
+            data={
+                'goal_name': 'Test Goal',
+                'target_amount': '1000000',
+                'current_amount': '0',
+                'start_date': str(today),
+                'target_date': str(today.replace(year=today.year + 1)),
+                'categories_to_reduce': [str(other_cat.pk)],
+            },
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+
+    def test_savings_goal_form_accepts_own_category(self):
+        """SavingsGoalForm chấp nhận category của chính user."""
+        today = date.today()
+        form = SavingsGoalForm(
+            data={
+                'goal_name': 'Test Goal',
+                'target_amount': '1000000',
+                'current_amount': '0',
+                'start_date': str(today),
+                'target_date': str(today.replace(year=today.year + 1)),
+                'categories_to_reduce': [str(self.cat.pk)],
+            },
+            user=self.user,
+        )
+        self.assertTrue(form.is_valid(), msg=form.errors)
+
+
+class RecurringGenerationTests(TestCase):
+    """Tests cho recurring transaction generation: idempotency, atomicity, concurrency."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='recurring-user', password='pass')
+        self.client.force_login(self.user)
+        self.cat = Category.objects.create(name='Bills', user=self.user)
+        self.today = timezone.now().date()
+
+    def _make_recurring(self, days_overdue=0, frequency='monthly', amount='500000'):
+        """Helper: Tạo RecurringExpense đã đến hạn."""
+        due_date = self.today - timedelta(days=days_overdue)
+        return RecurringExpense.objects.create(
+            user=self.user,
+            name='Test Recurring',
+            amount=Decimal(amount),
+            category=self.cat,
+            frequency=frequency,
+            start_date=due_date,
+            next_due_date=due_date,
+            is_active=True,
+        )
+
+    def _post_generate(self):
+        return self.client.post(reverse('ep1:generate_recurring'))
+
+    # ── Basic generation ──────────────────────────────────────────────────────
+
+    def test_generate_creates_expense_from_due_template(self):
+        """Gọi generate phải tạo 1 Expense từ template đã đến hạn."""
+        recurring = self._make_recurring(days_overdue=0)
+
+        response = self._post_generate()
+        self.assertIn(response.status_code, [200, 302])
+
+        self.assertEqual(Expense.objects.filter(user=self.user).count(), 1)
+        expense = Expense.objects.get(user=self.user)
+        self.assertEqual(expense.amount, Decimal('500000'))
+        self.assertEqual(expense.recurring_template, recurring)
+        self.assertEqual(expense.occurrence_date, self.today)
+
+    def test_generate_advances_next_due_date(self):
+        """Sau khi generate, next_due_date phải được tăng lên."""
+        recurring = self._make_recurring(days_overdue=0, frequency='monthly')
+        original_due = recurring.next_due_date
+
+        self._post_generate()
+
+        recurring.refresh_from_db()
+        self.assertGreater(recurring.next_due_date, original_due)
+
+    def test_generate_not_due_creates_nothing(self):
+        """Template chưa đến hạn không tạo Expense."""
+        RecurringExpense.objects.create(
+            user=self.user,
+            name='Future Recurring',
+            amount=Decimal('100000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=self.today + timedelta(days=30),
+            next_due_date=self.today + timedelta(days=30),
+            is_active=True,
+        )
+
+        self._post_generate()
+        self.assertEqual(Expense.objects.filter(user=self.user).count(), 0)
+
+    # ── Idempotency ───────────────────────────────────────────────────────────
+
+    def test_generate_twice_does_not_duplicate(self):
+        """Gọi generate 2 lần cho cùng occurrence không tạo duplicate Expense."""
+        self._make_recurring(days_overdue=0)
+
+        self._post_generate()
+        count_after_first = Expense.objects.filter(user=self.user).count()
+
+        # Gọi lần 2 — phải idempotent
+        self._post_generate()
+        count_after_second = Expense.objects.filter(user=self.user).count()
+
+        self.assertEqual(count_after_first, 1)
+        # Lần 2: next_due_date đã advance nên không có gì đến hạn nữa,
+        # hoặc nếu advance thất bại thì UniqueConstraint chặn duplicate.
+        self.assertEqual(count_after_second, count_after_first)
+
+    def test_unique_constraint_prevents_duplicate_occurrence(self):
+        """UniqueConstraint (recurring_template, occurrence_date) chặn duplicate trực tiếp qua ORM."""
+        recurring = self._make_recurring(days_overdue=0)
+        occ_date = self.today
+
+        # Tạo lần 1 — thành công
+        Expense.objects.create(
+            user=self.user,
+            amount=recurring.amount,
+            description='First',
+            category=self.cat,
+            date=occ_date,
+            recurring_template=recurring,
+            occurrence_date=occ_date,
+        )
+
+        # Tạo lần 2 — phải raise IntegrityError
+        with self.assertRaises(IntegrityError):
+            Expense.objects.create(
+                user=self.user,
+                amount=recurring.amount,
+                description='Duplicate',
+                category=self.cat,
+                date=occ_date,
+                recurring_template=recurring,
+                occurrence_date=occ_date,
+            )
+
+    # ── Expired template ──────────────────────────────────────────────────────
+
+    def test_expired_recurring_is_deactivated(self):
+        """Template quá end_date phải bị deactivate, không tạo Expense."""
+        yesterday = self.today - timedelta(days=1)
+        RecurringExpense.objects.create(
+            user=self.user,
+            name='Expired Recurring',
+            amount=Decimal('100000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=yesterday - timedelta(days=30),
+            next_due_date=yesterday,
+            end_date=yesterday,  # đã hết hạn
+            is_active=True,
+        )
+
+        self._post_generate()
+
+        # Không tạo Expense vì đã expired
+        self.assertEqual(Expense.objects.filter(user=self.user).count(), 0)
+        # Template phải bị deactivate
+        template = RecurringExpense.objects.get(user=self.user)
+        self.assertFalse(template.is_active)
+
+    # ── Inactive template ─────────────────────────────────────────────────────
+
+    def test_inactive_recurring_not_generated(self):
+        """Template is_active=False không được generate."""
+        RecurringExpense.objects.create(
+            user=self.user,
+            name='Inactive',
+            amount=Decimal('100000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=self.today,
+            next_due_date=self.today,
+            is_active=False,
+        )
+
+        self._post_generate()
+        self.assertEqual(Expense.objects.filter(user=self.user).count(), 0)

@@ -25,6 +25,12 @@ class ExpenseForm(forms.ModelForm):
         if user:
             self.fields['category'].queryset = Category.objects.filter(user=user)
 
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError('Số tiền phải lớn hơn 0.')
+        return amount
+
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True, label="Email")
 
@@ -186,6 +192,12 @@ class RecurringExpenseForm(forms.ModelForm):
         self.fields['next_due_date'].widget.attrs['class'] = 'form-control bg-light'
         self.fields['next_due_date'].help_text = 'Tự động tính toán bởi hệ thống'
     
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError('Số tiền phải lớn hơn 0.')
+        return amount
+
     def clean(self):
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
@@ -233,6 +245,12 @@ class IncomeForm(forms.ModelForm):
         
         if user:
             self.fields['source'].queryset = IncomeSource.objects.filter(user=user)
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError('Số tiền phải lớn hơn 0.')
+        return amount
 
 
 class IncomeSourceForm(forms.ModelForm):
@@ -293,6 +311,7 @@ class SavingsGoalForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        self._user = user  # store for category ownership validation in clean()
         
         # Xử lý dấu phẩy trong data trước khi validate
         if args and args[0]:
@@ -328,16 +347,29 @@ class SavingsGoalForm(forms.ModelForm):
                 )
         
         # Kiểm tra số tiền mục tiêu phải > 0
-        if target_amount and target_amount <= 0:
+        if target_amount is not None and target_amount <= 0:
             raise forms.ValidationError(
                 'Số tiền mục tiêu phải lớn hơn 0.'
             )
         
         # Kiểm tra số tiền hiện tại không được âm
-        if current_amount and current_amount < 0:
+        if current_amount is not None and current_amount < 0:
             raise forms.ValidationError(
                 'Số tiền hiện tại không được âm.'
             )
+        
+        # Kiểm tra category ownership — chống tấn công IDOR
+        # User chỉ được liên kết category thuộc chính họ
+        user = getattr(self, '_user', None)
+        if user:
+            selected_categories = cleaned_data.get('categories_to_reduce', [])
+            invalid_categories = [
+                c for c in selected_categories if c.user_id != user.id
+            ]
+            if invalid_categories:
+                raise forms.ValidationError(
+                    'Một hoặc nhiều danh mục không thuộc về tài khoản của bạn.'
+                )
         
         return cleaned_data
 

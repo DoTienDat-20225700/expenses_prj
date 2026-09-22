@@ -1382,71 +1382,122 @@ def toggle_recurring_status(request, pk):
 @login_required
 @require_http_methods(["POST"])
 def generate_recurring_expenses(request):
-    """Generate actual expenses from due recurring templates"""
+    """Generate actual expenses/incomes from due recurring templates.
+
+    Concurrency protection:
+    - select_for_update() locks template rows so two simultaneous requests
+      cannot read the same due templates at the same time.
+    - Each occurrence is wrapped in transaction.atomic() so the Expense.create()
+      and recurring.save() either both succeed or both roll back.
+    - UniqueConstraint(recurring_template, occurrence_date) acts as a final
+      idempotency net: if the same occurrence somehow slips through, the DB
+      raises IntegrityError which we catch and skip.
+    """
+    from django.db import transaction, IntegrityError
+
     user = request.user
     today = timezone.now().date()
-    
-    # Find all active recurring expenses that are due
-    due_recurrings = RecurringExpense.objects.filter(
-        user=user,
-        is_active=True,
-        next_due_date__lte=today
-    ).select_related('category')
-    
+
     generated_count = 0
     generated_income_count = 0
-    
-    # Process each due recurring expense
-    for recurring in due_recurrings:
-        # Check if expired and deactivate if needed
-        if recurring.is_expired():
-            recurring.is_active = False
-            recurring.save()
-            continue
-        
-        # Create actual expense from template
-        Expense.objects.create(
-            user=user,
-            amount=recurring.amount,
-            description=f"[Định kỳ] {recurring.description or recurring.name}",
-            category=recurring.category,
-            date=recurring.next_due_date
-        )
-        
-        generated_count += 1
-        
-        # Update next_due_date for next occurrence
-        recurring.advance_next_due_date()
-        recurring.save()
+    skipped_duplicates = 0
 
-    due_incomes = RecurringIncome.objects.filter(
-        user=user,
-        is_active=True,
-        next_due_date__lte=today,
-    ).select_related('source')
-    for recurring_income in due_incomes:
-        if recurring_income.is_expired():
-            recurring_income.is_active = False
-            recurring_income.save()
-            continue
-
-        Income.objects.create(
-            user=user,
-            source=recurring_income.source,
-            amount=recurring_income.amount,
-            description=f"[Định kỳ] {recurring_income.description or recurring_income.name}",
-            date=recurring_income.next_due_date,
+    # ── Recurring Expenses ─────────────────────────────────────────────────────
+    # select_for_update() holds a row-level lock until the enclosing transaction
+    # commits, preventing a second concurrent request from touching the same row.
+    with transaction.atomic():
+        due_recurrings = (
+            RecurringExpense.objects
+            .select_for_update()
+            .filter(user=user, is_active=True, next_due_date__lte=today)
+            .select_related('category')
         )
-        generated_income_count += 1
-        recurring_income.advance_next_due_date()
-        recurring_income.save()
-    
-    # Notify user of results
+
+        for recurring in due_recurrings:
+            if recurring.is_expired():
+                recurring.is_active = False
+                recurring.save()
+                continue
+
+            occurrence_date = recurring.next_due_date
+
+            try:
+                with transaction.atomic():
+                    Expense.objects.create(
+                        user=user,
+                        amount=recurring.amount,
+                        description=f"[Định kỳ] {recurring.description or recurring.name}",
+                        category=recurring.category,
+                        date=occurrence_date,
+                        # Occurrence tracking — idempotency key
+                        recurring_template=recurring,
+                        occurrence_date=occurrence_date,
+                    )
+                    # Advance inside the same savepoint so a crash here rolls
+                    # back both the Expense and the date advance together.
+                    recurring.advance_next_due_date()
+                    recurring.save()
+                    generated_count += 1
+
+            except IntegrityError:
+                # UniqueConstraint tripped → occurrence already exists (duplicate).
+                logger.warning(
+                    "Duplicate recurring expense skipped: template=%s occurrence=%s",
+                    recurring.pk,
+                    occurrence_date,
+                )
+                skipped_duplicates += 1
+
+    # ── Recurring Incomes ──────────────────────────────────────────────────────
+    with transaction.atomic():
+        due_incomes = (
+            RecurringIncome.objects
+            .select_for_update()
+            .filter(user=user, is_active=True, next_due_date__lte=today)
+            .select_related('source')
+        )
+
+        for recurring_income in due_incomes:
+            if recurring_income.is_expired():
+                recurring_income.is_active = False
+                recurring_income.save()
+                continue
+
+            occurrence_date = recurring_income.next_due_date
+
+            try:
+                with transaction.atomic():
+                    Income.objects.create(
+                        user=user,
+                        source=recurring_income.source,
+                        amount=recurring_income.amount,
+                        description=f"[Định kỳ] {recurring_income.description or recurring_income.name}",
+                        date=occurrence_date,
+                        # Occurrence tracking — idempotency key
+                        recurring_income_template=recurring_income,
+                        occurrence_date=occurrence_date,
+                    )
+                    recurring_income.advance_next_due_date()
+                    recurring_income.save()
+                    generated_income_count += 1
+
+            except IntegrityError:
+                logger.warning(
+                    "Duplicate recurring income skipped: template=%s occurrence=%s",
+                    recurring_income.pk,
+                    occurrence_date,
+                )
+                skipped_duplicates += 1
+
+    # ── Notify user ────────────────────────────────────────────────────────────
     if generated_count > 0 or generated_income_count > 0:
-        messages.success(request, f'Đã tạo {generated_count} chi tiêu và {generated_income_count} thu nhập từ các mẫu định kỳ.')
+        messages.success(
+            request,
+            f'Đã tạo {generated_count} chi tiêu và {generated_income_count} thu nhập từ các mẫu định kỳ.',
+        )
     else:
         messages.info(request, 'Không có chi tiêu định kỳ nào đến hạn.')
-    
+
     return redirect('ep1:recurring_list')
 
 

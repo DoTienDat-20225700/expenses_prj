@@ -1,5 +1,7 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -19,36 +21,60 @@ class Category(models.Model):
 
 class Expense(models.Model):
     amount = models.DecimalField(
-        max_digits=15, 
-        decimal_places=2, 
-        verbose_name="Số tiền"
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="Số tiền",
+        validators=[MinValueValidator(Decimal('0.01'))],
     )
     description = models.TextField(
-        blank=True, 
-        null=True, 
+        blank=True,
+        null=True,
         verbose_name="Mô tả"
     )
     category = models.ForeignKey(
-        Category, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
         verbose_name="Danh mục"
     )
     date = models.DateField(verbose_name="Ngày chi tiêu")
     user = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE, 
+        User,
+        on_delete=models.CASCADE,
         verbose_name="Người dùng"
     )
-    
+    # --- Recurring occurrence tracking (nullable: only set when generated from a template) ---
+    recurring_template = models.ForeignKey(
+        'RecurringExpense',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='generated_expenses',
+        verbose_name="Mẫu định kỳ",
+    )
+    occurrence_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Ngày phát sinh định kỳ",
+    )
+
     class Meta:
         verbose_name = "Chi tiêu"
         verbose_name_plural = "Chi tiêu"
         ordering = ['-date']
-    
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount__gt=0),
+                name='expense_amount_positive',
+            ),
+            models.UniqueConstraint(
+                fields=['recurring_template', 'occurrence_date'],
+                name='unique_expense_per_occurrence',
+            ),
+        ]
+
     def __str__(self):
         return f"{self.amount} - {self.category} - {self.date}"
-    
 
 class Budget(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Người dùng")
@@ -56,12 +82,19 @@ class Budget(models.Model):
         max_digits=15,
         decimal_places=2,
         default=0,
-        verbose_name="Ngân sách"
+        verbose_name="Ngân sách",
+        validators=[MinValueValidator(0)],
     )
 
     class Meta:
         verbose_name = "Ngân sách"
         verbose_name_plural = "Ngân sách"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(total__gte=0),
+                name='budget_total_non_negative',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.user.username}: {self.total}"
@@ -140,7 +173,10 @@ class RecurringExpense(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Người dùng")
     name = models.CharField("Tên chi tiêu", max_length=200)
-    amount = models.DecimalField("Số tiền", max_digits=15, decimal_places=2)
+    amount = models.DecimalField(
+        "Số tiền", max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Danh mục")
     frequency = models.CharField("Tần suất", max_length=10, choices=FREQUENCY_CHOICES, default='monthly')
     
@@ -165,6 +201,12 @@ class RecurringExpense(models.Model):
         verbose_name = "Chi tiêu định kỳ"
         verbose_name_plural = "Chi tiêu định kỳ"
         ordering = ['-next_due_date']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount__gt=0),
+                name='recurring_expense_amount_positive',
+            ),
+        ]
     
     def __str__(self):
         return f"{self.name} - {self.get_frequency_display()}"
@@ -255,17 +297,44 @@ class IncomeSource(models.Model):
 
 class Income(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Người dùng")
-    amount = models.DecimalField("Số tiền", max_digits=15, decimal_places=2)
+    amount = models.DecimalField(
+        "Số tiền", max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
     source = models.ForeignKey(IncomeSource, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Nguồn thu")
     description = models.TextField("Mô tả", blank=True, null=True)
     date = models.DateField("Ngày thu")
     created_at = models.DateTimeField("Ngày tạo", auto_now_add=True)
-    
+    # --- Recurring occurrence tracking ---
+    recurring_income_template = models.ForeignKey(
+        'RecurringIncome',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='generated_incomes',
+        verbose_name="Mẫu thu nhập định kỳ",
+    )
+    occurrence_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Ngày phát sinh định kỳ",
+    )
+
     class Meta:
         verbose_name = "Thu nhập"
         verbose_name_plural = "Thu nhập"
         ordering = ['-date']
-    
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount__gt=0),
+                name='income_amount_positive',
+            ),
+            models.UniqueConstraint(
+                fields=['recurring_income_template', 'occurrence_date'],
+                name='unique_income_per_occurrence',
+            ),
+        ]
+
     def __str__(self):
         return f"{self.amount} - {self.source} - {self.date}"
 
@@ -277,7 +346,10 @@ class RecurringIncome(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Người dùng")
     source = models.ForeignKey(IncomeSource, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Nguồn thu")
     name = models.CharField("Tên khoản thu", max_length=200)
-    amount = models.DecimalField("Số tiền", max_digits=15, decimal_places=2)
+    amount = models.DecimalField(
+        "Số tiền", max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
     frequency = models.CharField("Tần suất", max_length=10, choices=FREQUENCY_CHOICES, default='monthly')
     start_date = models.DateField("Ngày bắt đầu")
     end_date = models.DateField("Ngày kết thúc", null=True, blank=True)
@@ -290,6 +362,12 @@ class RecurringIncome(models.Model):
         verbose_name = "Thu nhập định kỳ"
         verbose_name_plural = "Thu nhập định kỳ"
         ordering = ['-next_due_date']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount__gt=0),
+                name='recurring_income_amount_positive',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.name} - {self.get_frequency_display()}"
@@ -312,10 +390,17 @@ class SavingsGoal(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Người dùng")
     goal_name = models.CharField("Tên mục tiêu", max_length=200, 
                                  help_text="Ví dụ: Mua Macbook, Du lịch Nhật Bản, ...")
-    target_amount = models.DecimalField("Số tiền mục tiêu", max_digits=15, decimal_places=2,
-                                       help_text="Số tiền bạn muốn tiết kiệm")
-    current_amount = models.DecimalField("Số tiền hiện tại", max_digits=15, decimal_places=2, 
-                                        default=0, help_text="Số tiền đã tiết kiệm được")
+    target_amount = models.DecimalField(
+        "Số tiền mục tiêu", max_digits=15, decimal_places=2,
+        help_text="Số tiền bạn muốn tiết kiệm",
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+    current_amount = models.DecimalField(
+        "Số tiền hiện tại", max_digits=15, decimal_places=2,
+        default=0,
+        help_text="Số tiền đã tiết kiệm được",
+        validators=[MinValueValidator(0)],
+    )
     start_date = models.DateField("Ngày bắt đầu", help_text="Ngày bắt đầu tiết kiệm")
     target_date = models.DateField("Ngày đích", help_text="Ngày mong muốn đạt được mục tiêu")
     
@@ -337,6 +422,16 @@ class SavingsGoal(models.Model):
         verbose_name = "Mục tiêu tiết kiệm"
         verbose_name_plural = "Mục tiêu tiết kiệm"
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(target_amount__gt=0),
+                name='savings_goal_target_positive',
+            ),
+            models.CheckConstraint(
+                check=models.Q(current_amount__gte=0),
+                name='savings_goal_current_non_negative',
+            ),
+        ]
     
     def __str__(self):
         return f"{self.goal_name} - {self.target_amount:,.0f}đ"
