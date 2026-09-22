@@ -3,12 +3,10 @@ import sys
 import django
 from pathlib import Path
 
-# Lấy đường dẫn thư mục hiện tại (expenses)
-current_dir = Path(__file__).resolve().parent
-# Lấy thư mục cha (expenses_prj) để Python nhìn thấy được package 'expenses'
-repo_root = current_dir.parent
+# Lấy đường dẫn thư mục hiện tại (scripts/)
+current_dir = Path(__file__).resolve().parent.parent  # → expenses/
+repo_root = current_dir.parent                         # → expenses_prj/
 sys.path.append(str(repo_root))
-# -------------------------------
 
 # Thiết lập môi trường Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -19,16 +17,34 @@ from django.contrib.auth.models import User
 
 
 def create_admin():
-    username = 'admin'           # Tên đăng nhập
-    email = 'admin@example.com'  # Email
-    password = '123123'   # <--- ĐỔI MẬT KHẨU CỦA BẠN
+    """Tạo superuser từ environment variables.
 
-    if not User.objects.filter(username=username).exists():
-        print(f"Dang tao tai khoan Superuser: {username}...")
-        User.objects.create_superuser(username, email, password)
-        print("✅ Tao Superuser thanh cong!")
-    else:
-        print("Superuser da ton tai. Bo qua.")
+    Yêu cầu các biến môi trường:
+        DJANGO_SUPERUSER_USERNAME
+        DJANGO_SUPERUSER_EMAIL
+        DJANGO_SUPERUSER_PASSWORD
+
+    Nếu thiếu bất kỳ biến nào → bỏ qua, không crash build.
+    """
+    username = os.environ.get('DJANGO_SUPERUSER_USERNAME', '').strip()
+    email = os.environ.get('DJANGO_SUPERUSER_EMAIL', '').strip()
+    password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '').strip()
+
+    if not username or not password:
+        print(
+            "⚠️  Bỏ qua tạo superuser: thiếu DJANGO_SUPERUSER_USERNAME "
+            "hoặc DJANGO_SUPERUSER_PASSWORD."
+        )
+        return
+
+    if User.objects.filter(username=username).exists():
+        print(f"ℹ️  Superuser '{username}' đã tồn tại. Bỏ qua.")
+        return
+
+    print(f"👤 Đang tạo superuser: {username} ...")
+    User.objects.create_superuser(username=username, email=email, password=password)
+    print(f"✅ Tạo superuser '{username}' thành công!")
+
 
 if __name__ == '__main__':
     create_admin()

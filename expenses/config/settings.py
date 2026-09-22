@@ -12,8 +12,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import logging
 from decouple import config
 import dj_database_url
+
+logger = logging.getLogger(__name__)
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,16 +27,48 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+# Accepts both SECRET_KEY and DJANGO_SECRET_KEY for backwards compatibility
+SECRET_KEY = config('SECRET_KEY', default=config('DJANGO_SECRET_KEY', default=''))
+if not SECRET_KEY:
+    raise ValueError(
+        "SECRET_KEY không được để trống. "
+        "Đặt biến môi trường SECRET_KEY hoặc DJANGO_SECRET_KEY."
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default='False') in ['True', 'true', '1', True]
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS — không dùng wildcard trong production
+# Render tự inject RENDER_EXTERNAL_HOSTNAME; local dev dùng localhost
+_render_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
+_extra_hosts = config('ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = list(filter(None, [
+    'localhost',
+    '127.0.0.1',
+    _render_hostname,
+] + _extra_hosts))
+
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'  
-LOGOUT_REDIRECT_URL = '/login/' 
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+# ── Production Security Settings ──────────────────────────────────────────────
+# Chỉ bật khi DEBUG=False để không ảnh hưởng local development
+if not DEBUG:
+    # Redirect HTTP → HTTPS
+    SECURE_SSL_REDIRECT = True
+    # Trust X-Forwarded-Proto từ Render/reverse proxy
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    # HSTS: 1 năm, bao gồm subdomain, sẵn sàng preload
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    # Cookie security
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Bảo vệ content sniffing
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 
 
@@ -229,36 +264,27 @@ else:
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # Email configuration
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='caubengungo1611@gmail.com')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='')
 
-# Force read EMAIL_HOST with explicit config call
+# Email configuration
 EMAIL_HOST = config('EMAIL_HOST', default='').strip()
-
-# Debug: print to check if EMAIL_HOST is loaded
-import sys
-if 'runserver' in sys.argv or 'shell' in sys.argv:
-    print(f"[DEBUG] EMAIL_HOST loaded: '{EMAIL_HOST}' (length: {len(EMAIL_HOST)})")
 
 if EMAIL_HOST:
     import ssl
     import certifi
-    import os
-    
+
     # Set SSL cert location for macOS compatibility
     os.environ['SSL_CERT_FILE'] = certifi.where()
-    
+
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='caubengungo1611@gmail.com')
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
     EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
     EMAIL_USE_TLS = config('EMAIL_USE_TLS', default='True') in ['True', 'true', '1', True]
     EMAIL_USE_SSL = config('EMAIL_USE_SSL', default='False') in ['True', 'true', '1', True]
     EMAIL_TIMEOUT = 10
-    
-    if 'runserver' in sys.argv or 'shell' in sys.argv:
-        print(f"[DEBUG] Using SMTP backend: {EMAIL_HOST}:{EMAIL_PORT}")
+    logger.debug("Email backend: SMTP (%s:%s)", EMAIL_HOST, config('EMAIL_PORT', default=587))
 else:
     # Development: print emails to console
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    if 'runserver' in sys.argv or 'shell' in sys.argv:
-        print("[DEBUG] Using console backend (EMAIL_HOST is empty)")
+    logger.debug("Email backend: console (EMAIL_HOST is empty)")

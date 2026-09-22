@@ -20,4 +20,7 @@ ls -la staticfiles/ | head -20
 # Chạy migrate database
 python manage.py migrate
 
-python create_superuser.py
+# Tạo superuser từ env vars (không crash nếu đã tồn tại)
+# Yêu cầu: DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD
+echo "👤 Creating superuser (if DJANGO_SUPERUSER_* env vars are set)..."
+python manage.py createsuperuser --no-input || true

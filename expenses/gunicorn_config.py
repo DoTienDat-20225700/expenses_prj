@@ -1,8 +1,9 @@
 # Gunicorn configuration file for Render Free Tier (512MB RAM)
 import multiprocessing
+import os
 
-# Bind to the PORT environment variable (Render requirement)
-bind = "0.0.0.0:10000"
+# Bind to the PORT environment variable (Render sets this automatically)
+bind = f"0.0.0.0:{os.environ.get('PORT', '10000')}"
 
 # Worker processes - CRITICAL for memory management
 # Use only 1 worker for free tier to avoid OOM

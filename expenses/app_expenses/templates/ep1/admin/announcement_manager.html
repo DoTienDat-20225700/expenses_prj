@@ -112,15 +112,19 @@
                   {% endif %}
                 </td>
                 <td>
-                  <a
-                    href="{% url 'ep1:toggle_announcement' item.id %}"
-                    class="btn btn-sm btn-outline-secondary"
-                    title="Ẩn/Hiện"
-                  >
-                    <i
-                      class="fas fa-eye{% if not item.is_active %}-slash{% endif %}"
-                    ></i>
-                  </a>
+                  <form method="post" action="{% url 'ep1:toggle_announcement' item.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button
+                      type="submit"
+                      class="btn btn-sm btn-outline-secondary"
+                      title="Ẩn/Hiện"
+                      aria-label="Ẩn/Hiện thông báo {{ item.title }}"
+                    >
+                      <i
+                        class="fas fa-eye{% if not item.is_active %}-slash{% endif %}"
+                      ></i>
+                    </button>
+                  </form>
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-danger"
@@ -190,13 +194,12 @@
         >
           <i class="fas fa-times me-1"></i>Hủy
         </button>
-        <a
-          id="confirmDeleteAnnouncementLink"
-          href="#"
-          class="btn btn-danger btn-sm"
-        >
-          <i class="fas fa-trash me-1"></i>Xác nhận xóa
-        </a>
+        <form id="deleteAnnouncementForm" method="post" action="" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash me-1"></i>Xác nhận xóa
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -209,13 +212,14 @@
       modal.addEventListener("show.bs.modal", function (event) {
         var btn = event.relatedTarget;
         var title = btn.getAttribute("data-announcement-title") || "";
-        var deleteUrl = btn.getAttribute("data-delete-url") || "#";
+        var deleteUrl = btn.getAttribute("data-delete-url") || "";
 
         var titleEl = document.getElementById("deleteAnnouncementTitle");
         if (titleEl) titleEl.textContent = title;
 
-        var confirmLink = document.getElementById("confirmDeleteAnnouncementLink");
-        if (confirmLink) confirmLink.setAttribute("href", deleteUrl);
+        // Đặt form action (POST) thay vì link href
+        var form = document.getElementById("deleteAnnouncementForm");
+        if (form) form.setAttribute("action", deleteUrl);
       });
     }
   });

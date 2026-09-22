@@ -18,6 +18,7 @@ rm requirements-render.txt
 python manage.py collectstatic --no-input
 python manage.py migrate
 
-# Tạo superuser tự động
-echo "👤 Creating superuser..."
-python create_superuser.py
+# Tạo superuser từ env vars (không crash nếu đã tồn tại)
+# Yêu cầu: DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD
+echo "👤 Creating superuser (if DJANGO_SUPERUSER_* env vars are set)..."
+python manage.py createsuperuser --no-input || true

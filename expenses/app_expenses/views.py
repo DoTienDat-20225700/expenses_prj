@@ -8,6 +8,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, get_user
 from django.contrib.auth.decorators import user_passes_test, login_required
+from django.views.decorators.http import require_http_methods
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.db.models.functions import TruncDate
@@ -163,6 +165,7 @@ def ai_monitor(request):
     return render(request, 'ep1/admin/ai_monitor.html', context)
 
 @user_passes_test(is_admin)
+@require_http_methods(["POST"])
 def force_retrain_ai(request, user_id):
     """Admin ép buộc huấn luyện lại AI cho 1 user"""
     user = get_object_or_404(User, pk=user_id)
@@ -197,6 +200,7 @@ def announcement_manager(request):
     return render(request, 'ep1/admin/announcement_manager.html', {'announcements': announcements})
 
 @user_passes_test(is_admin)
+@require_http_methods(["POST"])
 def delete_announcement(request, pk):
     """Xóa thông báo"""
     announcement = get_object_or_404(Announcement, pk=pk)
@@ -205,6 +209,7 @@ def delete_announcement(request, pk):
     return redirect('ep1:announcement_manager')
 
 @user_passes_test(is_admin)
+@require_http_methods(["POST"])
 def toggle_announcement(request, pk):
     """Ẩn/Hiện thông báo"""
     announcement = get_object_or_404(Announcement, pk=pk)
@@ -1331,12 +1336,10 @@ def delete_recurring(request, pk):
     if request.method == 'POST':
         recurring.delete()
         messages.success(request, 'Đã xóa chi tiêu định kỳ.')
-        # Redirect to 'next' if provided
-        next_url = request.GET.get('next') or request.POST.get('next')
-        if next_url:
-            return redirect(next_url)
-        return redirect('ep1:recurring_list')
-    
+        # Validate next param chống open redirect
+        next_url = request.POST.get('next') or request.GET.get('next')
+        return redirect(_get_safe_redirect_url(request, next_url, 'ep1:recurring_list'))
+
     # Pass next parameter to template
     next_url = request.GET.get('next', '')
     return render(request, 'ep1/delete_recurring.html', {
@@ -1345,24 +1348,39 @@ def delete_recurring(request, pk):
     })
 
 
+def _get_safe_redirect_url(request, next_param_value, fallback):
+    """Validate next URL trước redirect để chống open redirect attack.
+
+    Chỉ cho phép redirect đến URL cùng host (relative path).
+    """
+    url = next_param_value
+    if url and url_has_allowed_host_and_scheme(
+        url=url,
+        allowed_hosts=request.get_host(),
+        require_https=request.is_secure(),
+    ):
+        return url
+    return fallback
+
+
 @login_required
+@require_http_methods(["POST"])
 def toggle_recurring_status(request, pk):
     """Bật/tắt trạng thái chi tiêu định kỳ"""
     recurring = get_object_or_404(RecurringExpense, pk=pk, user=request.user)
     recurring.is_active = not recurring.is_active
     recurring.save()
-    
+
     status = "kích hoạt" if recurring.is_active else "vô hiệu hóa"
     messages.success(request, f'Đã {status} chi tiêu định kỳ "{recurring.name}".')
-    
-    # Redirect to 'next' if provided
-    next_url = request.GET.get('next')
-    if next_url:
-        return redirect(next_url)
-    return redirect('ep1:recurring_list')
+
+    # Validate next param chống open redirect
+    next_url = request.POST.get('next') or request.GET.get('next')
+    return redirect(_get_safe_redirect_url(request, next_url, 'ep1:recurring_list'))
 
 
 @login_required
+@require_http_methods(["POST"])
 def generate_recurring_expenses(request):
     """Generate actual expenses from due recurring templates"""
     user = request.user

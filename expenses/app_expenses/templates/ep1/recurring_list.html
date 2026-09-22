@@ -282,7 +282,8 @@
                     data-bs-target="#toggleRecurringModal"
                     data-recurring-name="{{ recurring.name }}"
                     data-recurring-action="{% if recurring.is_active %}tạm dừng{% else %}kích hoạt{% endif %}"
-                    data-toggle-url="{% url 'ep1:toggle_recurring' recurring.pk %}?next={{ request.get_full_path|urlencode }}#list-section"
+                    data-toggle-url="{% url 'ep1:toggle_recurring' recurring.pk %}"
+                    data-next-url="{{ request.get_full_path|urlencode }}#list-section"
                     title="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %}"
                     aria-label="{% if recurring.is_active %}Tạm dừng{% else %}Kích hoạt{% endif %} {{ recurring.name }}"
                   >
@@ -414,12 +415,12 @@
         >
           <i class="fas fa-times me-1"></i>Hủy
         </button>
-        <a
-          href="{% url 'ep1:generate_recurring' %}"
-          class="btn btn-info btn-sm text-white"
-        >
-          <i class="fas fa-check me-1"></i>Xác nhận tạo
-        </a>
+        <form method="post" action="{% url 'ep1:generate_recurring' %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-info btn-sm text-white">
+            <i class="fas fa-check me-1"></i>Xác nhận tạo
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -463,13 +464,13 @@
         >
           <i class="fas fa-times me-1"></i>Hủy
         </button>
-        <a
-          id="confirmToggleRecurringLink"
-          href="#"
-          class="btn btn-warning btn-sm"
-        >
-          <i class="fas fa-check me-1"></i>Xác nhận
-        </a>
+        <form id="toggleRecurringForm" method="post" action="" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="next" id="toggleRecurringNextInput" value="">
+          <button type="submit" class="btn btn-warning btn-sm">
+            <i class="fas fa-check me-1"></i>Xác nhận
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -494,7 +495,10 @@
         var btn = event.relatedTarget;
         var name = btn.getAttribute("data-recurring-name") || "";
         var action = btn.getAttribute("data-recurring-action") || "";
-        var toggleUrl = btn.getAttribute("data-toggle-url") || "#";
+        // data-toggle-url chứa URL đến để đặt vào form action (POST)
+        var toggleUrl = btn.getAttribute("data-toggle-url") || "";
+        // next được đặt riêng để tránh lẫn vào URL path
+        var nextUrl = btn.getAttribute("data-next-url") || "";
 
         var nameEl = document.getElementById("toggleRecurringName");
         if (nameEl) nameEl.textContent = name;
@@ -502,8 +506,13 @@
         var actionEl = document.getElementById("toggleRecurringAction");
         if (actionEl) actionEl.textContent = action;
 
-        var confirmLink = document.getElementById("confirmToggleRecurringLink");
-        if (confirmLink) confirmLink.setAttribute("href", toggleUrl);
+        // Đặt form action và hidden next input
+        var form = document.getElementById("toggleRecurringForm");
+        if (form) {
+          form.setAttribute("action", toggleUrl);
+          var nextInput = document.getElementById("toggleRecurringNextInput");
+          if (nextInput) nextInput.value = nextUrl;
+        }
       });
     }
   });
