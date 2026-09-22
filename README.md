@@ -191,20 +191,20 @@ gunicorn config.wsgi:application
 
 Các URL dưới đây nằm dưới root `/`; phần lớn yêu cầu đăng nhập:
 
-| Nhóm | URL tiêu biểu |
-|---|---|
-| Authentication | `/login/`, `/logout/`, `/register/` |
-| Dashboard | `/`, `/dashboard/` |
-| Expenses | `/expenses/`, `/expenses/add/`, `/expenses/export/` |
-| Categories | `/categories/` |
-| Income | `/income/`, `/income/sources/` |
-| Recurring | `/recurring/`, `/recurring/add/`, `/recurring/generate/` |
-| Savings goals | `/savings-goals/` |
-| Profile | `/profile/`, `/password_change/`, `/password_reset/` |
-| Admin | `/admin/`, `/admin-dashboard/`, `/manager/users/`, `/manager/announcements/` |
-| Chat UI | `/chat-assistant/` |
-| Chat APIs | `/api/parse-expense/`, `/api/save-expense-from-chat/`, `/api/manage-expense-from-chat/`, `/api/save-income-from-chat/`, `/api/save-recurring-from-chat/` |
-| Chart/refresh APIs | `/api/chart/category/`, `/api/chart/monthly/`, `/api/chart/income-expense/`, `/api/dashboard-refresh/` |
+| Nhóm               | URL tiêu biểu                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication     | `/login/`, `/logout/`, `/register/`                                                                                                                      |
+| Dashboard          | `/`, `/dashboard/`                                                                                                                                       |
+| Expenses           | `/expenses/`, `/expenses/add/`, `/expenses/export/`                                                                                                      |
+| Categories         | `/categories/`                                                                                                                                           |
+| Income             | `/income/`, `/income/sources/`                                                                                                                           |
+| Recurring          | `/recurring/`, `/recurring/add/`, `/recurring/generate/`                                                                                                 |
+| Savings goals      | `/savings-goals/`                                                                                                                                        |
+| Profile            | `/profile/`, `/password_change/`, `/password_reset/`                                                                                                     |
+| Admin              | `/admin/`, `/admin-dashboard/`, `/manager/users/`, `/manager/announcements/`                                                                             |
+| Chat UI            | `/chat-assistant/`                                                                                                                                       |
+| Chat APIs          | `/api/parse-expense/`, `/api/save-expense-from-chat/`, `/api/manage-expense-from-chat/`, `/api/save-income-from-chat/`, `/api/save-recurring-from-chat/` |
+| Chart/refresh APIs | `/api/chart/category/`, `/api/chart/monthly/`, `/api/chart/income-expense/`, `/api/dashboard-refresh/`                                                   |
 
 Đây là Django JSON endpoints nội bộ, không phải REST API có OpenAPI/DRF.
 
