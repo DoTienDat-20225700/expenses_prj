@@ -1,408 +1,267 @@
-# 💰 MoneyManager - Ứng Dụng Quản Lý Chi Tiêu
+# MoneyManager
 
-<div align="center">
+Ứng dụng web Django quản lý tài chính cá nhân: theo dõi chi tiêu, thu nhập, ngân sách, giao dịch định kỳ và mục tiêu tiết kiệm.
 
-![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+## Overview
 
-**Ứng dụng web quản lý tài chính cá nhân hiện đại, giúp bạn theo dõi chi tiêu, thu nhập và ngân sách một cách dễ dàng.**
+MoneyManager là Django monolith với app chính `app_expenses`. Người dùng đăng ký, đăng nhập và quản lý dữ liệu tài chính của mình qua Django templates. Ứng dụng có chatbot hỗ trợ truy vấn và xác nhận giao dịch, dự đoán danh mục bằng machine learning, cùng tùy chọn lưu ảnh đại diện qua Cloudinary.
 
-[Tính Năng](#-tính-năng) •
-[Cài Đặt](#-cài-đặt) •
-[Sử Dụng](#-sử-dụng) •
-[Công Nghệ](#-công-nghệ-sử-dụng)
+## Features
 
-</div>
+- Đăng ký, đăng nhập, đăng xuất, đổi mật khẩu và khôi phục mật khẩu.
+- Quản lý hồ sơ cá nhân và ảnh đại diện.
+- CRUD chi tiêu, danh mục chi tiêu và xuất CSV.
+- CRUD thu nhập và nguồn thu nhập.
+- Dashboard với tổng hợp, ngân sách, giao dịch gần đây và biểu đồ.
+- Chi tiêu định kỳ và thu nhập định kỳ.
+- Mục tiêu tiết kiệm, cập nhật tiến độ và phân tích danh mục cần cắt giảm.
+- Chat assistant cho truy vấn tài chính, preview và xác nhận tạo/sửa/xóa giao dịch.
+- Dự đoán danh mục bằng scikit-learn theo user.
+- Khu vực quản trị cho superuser và Django Admin.
+- Quản lý thông báo hệ thống.
 
----
+OCR, public REST API độc lập và mobile app chưa được triển khai trong source hiện tại.
 
-## ✨ Tính Năng
+## Tech Stack
 
-### 🔐 Xác Thực & Bảo Mật
+- Python 3.10+ và Django 5.2.
+- Django ORM, Django forms, function-based views và Django templates.
+- MySQL hoặc PostgreSQL thông qua `DATABASE_URL` hoặc biến database riêng.
+- Gunicorn và WhiteNoise.
+- HTML/CSS/JavaScript; template hiện tại tham chiếu Bootstrap và Font Awesome.
+- Cloudinary tùy chọn cho media.
+- scikit-learn, pandas, NumPy, SciPy, joblib cho ML.
+- Google Gemini tùy chọn thông qua `google-genai`.
 
-- ✅ Đăng ký và đăng nhhập người dùng
-- ✅ Quản lý hồ sơ cá nhân với ảnh đại diện
-- ✅ Bảo mật session và xác thực
+## Project Structure
 
-### 📊 Quản Lý Tài Chính
-
-- ✅ **Dashboard tổng quan** - Hiển thị thống kê tài chính theo tháng
-- ✅ **Theo dõi chi tiêu** - Ghi chép và phân loại các khoản chi tiêu
-- ✅ **Quản lý thu nhập** - Theo dõi các nguồn thu nhập
-- ✅ **Ngân sách** - Đặt và theo dõi ngân sách hàng tháng
-- ✅ **Danh mục chi tiêu** - Phân loại chi tiêu theo danh mục tùy chỉnh
-- ✅ **Thống kê & Báo cáo** - Biểu đồ và phân tích chi tiết
-
-### 🎨 Giao Diện & Trải Nghiệm
-
-- ✅ **Dark Mode** - Chế độ tối/sáng
-- ✅ **Responsive Design** - Tối ưu cho mọi thiết bị
-- ✅ **UI/UX hiện đại** - Thiết kế đẹp mắt với hiệu ứng glassmorphism
-- ✅ **Thông báo thông minh** - Cảnh báo và thông báo người dùng
-- ✅ **Animations mượt mà** - Trải nghiệm người dùng tốt nhất
-
-### 🤖 Tính Năng Nâng Cao
-
-- ✅ **Machine Learning** - Dự đoán danh mục chi tiêu tự động
-- ✅ **OCR Integration** - Quét hóa đơn tự động (sẵn sàng tích hợp)
-- ✅ **Fake Data Generator** - Tạo dữ liệu mẫu để test
-
----
-
-## 🚀 Cài Đặt
-
-### Yêu Cầu Hệ Thống
-
-- Python 3.10 hoặc cao hơn
-- PostgreSQL hoặc MySQL (khuyến nghị) hoặc SQLite (development)
-- pip (Python package manager)
-
-### Các Bước Cài Đặt
-
-#### 1. Clone Repository
-
-```bash
-git clone https://github.com/your-username/expenses_prj.git
-cd expenses_prj/expenses
+```text
+expenses_prj/
+├── README.md
+├── Procfile
+├── build.sh
+├── runtime.txt
+└── expenses/
+    ├── manage.py
+    ├── requirements.txt
+    ├── build.sh
+    ├── render.yaml
+    ├── gunicorn_config.py
+    ├── .env.example
+    ├── config/              # settings, root URLs, ASGI, WSGI
+    ├── app_expenses/        # models, views, forms, URLs, admin, tests
+    │   ├── migrations/
+    │   ├── templates/ep1/
+    │   ├── static/ep1/
+    │   └── utils/           # chatbot, NLP, Gemini, recurring logic
+    ├── scripts/             # fake data, superuser, database utilities
+    ├── media/               # local uploaded media
+    └── staticfiles/         # collectstatic output
 ```
 
-#### 2. Tạo Virtual Environment
+Không nên commit virtual environment, secrets hoặc generated artifacts.
 
-```bash
-# Tạo virtual environment
-python3 -m venv venv
+## System Architecture
 
-# Kích hoạt virtual environment
-# Trên macOS/Linux:
-source venv/bin/activate
-# Trên Windows:
-# venv\Scripts\activate
+```text
+Browser
+  -> config.urls -> app_expenses.urls
+  -> function-based views
+  -> forms / chatbot utilities / ML utilities
+  -> Django ORM -> configured database
+
+Uploads -> local filesystem hoặc Cloudinary
+Static files -> app static -> collectstatic -> WhiteNoise
 ```
 
-#### 3. Cài Đặt Dependencies
+Model chính gồm `Expense`, `Income`, `Category`, `IncomeSource`, `Budget`, `RecurringExpense`, `RecurringIncome`, `SavingsGoal`, `Profile` và `Announcement`. Giao dịch gắn với user; các form chính lọc category/source theo user hiện tại.
+
+## Installation
+
+Yêu cầu: Python 3.10+, pip và MySQL/PostgreSQL nếu không dùng database URL có sẵn.
+
+Từ thư mục repository:
 
 ```bash
+python3 -m venv expenses/venv
+source expenses/venv/bin/activate
+cd expenses
 pip install -r requirements.txt
-```
-
-#### 4. Cấu Hình Environment Variables
-
-Tạo file `.env` từ file mẫu:
-
-```bash
 cp .env.example .env
 ```
 
-Chỉnh sửa file `.env` với thông tin của bạn:
+Trên Windows, kích hoạt bằng `expenses\\venv\\Scripts\\activate`.
+
+Mở `expenses/.env` và đổi `DJANGO_SECRET_KEY` thành `SECRET_KEY`, vì `config/settings.py` đọc biến `SECRET_KEY`.
+
+## Environment Variables
+
+### Django và database
 
 ```env
-DJANGO_SECRET_KEY=your-secret-key-here
+SECRET_KEY=replace-with-a-long-random-secret
 DEBUG=True
-DATABASE_NAME=expenses_db
-DATABASE_USER=your_db_user
-DATABASE_PASSWORD=your_db_password
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
+
+# Có thể dùng DATABASE_URL thay cho các biến bên dưới.
+DATABASE_URL=mysql://user:password@127.0.0.1:3306/expenses_db
+# DATABASE_ENGINE=django.db.backends.mysql
+# DATABASE_NAME=expenses_db
+# DATABASE_USER=root
+# DATABASE_PASSWORD=
+# DATABASE_HOST=127.0.0.1
+# DATABASE_PORT=3306
 ```
 
-> **Lưu ý:** Để tạo SECRET_KEY mới, bạn có thể chạy:
->
-> ```bash
-> python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-> ```
+Khi không có `DATABASE_URL`, settings mặc định dùng MySQL tại `127.0.0.1:3306`. Production cần `DEBUG=False`, secret riêng và allowlist host phù hợp. Hiện settings vẫn đặt `ALLOWED_HOSTS = ['*']`; đây là known issue.
 
-#### 5. Cấu Hình Database
+### Chat assistant
 
-**Option A: PostgreSQL (Khuyến nghị cho production)**
-
-```bash
-# Tạo database trong PostgreSQL
-createdb expenses_db
+```env
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_TIMEOUT_MS=10000
+CHAT_RATE_LIMIT=10
+CHAT_RATE_WINDOW_SECONDS=60
 ```
 
-**Option B: MySQL**
+### Cloudinary
+
+```env
+CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
+# Hoặc dùng CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
+```
+
+Không có `CLOUDINARY_CLOUD_NAME` thì app dùng local filesystem cho media.
+
+### Email/password reset
+
+Nếu không có `EMAIL_HOST`, development dùng console email backend. SMTP cần `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` và `DEFAULT_FROM_EMAIL`.
+
+## Database Setup
+
+MySQL local:
 
 ```sql
 CREATE DATABASE expenses_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-**Option C: SQLite (Chỉ dành cho development)**
-
-Không cần cấu hình gì thêm, Django sẽ tự tạo file db.sqlite3
-
-#### 6. Chạy Migrations
+Hoặc tạo database PostgreSQL và cấu hình `DATABASE_URL`. Sau đó chạy từ thư mục `expenses`:
 
 ```bash
 python manage.py migrate
-```
-
-#### 7. Tạo Superuser (Admin)
-
-**Cách 1: Tự động (sử dụng script)**
-
-```bash
-python create_superuser.py
-```
-
-**Cách 2: Thủ công**
-
-```bash
 python manage.py createsuperuser
 ```
 
-#### 8. Tạo Dữ Liệu Mẫu (Tùy chọn)
+> `expenses/scripts/create_superuser.py` tồn tại nhưng build scripts tham chiếu sai đường dẫn và script có credentials mặc định không an toàn. Không dùng script này cho production.
+
+## Running The Project
 
 ```bash
-python fake_data.py
-```
-
-Script này sẽ tạo:
-
-- Người dùng mẫu
-- Danh mục chi tiêu
-- Nguồn thu nhập
-- Chi tiêu và thu nhập mẫu
-
-#### 9. Chạy Development Server
-
-```bash
+cd expenses
 python manage.py runserver
 ```
 
-Truy cập ứng dụng tại: **http://127.0.0.1:8000**
+Mở [http://127.0.0.1:8000/](http://127.0.0.1:8000/). Django Admin ở [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/).
 
----
-
-## 📖 Sử Dụng
-
-### Đăng Nhập
-
-1. Truy cập trang đăng nhập: `http://127.0.0.1:8000/login`
-2. Sử dụng tài khoản đã tạo hoặc đăng ký tài khoản mới
-3. Sau khi đăng nhập, bạn sẽ được chuyển đến Dashboard
-
-### Dashboard
-
-Dashboard hiển thị tổng quan tài chính của bạn:
-
-- **Tổng Thu Nhập** - Thu nhập trong tháng hiện tại
-- **Tổng Chi Tiêu** - Chi tiêu trong tháng hiện tại
-- **Ngân Sách Còn Lại** - Số tiền còn lại sau khi trừ chi tiêu
-- **Chi Tiêu Gần Đây** - 5 khoản chi tiêu mới nhất
-- **Thanh Toán Sắp Tới** - Các khoản cần thanh toán
-
-### Quản Lý Chi Tiêu
-
-1. Vào menu **Expenses** > **Add Expense**
-2. Nhập thông tin:
-   - Tên chi tiêu
-   - Số tiền
-   - Danh mục
-   - Ngày chi tiêu
-   - Ghi chú (tùy chọn)
-3. Upload hóa đơn/ảnh (tùy chọn)
-
-### Quản Lý Thu Nhập
-
-1. Vào menu **Income** > **Add Income**
-2. Nhập thông tin thu nhập
-3. Chọn nguồn thu nhập
-
-### Quản Lý Ngân Sách
-
-1. Vào **Budget** để xem và chỉnh sửa ngân sách
-2. Đặt ngân sách cho từng danh mục chi tiêu
-3. Theo dõi tiến độ sử dụng ngân sách
-
-### Admin Panel
-
-Truy cập admin panel tại: `http://127.0.0.1:8000/admin`
-
-Admin có thể:
-
-- Quản lý người dùng
-- Quản lý danh mục
-- Xem tất cả giao dịch
-- Quản lý cấu hình hệ thống
-
----
-
-## 🛠 Công Nghệ Sử Dụng
-
-### Backend
-
-- **Django 5.2** - Web framework chính
-- **Python 3.10+** - Ngôn ngữ lập trình
-- **PostgreSQL/MySQL** - Database
-- **Gunicorn** - WSGI HTTP Server (production)
-- **WhiteNoise** - Static file serving
-
-### Frontend
-
-- **HTML5/CSS3** - Markup & Styling
-- **JavaScript** - Client-side logic
-- **Bootstrap 5** - UI Framework
-- **Font Awesome** - Icons
-
-### Machine Learning
-
-- **scikit-learn** - ML algorithms
-- **pandas** - Data manipulation
-- **numpy** - Numerical computing
-- **joblib** - Model persistence
-
-### Utilities
-
-- **Pillow** - Image processing
-- **python-decouple** - Environment management
-- **django-widget-tweaks** - Form rendering
-- **django-cleanup** - Automatic file cleanup
-- **Faker** - Fake data generation
-
----
-
-## 📁 Cấu Trúc Dự Án
-
-```
-expenses_prj/
-├── expenses/                      # Thư mục chính của project
-│   ├── app_expenses/             # Django app chính
-│   │   ├── migrations/          # Database migrations
-│   │   ├── static/              # Static files (CSS, JS, images)
-│   │   ├── templates/           # HTML templates
-│   │   │   ├── ep1/            # App templates
-│   │   │   └── users/          # User authentication templates
-│   │   ├── admin.py            # Admin configuration
-│   │   ├── models.py           # Database models
-│   │   ├── views.py            # View functions
-│   │   ├── urls.py             # URL routing
-│   │   ├── form.py             # Django forms
-│   │   ├── validators.py       # Custom validators
-│   │   └── ml_utils.py         # Machine learning utilities
-│   ├── config/                   # Project configuration
-│   │   ├── settings.py         # Main settings
-│   │   ├── urls.py             # Main URL configuration
-│   │   └── wsgi.py             # WSGI configuration
-│   ├── media/                    # User uploaded files
-│   ├── venv/                     # Virtual environment
-│   ├── manage.py                 # Django management script
-│   ├── requirements.txt          # Python dependencies
-│   ├── .env                      # Environment variables (không commit)
-│   ├── .env.example             # Environment variables template
-│   ├── fake_data.py             # Fake data generator
-│   ├── create_superuser.py      # Auto create superuser
-│   ├── manage_db.py             # Database utilities
-│   ├── build.sh                 # Build script (production)
-│   └── expense_model_1.pkl      # Trained ML model
-└── README.md                     # Documentation này
-```
-
----
-
-## 🔧 Utility Scripts
-
-### 1. Fake Data Generator (`fake_data.py`)
-
-Tạo dữ liệu mẫu cho development và testing:
+Static files:
 
 ```bash
-python fake_data.py
+python manage.py collectstatic --no-input
 ```
 
-### 2. Create Superuser (`create_superuser.py`)
-
-Tự động tạo superuser:
+Gunicorn trong môi trường đã cấu hình:
 
 ```bash
-python create_superuser.py
+gunicorn config.wsgi:application
 ```
 
-### 3. Database Management (`manage_db.py`)
+`Procfile`, `render.yaml`, `gunicorn_config.py` và hai build script hiện chưa thống nhất working directory, port và đường dẫn tạo superuser; cần rà soát trước khi deploy Render.
 
-Quản lý database utilities:
+## Main Features / User Flow
+
+1. User đăng ký/đăng nhập; signal tạo profile, category và income source mặc định.
+2. User quản lý expense, income, category, source và budget của mình.
+3. Dashboard tổng hợp dữ liệu, biểu đồ và giao dịch gần đây.
+4. User tạo recurring expense/income và kích hoạt sinh giao dịch đến hạn.
+5. User tạo savings goal, cập nhật tiến độ và xem gợi ý.
+6. Chat assistant phân tích câu lệnh, trả preview và yêu cầu xác nhận trước khi ghi dữ liệu ở các flow hỗ trợ.
+7. Superuser dùng `/admin/` hoặc manager pages để quản lý user, announcement và AI monitor.
+
+## API / URLs
+
+Các URL dưới đây nằm dưới root `/`; phần lớn yêu cầu đăng nhập:
+
+| Nhóm | URL tiêu biểu |
+|---|---|
+| Authentication | `/login/`, `/logout/`, `/register/` |
+| Dashboard | `/`, `/dashboard/` |
+| Expenses | `/expenses/`, `/expenses/add/`, `/expenses/export/` |
+| Categories | `/categories/` |
+| Income | `/income/`, `/income/sources/` |
+| Recurring | `/recurring/`, `/recurring/add/`, `/recurring/generate/` |
+| Savings goals | `/savings-goals/` |
+| Profile | `/profile/`, `/password_change/`, `/password_reset/` |
+| Admin | `/admin/`, `/admin-dashboard/`, `/manager/users/`, `/manager/announcements/` |
+| Chat UI | `/chat-assistant/` |
+| Chat APIs | `/api/parse-expense/`, `/api/save-expense-from-chat/`, `/api/manage-expense-from-chat/`, `/api/save-income-from-chat/`, `/api/save-recurring-from-chat/` |
+| Chart/refresh APIs | `/api/chart/category/`, `/api/chart/monthly/`, `/api/chart/income-expense/`, `/api/dashboard-refresh/` |
+
+Đây là Django JSON endpoints nội bộ, không phải REST API có OpenAPI/DRF.
+
+## Scripts
+
+Các script nằm trong `expenses/scripts/`:
 
 ```bash
-python manage_db.py
+cd expenses
+python scripts/fake_data.py
+python scripts/debug_cloudinary.py
+python scripts/manage_db.py
 ```
 
-### 4. Build Script (`build.sh`)
+`fake_data.py` dành cho development/testing. `manage_db.py` có logic phụ thuộc MySQL/Homebrew và không phải công cụ database portable.
 
-Script deployment cho production:
-
-```bash
-chmod +x build.sh
-./build.sh
-```
-
----
-
-## 🧪 Testing
-
-### Chạy Tests
+## Running Tests
 
 ```bash
+cd expenses
 python manage.py test
+python manage.py check
+python manage.py check --deploy
+python manage.py makemigrations --check --dry-run
+python manage.py showmigrations
 ```
 
-### Test Coverage
+Test hiện tập trung trong `app_expenses/tests.py`, chủ yếu cho chatbot, parsing, rate limit và một số flow xác nhận tạo/sửa/xóa. Chưa có bộ test đầy đủ cho authentication, authorization matrix, uploads, admin actions, recurring generation, migrations và deployment.
 
-```bash
-coverage run --source='.' manage.py test
-coverage report
-```
+## Screenshots
 
----
+Repository có asset giao diện tại `expenses/app_expenses/static/ep1/`, gồm logo, background và ảnh mặc định. Chưa có bộ screenshot sản phẩm được quản lý như tài liệu chính thức.
 
-## 🤝 Contributing
+## Known Issues
 
-Nếu bạn muốn đóng góp cho dự án:
+- `SECRET_KEY` trong settings không khớp `DJANGO_SECRET_KEY` trong `.env.example`.
+- Settings mặc định MySQL; SQLite không phải database mặc định.
+- `ALLOWED_HOSTS` đang cho phép mọi host và production security headers/cookie settings chưa đầy đủ.
+- Một số mutation endpoint cần được chuẩn hóa thành POST-only và bảo vệ CSRF.
+- Sinh recurring transactions cần atomicity/idempotency khi có request đồng thời.
+- Một số amount field chưa có database-level constraint chống giá trị âm.
+- ML training bằng thread trong web process có thể gây tải CPU/memory khi scale.
+- Render configuration và build scripts chưa thống nhất working directory, port và đường dẫn script.
+- `google-genai` chưa được pin version trong `requirements.txt`.
+- Không có demo credentials an toàn được xác nhận trong repository.
 
-1. Fork repository
-2. Tạo branch mới (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Tạo Pull Request
+## Future Improvements
 
----
+1. Chuẩn hóa secrets, `ALLOWED_HOSTS`, HTTPS/cookie settings và loại bỏ credentials hard-coded.
+2. Chuyển mutation endpoints sang POST-only; tăng authorization tests và enforce ownership ở model/service layer.
+3. Dùng transaction, locking và idempotency cho recurring generation.
+4. Thêm constraints/indexes và tối ưu aggregate/query patterns dựa trên profiling.
+5. Chuyển ML training sang task queue và quản lý model artifacts ngoài web filesystem.
+6. Tách production/development dependencies và pin runtime dependencies.
+7. Bổ sung test cho auth, permission, CRUD, uploads, migrations, admin, recurring và deployment smoke checks.
+8. Thống nhất một cấu hình Render/deployment duy nhất.
 
-## 📝 License
+## Contributing
 
-Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE` để biết thêm chi tiết.
-
----
-
-## 👨‍💻 Author
-
-**Do Tien Dat - 20225700**
-
-- GitHub: [@DoTienDat-20225700](https://github.com/DoTienDat-20225700)
-
----
-
-## 🙏 Acknowledgments
-
-- Django Documentation
-- Bootstrap Team
-- Font Awesome
-- Community contributors
-
----
-
-## 📞 Support
-
-Nếu bạn gặp vấn đề hoặc có câu hỏi:
-
-1. Kiểm tra [Issues](https://github.com/your-username/expenses_prj/issues) đã tồn tại
-2. Tạo issue mới nếu chưa có
-3. Liên hệ qua email: your-email@example.com
-
----
-
-<div align="center">
-
-**⭐ Nếu dự án hữu ích, đừng quên cho một star nhé! ⭐**
-
-Made with ❤️ by Do Tien Dat
-
-</div>
+Giữ thay đổi tập trung, cập nhật test/tài liệu liên quan và chạy `python manage.py test` cùng Django checks trước khi tạo pull request.
