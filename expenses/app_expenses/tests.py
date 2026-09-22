@@ -755,3 +755,261 @@ class PerformanceQueryRegressionTests(TestCase):
         # Dọn dẹp model file sau test
         if os.path.exists(model_path):
             os.remove(model_path)
+
+
+class ServiceLayerTests(TestCase):
+    """Direct unit tests for Phase 4 service layer modules."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username='service_user',
+            password='service_password123',
+            email='service@user.com',
+        )
+        self.cat = Category.objects.create(name='Ăn uống Service', user=self.user)
+        self.source = IncomeSource.objects.create(name='Lương Service', user=self.user)
+        self.today = timezone.now().date()
+
+    def test_recurring_service_generation_and_idempotency(self):
+        from app_expenses.services import generate_due_recurring_transactions
+
+        rec_exp = RecurringExpense.objects.create(
+            user=self.user,
+            name='Tiền mạng Service',
+            amount=Decimal('300000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=self.today - timedelta(days=35),
+            next_due_date=self.today,
+            is_active=True,
+        )
+        rec_inc = RecurringIncome.objects.create(
+            user=self.user,
+            source=self.source,
+            name='Lương tháng Service',
+            amount=Decimal('15000000'),
+            frequency='monthly',
+            start_date=self.today - timedelta(days=35),
+            next_due_date=self.today,
+            is_active=True,
+        )
+
+        gen_exp, gen_inc, skipped = generate_due_recurring_transactions(self.user, today=self.today)
+        self.assertEqual(gen_exp, 1)
+        self.assertEqual(gen_inc, 1)
+        self.assertEqual(skipped, 0)
+
+        # Kiểm tra Expense/Income đã được sinh
+        self.assertTrue(Expense.objects.filter(recurring_template=rec_exp, occurrence_date=self.today).exists())
+        self.assertTrue(Income.objects.filter(recurring_income_template=rec_inc, occurrence_date=self.today).exists())
+
+        # Reset next_due_date về hôm nay và chạy lại -> Phải bắt IntegrityError và tăng skipped
+        rec_exp.refresh_from_db()
+        rec_exp.next_due_date = self.today
+        rec_exp.save()
+
+        rec_inc.refresh_from_db()
+        rec_inc.next_due_date = self.today
+        rec_inc.save()
+
+        gen_exp2, gen_inc2, skipped2 = generate_due_recurring_transactions(self.user, today=self.today)
+        self.assertEqual(gen_exp2, 0)
+        self.assertEqual(gen_inc2, 0)
+        self.assertEqual(skipped2, 2)
+
+    def test_recurring_service_toggle(self):
+        from app_expenses.services import toggle_recurring_active_status
+
+        rec_exp = RecurringExpense.objects.create(
+            user=self.user,
+            name='Netflix Service',
+            amount=Decimal('260000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=self.today,
+            next_due_date=self.today,
+            is_active=True,
+        )
+
+        is_active, name = toggle_recurring_active_status(rec_exp.pk, self.user)
+        self.assertFalse(is_active)
+        self.assertEqual(name, 'Netflix Service')
+
+        is_active2, _ = toggle_recurring_active_status(rec_exp.pk, self.user)
+        self.assertTrue(is_active2)
+
+    def test_dashboard_service_summary_metrics(self):
+        from app_expenses.services import get_dashboard_summary_metrics
+
+        Expense.objects.create(user=self.user, category=self.cat, amount=Decimal('100000'), date=self.today)
+        Income.objects.create(user=self.user, source=self.source, amount=Decimal('500000'), date=self.today)
+        Budget.objects.create(user=self.user, total=Decimal('2000000'))
+
+        metrics = get_dashboard_summary_metrics(self.user, today=self.today)
+        self.assertEqual(metrics['total_expenses'], Decimal('100000'))
+        self.assertEqual(metrics['total_income'], Decimal('500000'))
+        self.assertEqual(metrics['balance'], Decimal('400000'))
+        self.assertEqual(metrics['budget_remaining'], Decimal('1900000'))
+        self.assertEqual(metrics['budget_percentage'], 5.0)
+        self.assertEqual(len(metrics['recent_expenses']), 1)
+        self.assertEqual(len(metrics['recent_income']), 1)
+
+    def test_dashboard_service_charts_and_refresh(self):
+        from app_expenses.services import (
+            get_monthly_trend_chart_data,
+            get_expense_vs_income_chart_data,
+            get_category_distribution_chart_data,
+            get_dashboard_refresh_payload,
+        )
+
+        Expense.objects.create(user=self.user, category=self.cat, amount=Decimal('150000'), date=self.today)
+        Income.objects.create(user=self.user, source=self.source, amount=Decimal('600000'), date=self.today)
+
+        cat_chart = get_category_distribution_chart_data(self.user)
+        self.assertEqual(cat_chart['labels'], ['Ăn uống Service'])
+        self.assertEqual(cat_chart['data'], [150000.0])
+
+        trend_chart = get_monthly_trend_chart_data(self.user, today=self.today)
+        self.assertEqual(len(trend_chart['labels']), 6)
+        self.assertEqual(len(trend_chart['data']), 6)
+        self.assertEqual(trend_chart['data'][-1], 150000.0)
+
+        vs_chart = get_expense_vs_income_chart_data(self.user, today=self.today)
+        self.assertEqual(len(vs_chart['expenses']), 6)
+        self.assertEqual(len(vs_chart['income']), 6)
+        self.assertEqual(vs_chart['expenses'][-1], 150000.0)
+        self.assertEqual(vs_chart['income'][-1], 600000.0)
+
+        refresh_payload = get_dashboard_refresh_payload(self.user, today=self.today)
+        self.assertTrue(refresh_payload['success'])
+        self.assertEqual(refresh_payload['summary']['this_month_expenses'], 150000.0)
+        self.assertEqual(refresh_payload['summary']['this_month_income'], 600000.0)
+
+    def test_savings_service_sync_and_suggestions(self):
+        from app_expenses.services import (
+            sync_savings_goal_status,
+            calculate_ai_savings_suggestions,
+        )
+
+        goal = SavingsGoal.objects.create(
+            user=self.user,
+            goal_name='Xe máy Service',
+            target_amount=Decimal('10000000'),
+            current_amount=Decimal('10000000'),
+            start_date=self.today - timedelta(days=10),
+            target_date=self.today + timedelta(days=20),
+            is_completed=False,
+        )
+        # sync status should mark goal completed
+        changed = sync_savings_goal_status(goal)
+        self.assertTrue(changed)
+        goal.refresh_from_db()
+        self.assertTrue(goal.is_completed)
+
+        # AI suggestions for completed goal
+        sug_comp = calculate_ai_savings_suggestions(self.user, goal)
+        self.assertEqual(sug_comp['recommendations'][0]['type'], 'success')
+
+        # Active incomplete goal
+        goal2 = SavingsGoal.objects.create(
+            user=self.user,
+            goal_name='Laptop Service',
+            target_amount=Decimal('20000000'),
+            current_amount=Decimal('2000000'),
+            start_date=self.today,
+            target_date=self.today + timedelta(days=60),
+            is_completed=False,
+        )
+        goal2.categories_to_reduce.add(self.cat)
+        Expense.objects.create(user=self.user, category=self.cat, amount=Decimal('600000'), date=self.today - timedelta(days=5))
+
+        sug2 = calculate_ai_savings_suggestions(self.user, goal2)
+        self.assertTrue(sug2['is_achievable'] in (True, False))
+        self.assertTrue(len(sug2['category_analysis']) > 0)
+        self.assertIn('weekly_plan', sug2)
+        self.assertIn('monthly_plan', sug2)
+
+    def test_chat_service_helpers_and_actions(self):
+        from app_expenses.services import (
+            build_recurring_chat_preview,
+            build_expense_action_preview,
+            create_income_from_chat,
+            create_recurring_from_chat,
+            manage_expense_from_chat,
+            create_expense_from_chat,
+        )
+
+        # build_recurring_chat_preview
+        preview = build_recurring_chat_preview(
+            "Tiền nhà 5 triệu mỗi tháng",
+            {'amount': 5000000.0, 'frequency': 'monthly'},
+            self.user,
+            'CREATE_RECURRING_EXPENSE',
+        )
+        self.assertIsNotNone(preview)
+        self.assertEqual(preview['amount'], 5000000.0)
+        self.assertEqual(preview['frequency'], 'monthly')
+
+        # create_income_from_chat
+        success, inc_resp, status = create_income_from_chat(self.user, {
+            'amount': '2000000',
+            'description': 'Thưởng tết',
+            'source_name': 'Công ty',
+            'date': self.today.isoformat(),
+        })
+        self.assertTrue(success)
+        self.assertEqual(status, 200)
+        self.assertIn('income_id', inc_resp)
+
+        # create_recurring_from_chat
+        success, rec_resp, status = create_recurring_from_chat(self.user, {
+            'amount': '1000000',
+            'name': 'Gửi tiết kiệm định kỳ',
+            'frequency': 'monthly',
+            'start_date': self.today.isoformat(),
+            'transaction_type': 'recurring_income',
+            'source_name': 'Tiết kiệm',
+        })
+        self.assertTrue(success)
+        self.assertEqual(status, 200)
+        self.assertIn('recurring_id', rec_resp)
+
+        # create_expense_from_chat
+        success, exp_resp, status = create_expense_from_chat(self.user, {
+            'amount': '75000',
+            'description': 'Ăn trưa chat service',
+            'category_id': self.cat.id,
+            'date': self.today.isoformat(),
+        })
+        self.assertTrue(success)
+        self.assertEqual(status, 200)
+        exp_id = exp_resp['expense_id']
+
+        # build_expense_action_preview
+        action_prev = build_expense_action_preview('sửa ăn trưa chat service', self.user, 'EDIT_EXPENSE')
+        self.assertIsNotNone(action_prev)
+        self.assertEqual(action_prev['expense_id'], exp_id)
+
+        # manage_expense_from_chat (edit)
+        success, edit_resp, status = manage_expense_from_chat(self.user, {
+            'expense_id': exp_id,
+            'action': 'edit',
+            'amount': '80000',
+            'description': 'Ăn trưa buffet',
+            'category_id': self.cat.id,
+            'date': self.today.isoformat(),
+        })
+        self.assertTrue(success)
+        self.assertEqual(edit_resp['action'], 'edit')
+        exp = Expense.objects.get(id=exp_id)
+        self.assertEqual(exp.amount, Decimal('80000'))
+
+        # manage_expense_from_chat (delete)
+        success, del_resp, status = manage_expense_from_chat(self.user, {
+            'expense_id': exp_id,
+            'action': 'delete',
+        })
+        self.assertTrue(success)
+        self.assertEqual(del_resp['action'], 'delete')
+        self.assertFalse(Expense.objects.filter(id=exp_id).exists())

@@ -21,6 +21,23 @@ from decouple import config
 from .models import *
 from .form import *
 from .ml_utils import predict_category, train_model, get_model_path
+from .services import (
+    generate_due_recurring_transactions,
+    toggle_recurring_active_status,
+    get_dashboard_summary_metrics,
+    get_monthly_trend_chart_data,
+    get_expense_vs_income_chart_data,
+    get_category_distribution_chart_data,
+    get_dashboard_refresh_payload,
+    calculate_ai_savings_suggestions,
+    sync_savings_goal_status,
+    build_recurring_chat_preview,
+    build_expense_action_preview,
+    create_income_from_chat,
+    create_recurring_from_chat,
+    manage_expense_from_chat,
+    create_expense_from_chat,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -675,43 +692,8 @@ def predict_category_api(request):
 @login_required
 def dashboard(request):
     """Dashboard with charts and statistics"""
-    from datetime import datetime
-    from dateutil.relativedelta import relativedelta
-    
-    user = request.user
-    today = timezone.now().date()
-    
-    # Tháng hiện tại
-    first_day_this_month = today.replace(day=1)
-    first_day_next_month = (first_day_this_month + relativedelta(months=1))
-    
-    # Tháng trước
-    first_day_last_month = (first_day_this_month - relativedelta(months=1))
-    
-    # Thống kê chi tiêu (gộp total, tháng này, tháng trước thành 1 query)
-    expense_stats = Expense.objects.filter(user=user).aggregate(
-        total=Sum('amount'),
-        this_month=Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
-        last_month=Sum('amount', filter=Q(date__gte=first_day_last_month, date__lt=first_day_this_month)),
-    )
-    total_expenses = expense_stats['total'] or 0
-    this_month_expenses = expense_stats['this_month'] or 0
-    last_month_expenses = expense_stats['last_month'] or 0
-    
-    # Thống kê thu nhập (gộp total, tháng này thành 1 query)
-    income_stats = Income.objects.filter(user=user).aggregate(
-        total=Sum('amount'),
-        this_month=Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
-    )
-    total_income = income_stats['total'] or 0
-    this_month_income = income_stats['this_month'] or 0
-    
-    # Số dư
-    balance = total_income - total_expenses
-    
-    # Budget
-    budget_obj, _ = Budget.objects.get_or_create(user=user)
-    
+    budget_obj, _ = Budget.objects.get_or_create(user=request.user)
+
     # Xử lý Budget form (như bên ep1_lists)
     if 'budget_submit' in request.POST:
         b_form = BudgetForm(request.POST, instance=budget_obj)
@@ -721,255 +703,38 @@ def dashboard(request):
             return redirect('ep1:dashboard')
     else:
         b_form = BudgetForm(instance=budget_obj)
-    
-    # Tính toán ngân sách còn lại
-    budget_remaining = budget_obj.total - this_month_expenses
-    
-    # Top 5 danh mục chi tiêu
-    top_categories = Expense.objects.filter(user=user).values('category__name').annotate(
-        total=Sum('amount')
-    ).order_by('-total')[:5]
-    
-    # Recent transactions with optimized queries
-    recent_expenses = Expense.objects.filter(user=user).select_related('category').order_by('-date')[:3]
-    recent_income = Income.objects.filter(user=user).select_related('source').order_by('-date')[:3]
-    
-    # Upcoming recurring expenses
-    upcoming_recurring = RecurringExpense.objects.filter(
-        user=user,
-        is_active=True,
-        next_due_date__gte=today
-    ).select_related('category').order_by('next_due_date')[:5]
-    
-    # Lấy các thông báo đang Active
-    active_announcements = Announcement.objects.filter(is_active=True).order_by('-created_at')
 
-    # Tính phần trăm ngân sách đã dùng
-    if budget_obj.total > 0:
-        budget_percentage = (this_month_expenses / budget_obj.total) * 100
-    else:
-        budget_percentage = 0
-    
+    metrics = get_dashboard_summary_metrics(request.user)
     context = {
-        'total_expenses': total_expenses,
-        'this_month_expenses': this_month_expenses,
-        'last_month_expenses': last_month_expenses,
-        'total_income': total_income,
-        'this_month_income': this_month_income,
-        'balance': balance,
-        'budget': budget_obj,
-        'b_form': b_form, # Thêm form vào context
-        'budget_remaining': budget_remaining,
-        'budget_percentage': budget_percentage, # Thêm phần trăm
-        'top_categories': top_categories,
-        'recent_expenses': recent_expenses,
-        'recent_income': recent_income,
-        'upcoming_recurring': upcoming_recurring,
-        'active_announcements': active_announcements,
+        **metrics,
+        'b_form': b_form,
     }
-    
     return render(request, 'ep1/dashboard.html', context)
 
 
 @login_required
 def chart_category_data(request):
     """API endpoint for category pie chart data"""
-    user = request.user
-    
-    category_data = Expense.objects.filter(user=user).values('category__name').annotate(
-        total=Sum('amount')
-    ).order_by('-total')[:10]
-    
-    labels = [item['category__name'] or 'Không xác định' for item in category_data]
-    data = [float(item['total']) for item in category_data]
-    
-    return JsonResponse({
-        'labels': labels,
-        'data': data
-    })
+    return JsonResponse(get_category_distribution_chart_data(request.user))
 
 
 @login_required
 def chart_monthly_trend(request):
     """API endpoint for monthly trend chart (last 6 months) using single conditional aggregate"""
-    from dateutil.relativedelta import relativedelta
-    user = request.user
-    today = timezone.now().date()
-    
-    month_ranges = []
-    agg_kwargs = {}
-    for i in range(5, -1, -1):
-        month_start = (today.replace(day=1) - relativedelta(months=i))
-        month_end = (month_start + relativedelta(months=1))
-        label = month_start.strftime('%m/%Y')
-        key = f'm_{i}'
-        month_ranges.append((label, key))
-        agg_kwargs[key] = Sum('amount', filter=Q(date__gte=month_start, date__lt=month_end))
-    
-    oldest_start = (today.replace(day=1) - relativedelta(months=5))
-    newest_end = (today.replace(day=1) + relativedelta(months=1))
-    
-    expense_agg = Expense.objects.filter(
-        user=user,
-        date__gte=oldest_start,
-        date__lt=newest_end,
-    ).aggregate(**agg_kwargs)
-    
-    labels = [label for label, key in month_ranges]
-    data = [float(expense_agg.get(key) or 0) for label, key in month_ranges]
-    
-    return JsonResponse({
-        'labels': labels,
-        'data': data
-    })
+    return JsonResponse(get_monthly_trend_chart_data(request.user))
 
 
 @login_required
 def chart_expense_vs_income(request):
     """API endpoint for income vs expense comparison (last 6 months) using conditional aggregates"""
-    from dateutil.relativedelta import relativedelta
-    user = request.user
-    today = timezone.now().date()
-    
-    month_ranges = []
-    exp_agg_kwargs = {}
-    inc_agg_kwargs = {}
-    for i in range(5, -1, -1):
-        month_start = (today.replace(day=1) - relativedelta(months=i))
-        month_end = (month_start + relativedelta(months=1))
-        label = month_start.strftime('%m/%Y')
-        key = f'm_{i}'
-        month_ranges.append((label, key))
-        exp_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=month_start, date__lt=month_end))
-        inc_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=month_start, date__lt=month_end))
-    
-    oldest_start = (today.replace(day=1) - relativedelta(months=5))
-    newest_end = (today.replace(day=1) + relativedelta(months=1))
-    
-    expense_agg = Expense.objects.filter(
-        user=user,
-        date__gte=oldest_start,
-        date__lt=newest_end,
-    ).aggregate(**exp_agg_kwargs)
-    
-    income_agg = Income.objects.filter(
-        user=user,
-        date__gte=oldest_start,
-        date__lt=newest_end,
-    ).aggregate(**inc_agg_kwargs)
-    
-    labels = [label for label, key in month_ranges]
-    expense_data = [float(expense_agg.get(key) or 0) for label, key in month_ranges]
-    income_data = [float(income_agg.get(key) or 0) for label, key in month_ranges]
-    
-    return JsonResponse({
-        'labels': labels,
-        'expenses': expense_data,
-        'income': income_data
-    })
+    return JsonResponse(get_expense_vs_income_chart_data(request.user))
 
 
 @login_required
 def dashboard_refresh_api(request):
     """Return updated dashboard summary, lists, and chart data using conditional aggregates."""
-    from dateutil.relativedelta import relativedelta
-
-    user = request.user
-    today = timezone.now().date()
-
-    first_day_this_month = today.replace(day=1)
-    first_day_next_month = (first_day_this_month + relativedelta(months=1))
-
-    # Xây dựng aggregated query cho 6 tháng + totals
-    exp_agg_kwargs = {
-        'total': Sum('amount'),
-        'this_month': Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
-    }
-    inc_agg_kwargs = {
-        'total': Sum('amount'),
-        'this_month': Sum('amount', filter=Q(date__gte=first_day_this_month, date__lt=first_day_next_month)),
-    }
-    month_ranges = []
-    for i in range(5, -1, -1):
-        m_start = (first_day_this_month - relativedelta(months=i))
-        m_end = (m_start + relativedelta(months=1))
-        label = m_start.strftime('%m/%Y')
-        key = f'm_{i}'
-        month_ranges.append((label, key))
-        exp_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=m_start, date__lt=m_end))
-        inc_agg_kwargs[key] = Sum('amount', filter=Q(date__gte=m_start, date__lt=m_end))
-
-    expense_agg = Expense.objects.filter(user=user).aggregate(**exp_agg_kwargs)
-    income_agg = Income.objects.filter(user=user).aggregate(**inc_agg_kwargs)
-
-    total_expenses = expense_agg['total'] or 0
-    this_month_expenses = expense_agg['this_month'] or 0
-
-    total_income = income_agg['total'] or 0
-    this_month_income = income_agg['this_month'] or 0
-
-    balance = total_income - total_expenses
-
-    budget_obj, _ = Budget.objects.get_or_create(user=user)
-    budget_remaining = budget_obj.total - this_month_expenses
-    budget_percentage = (this_month_expenses / budget_obj.total) * 100 if budget_obj.total > 0 else 0
-
-    top_categories = Expense.objects.filter(user=user).values('category__name').annotate(
-        total=Sum('amount')
-    ).order_by('-total')[:5]
-
-    recent_expenses = Expense.objects.filter(user=user).select_related('category').order_by('-date')[:3]
-    recent_income = Income.objects.filter(user=user).select_related('source').order_by('-date')[:3]
-
-    category_data = Expense.objects.filter(user=user).values('category__name').annotate(
-        total=Sum('amount')
-    ).order_by('-total')[:10]
-    category_labels = [item['category__name'] or 'Không xác định' for item in category_data]
-    category_values = [float(item['total']) for item in category_data]
-
-    income_labels = [label for label, key in month_ranges]
-    income_values = [float(income_agg.get(key) or 0) for label, key in month_ranges]
-    expense_values = [float(expense_agg.get(key) or 0) for label, key in month_ranges]
-
-    top_categories_html = render_to_string(
-        'ep1/partials/dashboard_top_categories.html',
-        {'top_categories': top_categories},
-        request=request,
-    )
-
-    recent_transactions_html = render_to_string(
-        'ep1/partials/dashboard_recent_transactions.html',
-        {
-            'recent_expenses': recent_expenses,
-            'recent_income': recent_income,
-        },
-        request=request,
-    )
-
-    return JsonResponse({
-        'success': True,
-        'summary': {
-            'this_month_expenses': float(this_month_expenses),
-            'total_expenses': float(total_expenses),
-            'this_month_income': float(this_month_income),
-            'total_income': float(total_income),
-            'balance': float(balance),
-            'budget_total': float(budget_obj.total),
-            'budget_remaining': float(budget_remaining),
-            'budget_percentage': float(budget_percentage),
-        },
-        'top_categories_html': top_categories_html,
-        'recent_transactions_html': recent_transactions_html,
-        'charts_category': {
-            'labels': category_labels,
-            'data': category_values,
-        },
-        'charts_income_expense': {
-            'labels': income_labels,
-            'income': income_values,
-            'expenses': expense_values,
-        },
-    })
+    payload = get_dashboard_refresh_payload(request.user, request=request)
+    return JsonResponse(payload)
 
 
 # ============================================
@@ -1351,12 +1116,9 @@ def _get_safe_redirect_url(request, next_param_value, fallback):
 @require_http_methods(["POST"])
 def toggle_recurring_status(request, pk):
     """Bật/tắt trạng thái chi tiêu định kỳ"""
-    recurring = get_object_or_404(RecurringExpense, pk=pk, user=request.user)
-    recurring.is_active = not recurring.is_active
-    recurring.save()
-
-    status = "kích hoạt" if recurring.is_active else "vô hiệu hóa"
-    messages.success(request, f'Đã {status} chi tiêu định kỳ "{recurring.name}".')
+    is_active, name = toggle_recurring_active_status(pk, request.user)
+    status = "kích hoạt" if is_active else "vô hiệu hóa"
+    messages.success(request, f'Đã {status} chi tiêu định kỳ "{name}".')
 
     # Validate next param chống open redirect
     next_url = request.POST.get('next') or request.GET.get('next')
@@ -1366,112 +1128,8 @@ def toggle_recurring_status(request, pk):
 @login_required
 @require_http_methods(["POST"])
 def generate_recurring_expenses(request):
-    """Generate actual expenses/incomes from due recurring templates.
-
-    Concurrency protection:
-    - select_for_update() locks template rows so two simultaneous requests
-      cannot read the same due templates at the same time.
-    - Each occurrence is wrapped in transaction.atomic() so the Expense.create()
-      and recurring.save() either both succeed or both roll back.
-    - UniqueConstraint(recurring_template, occurrence_date) acts as a final
-      idempotency net: if the same occurrence somehow slips through, the DB
-      raises IntegrityError which we catch and skip.
-    """
-    from django.db import transaction, IntegrityError
-
-    user = request.user
-    today = timezone.now().date()
-
-    generated_count = 0
-    generated_income_count = 0
-    skipped_duplicates = 0
-
-    # ── Recurring Expenses ─────────────────────────────────────────────────────
-    # select_for_update() holds a row-level lock until the enclosing transaction
-    # commits, preventing a second concurrent request from touching the same row.
-    with transaction.atomic():
-        due_recurrings = (
-            RecurringExpense.objects
-            .select_for_update()
-            .filter(user=user, is_active=True, next_due_date__lte=today)
-            .select_related('category')
-        )
-
-        for recurring in due_recurrings:
-            if recurring.is_expired():
-                recurring.is_active = False
-                recurring.save()
-                continue
-
-            occurrence_date = recurring.next_due_date
-
-            try:
-                with transaction.atomic():
-                    Expense.objects.create(
-                        user=user,
-                        amount=recurring.amount,
-                        description=f"[Định kỳ] {recurring.description or recurring.name}",
-                        category=recurring.category,
-                        date=occurrence_date,
-                        # Occurrence tracking — idempotency key
-                        recurring_template=recurring,
-                        occurrence_date=occurrence_date,
-                    )
-                    # Advance inside the same savepoint so a crash here rolls
-                    # back both the Expense and the date advance together.
-                    recurring.advance_next_due_date()
-                    recurring.save()
-                    generated_count += 1
-
-            except IntegrityError:
-                # UniqueConstraint tripped → occurrence already exists (duplicate).
-                logger.warning(
-                    "Duplicate recurring expense skipped: template=%s occurrence=%s",
-                    recurring.pk,
-                    occurrence_date,
-                )
-                skipped_duplicates += 1
-
-    # ── Recurring Incomes ──────────────────────────────────────────────────────
-    with transaction.atomic():
-        due_incomes = (
-            RecurringIncome.objects
-            .select_for_update()
-            .filter(user=user, is_active=True, next_due_date__lte=today)
-            .select_related('source')
-        )
-
-        for recurring_income in due_incomes:
-            if recurring_income.is_expired():
-                recurring_income.is_active = False
-                recurring_income.save()
-                continue
-
-            occurrence_date = recurring_income.next_due_date
-
-            try:
-                with transaction.atomic():
-                    Income.objects.create(
-                        user=user,
-                        source=recurring_income.source,
-                        amount=recurring_income.amount,
-                        description=f"[Định kỳ] {recurring_income.description or recurring_income.name}",
-                        date=occurrence_date,
-                        # Occurrence tracking — idempotency key
-                        recurring_income_template=recurring_income,
-                        occurrence_date=occurrence_date,
-                    )
-                    recurring_income.advance_next_due_date()
-                    recurring_income.save()
-                    generated_income_count += 1
-
-            except IntegrityError:
-                logger.warning(
-                    "Duplicate recurring income skipped: template=%s occurrence=%s",
-                    recurring_income.pk,
-                    occurrence_date,
-                )
-                skipped_duplicates += 1
+    """Generate actual expenses/incomes from due recurring templates."""
+    generated_count, generated_income_count, _ = generate_due_recurring_transactions(request.user)
 
     # ── Notify user ────────────────────────────────────────────────────────────
     if generated_count > 0 or generated_income_count > 0:
@@ -1493,12 +1151,11 @@ def generate_recurring_expenses(request):
 def savings_goal_list(request):
     """Hiển thị danh sách mục tiêu tiết kiệm"""
     goals = SavingsGoal.objects.filter(user=request.user).order_by('-created_at')
-    
+
     # Cập nhật trạng thái chỉ khi mục tiêu chuyển từ chưa hoàn thành sang hoàn thành
     for goal in goals:
-        if not goal.is_completed and goal.check_completion():
-            goal.save(update_fields=['is_completed'])
-    
+        sync_savings_goal_status(goal)
+
     context = {
         'goals': goals,
     }
@@ -1519,7 +1176,7 @@ def add_savings_goal(request):
             return redirect('ep1:savings_goal_detail', pk=goal.pk)
     else:
         form = SavingsGoalForm(user=request.user)
-    
+
     context = {
         'form': form,
         'title': 'Tạo mục tiêu tiết kiệm mới',
@@ -1531,7 +1188,7 @@ def add_savings_goal(request):
 def edit_savings_goal(request, pk):
     """Chỉnh sửa mục tiêu tiết kiệm"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
-    
+
     if request.method == 'POST':
         form = SavingsGoalForm(request.POST, instance=goal, user=request.user)
         if form.is_valid():
@@ -1540,7 +1197,7 @@ def edit_savings_goal(request, pk):
             return redirect('ep1:savings_goal_detail', pk=goal.pk)
     else:
         form = SavingsGoalForm(instance=goal, user=request.user)
-    
+
     context = {
         'form': form,
         'goal': goal,
@@ -1553,13 +1210,13 @@ def edit_savings_goal(request, pk):
 def delete_savings_goal(request, pk):
     """Xóa mục tiêu tiết kiệm"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
-    
+
     if request.method == 'POST':
         goal_name = goal.goal_name
         goal.delete()
         messages.success(request, f'Đã xóa mục tiêu "{goal_name}"!')
         return redirect('ep1:savings_goal_list')
-    
+
     context = {
         'goal': goal,
     }
@@ -1570,14 +1227,11 @@ def delete_savings_goal(request, pk):
 def savings_goal_detail(request, pk):
     """Chi tiết mục tiêu với gợi ý AI"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
-    
-    # Cập nhật trạng thái hoàn thành chỉ khi có thay đổi
-    if not goal.is_completed and goal.check_completion():
-        goal.save(update_fields=['is_completed'])
-    
-    # Lấy gợi ý AI
-    ai_suggestions = get_ai_savings_suggestions(request.user, goal)
-    
+
+    sync_savings_goal_status(goal)
+
+    ai_suggestions = calculate_ai_savings_suggestions(request.user, goal)
+
     context = {
         'goal': goal,
         'ai_suggestions': ai_suggestions,
@@ -1589,23 +1243,23 @@ def savings_goal_detail(request, pk):
 def update_savings_progress(request, pk):
     """Cập nhật tiến độ tiết kiệm"""
     goal = get_object_or_404(SavingsGoal, pk=pk, user=request.user)
-    
+
     if request.method == 'POST':
         form = UpdateSavingsProgressForm(request.POST, instance=goal)
         if form.is_valid():
             updated_goal = form.save(commit=False)
-            
+
             # Kiểm tra và cập nhật trạng thái hoàn thành
             if updated_goal.check_completion():
                 messages.success(request, f'🎉 Chúc mừng! Bạn đã hoàn thành mục tiêu "{goal.goal_name}"!')
             else:
                 messages.success(request, f'Đã cập nhật tiến độ cho "{goal.goal_name}"!')
-            
+
             updated_goal.save()
             return redirect('ep1:savings_goal_detail', pk=goal.pk)
     else:
         form = UpdateSavingsProgressForm(instance=goal)
-    
+
     context = {
         'form': form,
         'goal': goal,
@@ -1614,162 +1268,8 @@ def update_savings_progress(request, pk):
 
 
 def get_ai_savings_suggestions(user, goal):
-    """
-    Logic AI để tạo gợi ý tiết kiệm dựa trên:
-    - Chi tiêu hiện tại của user
-    - Mục tiêu cần đạt
-    - Danh mục đã chọn để cắt giảm
-    """
-    from datetime import timedelta
-    from decimal import Decimal
-    
-    suggestions = {
-        'daily_needed': goal.daily_savings_needed,
-        'days_remaining': goal.days_remaining,
-        'amount_remaining': goal.amount_remaining,
-        'progress_percentage': goal.progress_percentage,
-        'is_achievable': True,
-        'category_analysis': [],
-        'recommendations': [],
-        'weekly_plan': {},
-        'monthly_plan': {},
-    }
-    
-    # Nếu đã hoàn thành hoặc quá hạn
-    if goal.is_completed:
-        suggestions['recommendations'].append({
-            'type': 'success',
-            'message': '🎉 Chúc mừng! Bạn đã hoàn thành mục tiêu này!'
-        })
-        return suggestions
-    
-    if goal.is_overdue:
-        suggestions['recommendations'].append({
-            'type': 'warning',
-            'message': '⚠️ Mục tiêu đã quá hạn. Hãy cân nhắc gia hạn hoặc điều chỉnh mục tiêu.'
-        })
-        suggestions['is_achievable'] = False
-        return suggestions
-    
-    # Phân tích chi tiêu trong 30 ngày gần đây
-    thirty_days_ago = timezone.now().date() - timedelta(days=30)
-    recent_expenses = Expense.objects.filter(
-        user=user,
-        date__gte=thirty_days_ago
-    )
-    
-    # Tổng chi tiêu 30 ngày
-    total_spent_30days = recent_expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal('0')
-    daily_avg_spending = total_spent_30days / 30 if total_spent_30days > 0 else Decimal('0')
-    
-    # Phân tích từng danh mục được chọn để cắt giảm (gom thành 1 query duy nhất)
-    categories_to_reduce = list(goal.categories_to_reduce.all())
-    
-    if categories_to_reduce:
-        total_reducible = Decimal('0')
-        cat_ids = [c.id for c in categories_to_reduce]
-        
-        cat_totals_query = recent_expenses.filter(category_id__in=cat_ids).values('category_id').annotate(
-            cat_total=Sum('amount')
-        )
-        totals_by_cat_id = {item['category_id']: (item['cat_total'] or Decimal('0')) for item in cat_totals_query}
-        
-        for category in categories_to_reduce:
-            cat_total = totals_by_cat_id.get(category.id, Decimal('0'))
-            cat_daily_avg = cat_total / 30
-            
-            # Gợi ý cắt giảm 50-70% (có thể điều chỉnh)
-            suggested_reduction_pct = 60  # 60%
-            suggested_daily_reduction = cat_daily_avg * Decimal(suggested_reduction_pct / 100)
-            total_reducible += suggested_daily_reduction
-            
-            if cat_total > 0:
-                suggestions['category_analysis'].append({
-                    'category_name': category.name,
-                    'total_30days': float(cat_total),
-                    'daily_average': float(cat_daily_avg),
-                    'suggested_reduction_pct': suggested_reduction_pct,
-                    'suggested_daily_reduction': float(suggested_daily_reduction),
-                    'monthly_savings': float(suggested_daily_reduction * 30),
-                })
-        
-        # So sánh số tiền cần tiết kiệm với số tiền có thể cắt giảm
-        if total_reducible >= goal.daily_savings_needed:
-            suggestions['is_achievable'] = True
-            suggestions['recommendations'].append({
-                'type': 'success',
-                'message': f'✅ Mục tiêu khả thi! Bạn có thể tiết kiệm {float(total_reducible):,.0f}đ/ngày bằng cách cắt giảm các danh mục đã chọn.'
-            })
-        else:
-            gap = goal.daily_savings_needed - total_reducible
-            suggestions['recommendations'].append({
-                'type': 'warning',
-                'message': f'⚠️ Cắt giảm các danh mục đã chọn chỉ đủ tiết kiệm {float(total_reducible):,.0f}đ/ngày. Bạn còn thiếu {float(gap):,.0f}đ/ngày. Hãy xem xét thêm các danh mục khác.'
-            })
-    else:
-        # Nếu chưa chọn danh mục nào, phân tích tất cả danh mục
-        suggestions['recommendations'].append({
-            'type': 'info',
-            'message': '💡 Hãy chọn các danh mục bạn muốn cắt giảm để nhận gợi ý chi tiết hơn.'
-        })
-        
-        # Liệt kê top danh mục chi tiêu nhiều nhất
-        top_categories = recent_expenses.values('category__name').annotate(
-            total=Sum('amount')
-        ).order_by('-total')[:5]
-        
-        for cat in top_categories:
-            if cat['category__name']:
-                cat_total = cat['total']
-                cat_daily = cat_total / 30
-                suggestions['category_analysis'].append({
-                    'category_name': cat['category__name'],
-                    'total_30days': float(cat_total),
-                    'daily_average': float(cat_daily),
-                    'suggested_reduction_pct': 50,
-                    'suggested_daily_reduction': float(cat_daily * Decimal('0.5')),
-                    'monthly_savings': float(cat_daily * Decimal('0.5') * 30),
-                })
-    
-    # Kế hoạch tuần/tháng
-    days = goal.days_remaining
-    if days > 0:
-        suggestions['weekly_plan'] = {
-            'amount': float(goal.daily_savings_needed * 7),
-            'description': f'Tiết kiệm {float(goal.daily_savings_needed * 7):,.0f}đ mỗi tuần'
-        }
-        suggestions['monthly_plan'] = {
-            'amount': float(goal.daily_savings_needed * 30),
-            'description': f'Tiết kiệm {float(goal.daily_savings_needed * 30):,.0f}đ mỗi tháng'
-        }
-    
-    # Thêm gợi ý chung
-    if goal.daily_savings_needed > 0:
-        # Gợi ý cụ thể dựa trên số tiền cần tiết kiệm
-        daily_needed = float(goal.daily_savings_needed)
-        
-        if daily_needed < 50000:  # < 50k/ngày
-            suggestions['recommendations'].append({
-                'type': 'tip',
-                'message': f'💰 Mẹo: Bỏ 1 ly cafe/trà sữa mỗi ngày (40-50k) là đủ để đạt mục tiêu!'
-            })
-        elif daily_needed < 100000:  # < 100k/ngày
-            suggestions['recommendations'].append({
-                'type': 'tip',
-                'message': f'💰 Mẹo: Tự nấu ăn thay vì ăn ngoài, mang cơm trưa đi làm có thể tiết kiệm 50-100k/ngày.'
-            })
-        elif daily_needed < 200000:  # < 200k/ngày
-            suggestions['recommendations'].append({
-                'type': 'tip',
-                'message': f'💰 Mẹo: Cắt giảm shopping và giải trí không cần thiết, đi lại bằng phương tiện công cộng.'
-            })
-        else:  # >= 200k/ngày
-            suggestions['recommendations'].append({
-                'type': 'tip',
-                'message': f'💰 Số tiền cần tiết kiệm khá lớn ({daily_needed:,.0f}đ/ngày). Hãy xem xét tăng thu nhập hoặc kéo dài thời gian mục tiêu.'
-            })
-    
-    return suggestions
+    """Alias for backwards compatibility delegating to savings_service."""
+    return calculate_ai_savings_suggestions(user, goal)
 
 
 # ======================== CHATBOT / VOICE ASSISTANT ========================
@@ -1794,85 +1294,11 @@ def chat_assistant(request):
 
 
 def _recurring_chat_preview(text, structured, user, intent):
-    from datetime import date
-    from app_expenses.utils.nlp_parser import ExpenseNLPParser
-
-    amount = structured.get('amount')
-    if not amount:
-        amount = ExpenseNLPParser()._extract_amount(text.lower())
-    if not amount:
-        return None
-
-    frequency = structured.get('frequency')
-    if frequency not in {'daily', 'weekly', 'monthly', 'yearly'}:
-        frequency_map = {
-            'ngày': 'daily', 'hàng ngày': 'daily', 'mỗi ngày': 'daily',
-            'tuần': 'weekly', 'hàng tuần': 'weekly', 'mỗi tuần': 'weekly',
-            'tháng': 'monthly', 'hàng tháng': 'monthly', 'mỗi tháng': 'monthly',
-            'năm': 'yearly', 'hàng năm': 'yearly', 'mỗi năm': 'yearly',
-        }
-        frequency = next((value for key, value in frequency_map.items() if key in text.lower()), 'monthly')
-
-    date_value = structured.get('date')
-    try:
-        start_date = date.fromisoformat(date_value) if date_value else timezone.now().date()
-    except (TypeError, ValueError):
-        start_date = timezone.now().date()
-
-    description = structured.get('description') or text.strip()
-    category_hint = structured.get('category_hint')
-    category = None
-    if category_hint:
-        category = Category.objects.filter(user=user, name__icontains=category_hint).first()
-
-    return {
-        'amount': amount,
-        'description': description,
-        'name': description[:200],
-        'category_id': category.id if category else None,
-        'category_name': category.name if category else category_hint,
-        'source_name': structured.get('source_name') or description[:100],
-        'frequency': frequency,
-        'start_date': start_date.isoformat(),
-        'end_date': structured.get('end_date'),
-        '_type': 'recurring_income' if intent == 'CREATE_RECURRING_INCOME' else 'recurring_expense',
-    }
+    return build_recurring_chat_preview(text, structured, user, intent)
 
 
 def _chat_expense_action_preview(text, user, intent):
-    """Find one user-owned expense for an explicit edit/delete confirmation."""
-    from app_expenses.utils.nlp_parser import ExpenseNLPParser
-
-    expenses = Expense.objects.filter(user=user).select_related('category')
-    amount = ExpenseNLPParser()._extract_amount(text.lower())
-    if amount:
-        expenses = expenses.filter(amount=amount)
-
-    search_terms = re.sub(
-        r'\b(sửa|sửa khoản chi|sửa chi tiêu|đổi|cập nhật|xóa|xóa khoản chi|'
-        r'xóa chi tiêu|xóa giao dịch|bỏ|khoản|chi tiêu|giao dịch|giúp|tôi|cho tôi)\b',
-        ' ', text.lower()
-    )
-    meaningful_terms = [term for term in search_terms.split() if len(term) > 2]
-    if meaningful_terms:
-        term_query = Q()
-        for term in meaningful_terms:
-            term_query |= Q(description__icontains=term) | Q(category__name__icontains=term)
-        expenses = expenses.filter(term_query)
-
-    expense = expenses.order_by('-date', '-id').first()
-    if not expense:
-        return None
-    return {
-        'expense_id': expense.id,
-        'amount': float(expense.amount),
-        'description': expense.description or '',
-        'date': expense.date.isoformat(),
-        'category_id': expense.category_id,
-        'category_name': expense.category.name if expense.category else 'Khác',
-        'action': 'delete' if intent == 'DELETE_EXPENSE' else 'edit',
-        '_type': 'expense_action',
-    }
+    return build_expense_action_preview(text, user, intent)
 
 
 @login_required
@@ -2053,34 +1479,13 @@ def save_income_from_chat_api(request):
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
     import json
-    from datetime import datetime
-    from decimal import Decimal
-    from app_expenses.models import IncomeSource, Income
-
     try:
         data = json.loads(request.body)
-        amount = Decimal(str(data.get('amount', '')))
-        description = str(data.get('description', '')).strip()[:500]
-        source_name = str(data.get('source_name', 'Khác')).strip()[:100] or 'Khác'
-        date_str = data.get('date')
-        if amount <= 0 or not date_str:
-            return JsonResponse({'success': False, 'error': 'Dữ liệu thu nhập không hợp lệ'}, status=400)
-        income_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except (json.JSONDecodeError, TypeError, ValueError, ArithmeticError):
+    except (json.JSONDecodeError, TypeError):
         return JsonResponse({'success': False, 'error': 'Dữ liệu thu nhập không hợp lệ'}, status=400)
 
-    income_source, _ = IncomeSource.objects.get_or_create(
-        user=request.user,
-        name=source_name,
-    )
-    income = Income.objects.create(
-        user=request.user,
-        source=income_source,
-        amount=amount,
-        description=description,
-        date=income_date,
-    )
-    return JsonResponse({'success': True, 'income_id': income.id})
+    success, payload, status_code = create_income_from_chat(request.user, data)
+    return JsonResponse(payload, status=status_code)
 
 
 @login_required
@@ -2090,65 +1495,13 @@ def save_recurring_from_chat_api(request):
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
     import json
-    from datetime import datetime, timedelta
-    from decimal import Decimal
-    from dateutil.relativedelta import relativedelta
-
     try:
         data = json.loads(request.body)
-        amount = Decimal(str(data.get('amount', '')))
-        name = str(data.get('name') or data.get('description') or '').strip()[:200]
-        frequency = data.get('frequency')
-        start_date = datetime.strptime(data.get('start_date', ''), '%Y-%m-%d').date()
-        end_date_value = data.get('end_date')
-        end_date = datetime.strptime(end_date_value, '%Y-%m-%d').date() if end_date_value else None
-        transaction_type = data.get('transaction_type')
-        if amount <= 0 or not name or frequency not in {'daily', 'weekly', 'monthly', 'yearly'}:
-            raise ValueError
-        if end_date and end_date <= start_date:
-            raise ValueError
-    except (json.JSONDecodeError, TypeError, ValueError, ArithmeticError):
+    except (json.JSONDecodeError, TypeError):
         return JsonResponse({'success': False, 'error': 'Dữ liệu định kỳ không hợp lệ'}, status=400)
 
-    next_due_date = start_date + {
-        'daily': timedelta(days=1),
-        'weekly': timedelta(weeks=1),
-        'monthly': relativedelta(months=1),
-        'yearly': relativedelta(years=1),
-    }[frequency]
-
-    if transaction_type == 'recurring_income':
-        source_name = str(data.get('source_name') or name).strip()[:100]
-        source, _ = IncomeSource.objects.get_or_create(user=request.user, name=source_name)
-        recurring = RecurringIncome.objects.create(
-            user=request.user,
-            source=source,
-            name=name,
-            amount=amount,
-            frequency=frequency,
-            start_date=start_date,
-            end_date=end_date,
-            next_due_date=next_due_date,
-            description=data.get('description', '')[:500],
-        )
-    else:
-        category = None
-        category_id = data.get('category_id')
-        if category_id:
-            category = Category.objects.filter(id=category_id, user=request.user).first()
-        recurring = RecurringExpense.objects.create(
-            user=request.user,
-            name=name,
-            amount=amount,
-            category=category,
-            frequency=frequency,
-            start_date=start_date,
-            end_date=end_date,
-            next_due_date=next_due_date,
-            description=data.get('description', '')[:500],
-        )
-
-    return JsonResponse({'success': True, 'recurring_id': recurring.id})
+    success, payload, status_code = create_recurring_from_chat(request.user, data)
+    return JsonResponse(payload, status=status_code)
 
 
 @login_required
@@ -2158,41 +1511,13 @@ def manage_expense_from_chat_api(request):
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
     import json
-    from datetime import datetime
-    from decimal import Decimal
-
     try:
         data = json.loads(request.body)
-        expense = Expense.objects.get(pk=data.get('expense_id'), user=request.user)
-        action = data.get('action')
-        if action not in {'edit', 'delete'}:
-            raise ValueError
-    except (json.JSONDecodeError, TypeError, ValueError, Expense.DoesNotExist):
+    except (json.JSONDecodeError, TypeError):
         return JsonResponse({'success': False, 'error': 'Giao dịch không hợp lệ'}, status=400)
 
-    if action == 'delete':
-        expense.delete()
-        logger.info('Chat expense deleted: user_id=%s expense_id=%s', request.user.id, data.get('expense_id'))
-        return JsonResponse({'success': True, 'action': 'delete'})
-
-    try:
-        amount = Decimal(str(data.get('amount', expense.amount)))
-        date_value = datetime.strptime(data.get('date', expense.date.isoformat()), '%Y-%m-%d').date()
-        description = str(data.get('description', expense.description or '')).strip()[:500]
-        if amount <= 0 or not description:
-            raise ValueError
-        category_id = data.get('category_id')
-        category = Category.objects.filter(id=category_id, user=request.user).first() if category_id else None
-        expense.amount = amount
-        expense.date = date_value
-        expense.description = description
-        expense.category = category
-        expense.save(update_fields=['amount', 'date', 'description', 'category'])
-    except (TypeError, ValueError, ArithmeticError):
-        return JsonResponse({'success': False, 'error': 'Dữ liệu cập nhật không hợp lệ'}, status=400)
-
-    logger.info('Chat expense edited: user_id=%s expense_id=%s', request.user.id, expense.id)
-    return JsonResponse({'success': True, 'action': 'edit', 'expense_id': expense.id})
+    success, payload, status_code = manage_expense_from_chat(request.user, data)
+    return JsonResponse(payload, status=status_code)
 
 
 @login_required
@@ -2208,99 +1533,15 @@ def save_expense_from_chat_api(request):
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
-    
+
     import json
-    from decimal import Decimal
-    from datetime import datetime
-    import traceback
-    
     try:
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
-        
-        # Validate dữ liệu
-        amount = data.get('amount')
-        description = data.get('description', '').strip()
-        category_id = data.get('category_id')
-        date_str = data.get('date')
-        
-        if not amount:
-            return JsonResponse({'success': False, 'error': 'Thiếu số tiền'}, status=400)
-        
-        if not date_str:
-            return JsonResponse({'success': False, 'error': 'Thiếu ngày tháng'}, status=400)
-        
-        try:
-            amount = Decimal(str(amount))
-            if amount <= 0:
-                return JsonResponse({'success': False, 'error': 'Số tiền phải lớn hơn 0'}, status=400)
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Số tiền không hợp lệ: {str(e)}'}, status=400)
-        
-        try:
-            # Handle both ISO format and simple date format
-            if 'T' in date_str:
-                expense_date = datetime.fromisoformat(date_str).date()
-            else:
-                expense_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Ngày tháng không hợp lệ ({date_str}): {str(e)}'}, status=400)
-        
-        # Kiểm tra category
-        category = None
-        if category_id:
-            try:
-                category = Category.objects.get(id=category_id, user=request.user)
-            except Category.DoesNotExist:
-                return JsonResponse({'success': False, 'error': f'Danh mục không tồn tại (ID: {category_id})'}, status=400)
-            except Exception as e:
-                return JsonResponse({'success': False, 'error': f'Lỗi kiểm tra danh mục: {str(e)}'}, status=400)
-        
-        # Tạo expense
-        expense = Expense.objects.create(
-            user=request.user,
-            amount=amount,
-            description=description,
-            category=category,
-            date=expense_date
-        )
-        
-        # Kiểm tra budget warning
-        warning_message = None
-        try:
-            budget = Budget.objects.get(user=request.user)
-            current_total = Expense.objects.filter(user=request.user).aggregate(Sum('amount'))['amount__sum'] or 0
-            
-            if current_total > budget.total:
-                over_amount = current_total - budget.total
-                warning_message = f'⚠️ Bạn đã vượt quá ngân sách {over_amount:,.0f} ₫!'
-        except Budget.DoesNotExist:
-            pass
-        except Exception as e:
-            print(f"Lỗi kiểm tra budget: {e}")
-        
-        # Train model trong background
-        try:
-            thread = threading.Thread(target=train_model, args=(request.user,))
-            thread.start()
-        except Exception as e:
-            print(f"Lỗi chạy background task: {e}")
-        
-        return JsonResponse({
-            'success': True,
-            'expense_id': expense.id,
-            'warning': warning_message
-        })
-        
-    except Exception as e:
-        # Catch-all for unexpected errors
-        traceback.print_exc()
-        return JsonResponse({
-            'success': False,
-            'error': f'Lỗi lưu chi tiêu: {str(e)}'
-        }, status=500)
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    success, payload, status_code = create_expense_from_chat(request.user, data)
+    return JsonResponse(payload, status=status_code)
 
 
 @login_required
