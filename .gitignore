@@ -159,3 +159,7 @@ yarn-error.log
 *.backup
 *.old
 *.orig
+
+# ===== AI Agent configuration =====
+.agent/
+
