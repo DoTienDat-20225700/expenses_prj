@@ -55,7 +55,7 @@
           {% csrf_token %}
 
           <div class="mb-3">
-            <label class="form-label fw-bold"
+            <label for="id_current_amount" class="form-label fw-bold"
               >{{ form.current_amount.label }}</label
             >
             {{ form.current_amount }} {% if form.current_amount.errors %}
@@ -66,7 +66,7 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-bold">{{ form.notes.label }}</label>
+            <label for="id_notes" class="form-label fw-bold">{{ form.notes.label }}</label>
             {{ form.notes }} {% if form.notes.errors %}
             <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
             {% endif %}

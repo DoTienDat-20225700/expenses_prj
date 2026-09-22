@@ -14,7 +14,7 @@
           {% endif %}
 
           <div class="mb-3">
-            <label class="form-label fw-semibold"
+            <label for="id_amount" class="form-label fw-semibold"
               >{{ form.amount.label }}</label
             >
             {{ form.amount }} {% if form.amount.errors %}
@@ -23,7 +23,7 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold"
+            <label for="id_source" class="form-label fw-semibold"
               >{{ form.source.label }}</label
             >
             {{ form.source }} {% if form.source.errors %}
@@ -32,14 +32,14 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">{{ form.date.label }}</label>
+            <label for="id_date" class="form-label fw-semibold">{{ form.date.label }}</label>
             {{ form.date }} {% if form.date.errors %}
             <div class="text-danger small mt-1">{{ form.date.errors }}</div>
             {% endif %}
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold"
+            <label for="id_description" class="form-label fw-semibold"
               >{{ form.description.label }}</label
             >
             {{ form.description }} {% if form.description.errors %}

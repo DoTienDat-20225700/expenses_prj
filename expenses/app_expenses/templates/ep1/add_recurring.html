@@ -24,7 +24,7 @@
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_name" class="form-label fw-semibold"
                 >{{ form.name.label }}</label
               >
               {{ form.name }} {% if form.name.errors %}
@@ -33,7 +33,7 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_amount" class="form-label fw-semibold"
                 >{{ form.amount.label }}</label
               >
               {{ form.amount }} {% if form.amount.errors %}
@@ -42,7 +42,7 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_category" class="form-label fw-semibold"
                 >{{ form.category.label }}</label
               >
               {{ form.category }} {% if form.category.errors %}
@@ -53,7 +53,7 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_frequency" class="form-label fw-semibold"
                 >{{ form.frequency.label }}</label
               >
               {{ form.frequency }} {% if form.frequency.errors %}
@@ -64,7 +64,7 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_start_date" class="form-label fw-semibold"
                 >{{ form.start_date.label }}</label
               >
               {{ form.start_date }} {% if form.start_date.errors %}
@@ -75,7 +75,7 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_end_date" class="form-label fw-semibold"
                 >{{ form.end_date.label }} (Tùy chọn)</label
               >
               {{ form.end_date }}
@@ -90,7 +90,7 @@
             </div>
 
             <div class="col-md-6 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_next_due_date" class="form-label fw-semibold"
                 >{{ form.next_due_date.label }} (Tùy chọn)</label
               >
               {{ form.next_due_date }} {% if form.next_due_date.help_text %}
@@ -105,7 +105,7 @@
             </div>
 
             <div class="col-12 mb-3">
-              <label class="form-label fw-semibold"
+              <label for="id_description" class="form-label fw-semibold"
                 >{{ form.description.label }}</label
               >
               {{ form.description }} {% if form.description.errors %}

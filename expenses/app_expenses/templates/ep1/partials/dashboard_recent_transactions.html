@@ -44,8 +44,9 @@
 </div>
 
 {% if not recent_expenses and not recent_income %}
-<div class="text-center py-5 text-muted">
-  <i class="fas fa-receipt fs-1 mb-2 opacity-50"></i>
-  <p>Chưa có giao dịch nào</p>
+<div class="empty-state py-4">
+  <i class="fas fa-receipt empty-state-icon fs-2 mb-2 d-block opacity-50" aria-hidden="true"></i>
+  <p class="empty-state-title small mb-1">Chưa có giao dịch gần đây</p>
+  <p class="text-muted small mb-0">Các giao dịch chi tiêu hoặc thu nhập mới sẽ hiển thị tại đây.</p>
 </div>
 {% endif %}

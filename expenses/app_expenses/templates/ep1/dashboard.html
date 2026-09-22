@@ -447,9 +447,22 @@
       .then((data) => {
         const summary = document.getElementById("categoryChartSummary");
         if (summary) {
-          summary.textContent = data.labels.length
+          summary.textContent = data.labels && data.labels.length
             ? `Phân bố chi tiêu theo danh mục: ${data.labels.map((label, index) => `${label}: ${data.data[index]}`).join(", ")}.`
             : "Chưa có dữ liệu phân bố chi tiêu.";
+        }
+        if (!data.labels || data.labels.length === 0) {
+          const canvas = document.getElementById("categoryChart");
+          if (canvas && canvas.parentElement) {
+            canvas.parentElement.innerHTML = `
+              <div class="chart-empty-placeholder">
+                <i class="fas fa-chart-pie" aria-hidden="true"></i>
+                <p class="mb-1 fw-semibold">Chưa có dữ liệu phân bố chi tiêu</p>
+                <small class="text-muted">Các danh mục chi tiêu sẽ xuất hiện tại đây khi bạn có phát sinh chi tiêu.</small>
+              </div>
+            `;
+          }
+          return;
         }
         const ctx = document.getElementById("categoryChart").getContext("2d");
         window.dashboardCategoryChart = new Chart(ctx, {
@@ -498,15 +511,27 @@
       .then((data) => {
         const summary = document.getElementById("incomeExpenseChartSummary");
         if (summary) {
-          summary.textContent = data.labels.length
+          summary.textContent = data.labels && data.labels.length
             ? `Xu hướng sáu tháng. Thu nhập: ${data.income.join(", ")}. Chi tiêu: ${data.expenses.join(", ")}.`
             : "Chưa có dữ liệu xu hướng thu nhập và chi tiêu.";
+        }
+        const hasData = (data.income && data.income.some(v => v > 0)) || (data.expenses && data.expenses.some(v => v > 0));
+        if (!hasData && (!data.labels || data.labels.length === 0)) {
+          const canvas = document.getElementById("incomeExpenseChart");
+          if (canvas && canvas.parentElement) {
+            canvas.parentElement.innerHTML = `
+              <div class="chart-empty-placeholder">
+                <i class="fas fa-chart-area" aria-hidden="true"></i>
+                <p class="mb-1 fw-semibold">Chưa có dữ liệu xu hướng 6 tháng</p>
+                <small class="text-muted">Biểu đồ thu nhập và chi tiêu sẽ tự động hiển thị khi có dữ liệu.</small>
+              </div>
+            `;
+          }
+          return;
         }
         const ctx = document
           .getElementById("incomeExpenseChart")
           .getContext("2d");
-
-        // Simplified solid colors for better performance
 
         window.dashboardIncomeExpenseChart = new Chart(ctx, {
           type: "line",

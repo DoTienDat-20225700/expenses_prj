@@ -111,10 +111,11 @@
     <div class="card-body p-3 rounded">
       <div class="row g-3 align-items-end">
         <div class="col-md-2">
-          <label class="form-label small fw-bold text-muted"
+          <label for="filter_sort_amount" class="form-label small fw-bold text-muted"
             >Sắp xếp tiền</label
           >
           <select
+            id="filter_sort_amount"
             name="sort_amount"
             class="form-select"
             onchange="this.form.submit()"
@@ -130,10 +131,11 @@
         </div>
 
         <div class="col-md-2">
-          <label class="form-label small fw-bold text-muted"
+          <label for="filter_sort_date" class="form-label small fw-bold text-muted"
             >Sắp xếp ngày</label
           >
           <select
+            id="filter_sort_date"
             name="sort_date"
             class="form-select"
             onchange="this.form.submit()"
@@ -149,8 +151,9 @@
         </div>
 
         <div class="col-md-2">
-          <label class="form-label small fw-bold text-muted">Danh mục</label>
+          <label for="filter_category" class="form-label small fw-bold text-muted">Danh mục</label>
           <select
+            id="filter_category"
             name="category"
             class="form-select"
             onchange="this.form.submit()"
@@ -165,24 +168,28 @@
         </div>
 
         <div class="col-md-4">
-          <label class="form-label small fw-bold text-muted"
+          <label for="filter_date_from" class="form-label small fw-bold text-muted"
             >Khoảng thời gian</label
           >
           <div class="input-group">
             <input
               type="date"
+              id="filter_date_from"
               name="date_from"
               class="form-control"
               value="{{ date_from }}"
               onchange="this.form.submit()"
+              aria-label="Từ ngày"
             />
             <span class="input-group-text">-</span>
             <input
               type="date"
+              id="filter_date_to"
               name="date_to"
               class="form-control"
               value="{{ date_to }}"
               onchange="this.form.submit()"
+              aria-label="Đến ngày"
             />
           </div>
         </div>
@@ -248,10 +255,14 @@
           {% empty %}
           <tr>
             <td colspan="5" class="text-center py-5 text-muted">
-              <div class="mb-3">
-                <i class="fas fa-folder-open fa-3x opacity-25"></i>
+              <div class="empty-state py-3">
+                <i class="fas fa-folder-open empty-state-icon fa-3x mb-3 d-block opacity-25" aria-hidden="true"></i>
+                <p class="empty-state-title mb-1">Chưa có dữ liệu chi tiêu nào.</p>
+                <p class="empty-state-text mb-3">Bắt đầu quản lý tài chính bằng cách ghi nhận khoản chi tiêu đầu tiên của bạn.</p>
+                <a href="{% url 'ep1:add_ep1' %}" class="btn btn-primary btn-sm">
+                  <i class="fas fa-plus me-1"></i> Thêm chi tiêu mới
+                </a>
               </div>
-              <p class="mb-0">Chưa có dữ liệu chi tiêu nào.</p>
             </td>
           </tr>
           {% endfor %}

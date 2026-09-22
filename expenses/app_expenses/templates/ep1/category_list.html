@@ -53,10 +53,14 @@
               {% empty %}
               <tr>
                 <td colspan="2" class="text-center py-5 text-muted">
-                  <div class="mb-3">
-                    <i class="fas fa-folder-open fa-3x opacity-25"></i>
+                  <div class="empty-state py-3">
+                    <i class="fas fa-tags empty-state-icon fa-3x mb-3 d-block opacity-25" aria-hidden="true"></i>
+                    <p class="empty-state-title mb-1">Chưa có danh mục nào.</p>
+                    <p class="empty-state-text mb-3">Tạo các danh mục chi tiêu riêng phù hợp với thói quen của bạn.</p>
+                    <a href="{% url 'ep1:add_category' %}" class="btn btn-success btn-sm">
+                      <i class="fas fa-plus me-1"></i> Thêm danh mục mới
+                    </a>
                   </div>
-                  <p class="mb-0">Chưa có danh mục nào.</p>
                 </td>
               </tr>
               {% endfor %}

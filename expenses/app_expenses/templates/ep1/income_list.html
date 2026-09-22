@@ -30,8 +30,8 @@
       <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
           <div class="col-md-2">
-            <label class="form-label small fw-bold text-muted">Sắp xếp tiền</label>
-            <select name="sort_amount" class="form-select" onchange="this.form.submit()">
+            <label for="filter_income_sort_amount" class="form-label small fw-bold text-muted">Sắp xếp tiền</label>
+            <select id="filter_income_sort_amount" name="sort_amount" class="form-select" onchange="this.form.submit()">
                 <option value="">Mặc định</option>
                 <option value="asc" {% if sort_amount == 'asc' %}selected{% endif %}>Thấp đến Cao</option>
                 <option value="desc" {% if sort_amount == 'desc' %}selected{% endif %}>Cao đến Thấp</option>
@@ -39,8 +39,8 @@
           </div>
 
           <div class="col-md-2">
-            <label class="form-label small fw-bold text-muted">Sắp xếp ngày</label>
-            <select name="sort_date" class="form-select" onchange="this.form.submit()">
+            <label for="filter_income_sort_date" class="form-label small fw-bold text-muted">Sắp xếp ngày</label>
+            <select id="filter_income_sort_date" name="sort_date" class="form-select" onchange="this.form.submit()">
                 <option value="">Mặc định</option>
                 <option value="asc" {% if sort_date == 'asc' %}selected{% endif %}>Cũ đến Mới</option>
                 <option value="desc" {% if sort_date == 'desc' %}selected{% endif %}>Mới đến Cũ</option>
@@ -48,8 +48,8 @@
           </div>
 
           <div class="col-md-2">
-            <label class="form-label small fw-bold text-muted">Nguồn Thu</label>
-            <select name="source" class="form-select" onchange="this.form.submit()">
+            <label for="filter_income_source" class="form-label small fw-bold text-muted">Nguồn Thu</label>
+            <select id="filter_income_source" name="source" class="form-select" onchange="this.form.submit()">
               <option value="">Tất cả nguồn thu</option>
               {% for source in sources %}
               <option value="{{ source.id }}" {% if selected_source == source.id %}selected{% endif %}>
@@ -60,13 +60,13 @@
           </div>
 
           <div class="col-md-4">
-            <label class="form-label small fw-bold text-muted">Khoảng thời gian</label>
+            <label for="filter_income_date_from" class="form-label small fw-bold text-muted">Khoảng thời gian</label>
             <div class="input-group">
-                <input type="date" name="date_from" class="form-control" 
-                       value="{{ date_from }}" onchange="this.form.submit()" />
+                <input type="date" id="filter_income_date_from" name="date_from" class="form-control" 
+                       value="{{ date_from }}" onchange="this.form.submit()" aria-label="Từ ngày" />
                 <span class="input-group-text">-</span>
-                <input type="date" name="date_to" class="form-control" 
-                       value="{{ date_to }}" onchange="this.form.submit()" />
+                <input type="date" id="filter_income_date_to" name="date_to" class="form-control" 
+                       value="{{ date_to }}" onchange="this.form.submit()" aria-label="Đến ngày" />
             </div>
           </div>
 
@@ -187,12 +187,23 @@
         </div>
         {% endif %}
         {% else %}
-        <div class="text-center py-5">
-          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-          <p class="text-muted">Chưa có thu nhập nào</p>
-          <a href="{% url "ep1:add_income" %}" class="btn btn-success">
-            <i class="fas fa-plus me-2"></i>Thêm thu nhập đầu tiên
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <i class="fas fa-money-bill-wave fa-3x text-muted opacity-50"></i>
+          </div>
+          {% if date_from or date_to or selected_source %}
+          <h5 class="empty-state-title">Không tìm thấy khoản thu nhập nào</h5>
+          <p class="empty-state-text">Thử thay đổi bộ lọc ngày hoặc nguồn thu để xem kết quả.</p>
+          <a href="{% url 'ep1:income_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-sync-alt me-1"></i> Xóa bộ lọc
           </a>
+          {% else %}
+          <h5 class="empty-state-title">Chưa có khoản thu nhập nào</h5>
+          <p class="empty-state-text">Ghi nhận các nguồn thu của bạn để theo dõi dòng tiền chính xác hơn.</p>
+          <a href="{% url 'ep1:add_income' %}" class="btn btn-success empty-state-cta">
+            <i class="fas fa-plus me-1"></i> Thêm thu nhập đầu tiên
+          </a>
+          {% endif %}
         </div>
         {% endif %}
       </div>

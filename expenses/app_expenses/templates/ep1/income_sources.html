@@ -23,7 +23,7 @@
         <form method="post">
           {% csrf_token %}
           <div class="mb-3">
-            <label class="form-label fw-semibold">{{ form.name.label }}</label>
+            <label for="id_name" class="form-label fw-semibold">{{ form.name.label }}</label>
             {{ form.name }} {% if form.name.errors %}
             <div class="text-danger small mt-1">{{ form.name.errors }}</div>
             {% endif %}
@@ -79,9 +79,12 @@
           </table>
         </div>
         {% else %}
-        <div class="text-center py-5">
-          <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-          <p class="text-muted">Chưa có nguồn thu nào</p>
+        <div class="empty-state py-4">
+          <div class="empty-state-icon">
+            <i class="fas fa-sitemap fa-3x text-muted opacity-50"></i>
+          </div>
+          <h6 class="empty-state-title">Chưa có nguồn thu nào</h6>
+          <p class="empty-state-text">Sử dụng form bên cạnh để thêm nguồn thu đầu tiên (ví dụ: Lương, Thưởng, Đầu tư...).</p>
         </div>
         {% endif %}
       </div>

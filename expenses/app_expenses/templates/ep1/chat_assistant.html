@@ -312,6 +312,9 @@
   let currentParsedData = null;
 
   function formatMessage(text, allowMarkup = false) {
+    if (String(text).includes("typing-indicator")) {
+      return text;
+    }
     text = String(text).replace(/[&<>"']/g, function (character) {
       return {
         "&": "&amp;",
@@ -341,6 +344,7 @@
     e.preventDefault();
 
     const input = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
     const text = input.value.trim();
 
     if (!text) return;
@@ -348,11 +352,17 @@
     // Add user message
     addMessage("user", text);
 
-    // Clear input
+    // Clear and disable input
     input.value = "";
+    input.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
 
-    // Show loading
-    const loadingId = addMessage("bot", "⏳ Đang xử lý...", "system");
+    // Show loading typing indicator
+    const loadingId = addMessage(
+      "bot",
+      '<div class="typing-indicator" aria-label="Đang xử lý"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>',
+      "typing"
+    );
 
     // Call API
     fetch("{% url 'ep1:parse_expense_api' %}", {
@@ -363,10 +373,16 @@
       },
       body: JSON.stringify({ text: text }),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Mã phản hồi không hợp lệ: " + response.status);
+        }
+        return response.json();
+      })
       .then((data) => {
         // Remove loading message
-        document.getElementById(loadingId).remove();
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
 
         if (data.success) {
           if (data.gemini_warning) {
@@ -396,13 +412,19 @@
             showConfirmation(data);
           }
         } else {
-          addMessage("bot", "❌ " + data.error, "error");
+          addMessage("bot", "❌ " + (data.error || "Có lỗi xảy ra, vui lòng thử lại."), "error");
         }
       })
       .catch((error) => {
-        document.getElementById(loadingId).remove();
-        addMessage("bot", "❌ Có lỗi xảy ra. Vui lòng thử lại.", "error");
-        console.error("Error:", error);
+        const loadingEl = document.getElementById(loadingId);
+        if (loadingEl) loadingEl.remove();
+        addMessage("bot", "❌ Không thể kết nối đến máy chủ. Vui lòng thử lại sau.", "error");
+        console.error("Chatbot Error:", error);
+      })
+      .finally(() => {
+        input.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        input.focus();
       });
   });
 

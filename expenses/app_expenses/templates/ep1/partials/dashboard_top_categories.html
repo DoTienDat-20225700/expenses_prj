@@ -14,8 +14,9 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="text-center py-5 text-muted">
-  <i class="fas fa-inbox fs-1 mb-2 opacity-50"></i>
-  <p>Chưa có dữ liệu</p>
+<div class="empty-state py-4">
+  <i class="fas fa-folder-open empty-state-icon fs-2 mb-2 d-block opacity-50" aria-hidden="true"></i>
+  <p class="empty-state-title small mb-1">Chưa có chi tiêu theo danh mục</p>
+  <p class="text-muted small mb-0">Thêm khoản chi tiêu đầu tiên để xem thống kê danh mục.</p>
 </div>
 {% endif %}

@@ -52,6 +52,9 @@
   </head>
 
   <body class="main-body">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Chuyển đến nội dung chính</a>
+
     <nav class="navbar navbar-expand-lg fixed-top">
       <div class="container">
         <a
@@ -403,6 +406,34 @@
           
           lastScroll = currentScroll;
         });
+
+        // Chống duplicate click submit trên toàn bộ standard form
+        document.addEventListener("submit", function (e) {
+          const form = e.target;
+          if (
+            form.classList.contains("no-double-submit-prevent") ||
+            form.id === "floatingChatForm" ||
+            form.id === "chatForm"
+          ) {
+            return;
+          }
+          const submitBtn = form.querySelector(
+            'button[type="submit"]:not([disabled])',
+          );
+          if (submitBtn) {
+            setTimeout(function () {
+              submitBtn.setAttribute("data-original-html", submitBtn.innerHTML);
+              submitBtn.disabled = true;
+              submitBtn.classList.add("disabled");
+              if (!submitBtn.querySelector(".spinner-border")) {
+                const text = submitBtn.innerText.trim();
+                submitBtn.innerHTML =
+                  '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ' +
+                  (text ? "Đang xử lý..." : "");
+              }
+            }, 0);
+          }
+        });
       });
     </script>
     
@@ -727,13 +758,16 @@
       /* Mobile Responsive */
       @media (max-width: 576px) {
         .chat-box {
-          width: calc(100vw - 40px);
-          height: 450px;
+          width: calc(100vw - 24px);
+          height: calc(100vh - 120px);
+          max-height: 480px;
+          right: 0;
+          bottom: 65px;
         }
         
         #floatingChatWidget {
-          right: 10px;
-          bottom: 10px;
+          right: 12px;
+          bottom: 12px;
         }
       }
       
@@ -892,7 +926,12 @@
           addFloatingMessage('user', text);
           chatInput.value = '';
           
-          const loadingId = addFloatingMessage('bot', '⏳ Đang xử lý...', 'system');
+          // Disable controls while fetching
+          chatInput.disabled = true;
+          const sendBtn = chatForm.querySelector('button[type="submit"]');
+          if (sendBtn) sendBtn.disabled = true;
+          
+          const loadingId = addFloatingMessage('bot', '<div class="typing-indicator" aria-label="Đang xử lý"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>', 'typing');
           
           fetch("{% url 'ep1:parse_expense_api' %}", {
             method: 'POST',
@@ -902,9 +941,15 @@
             },
             body: JSON.stringify({ text: text })
           })
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Mã phản hồi không hợp lệ: ' + response.status);
+            }
+            return response.json();
+          })
           .then(data => {
-            document.getElementById(loadingId).remove();
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
             
             if (data.success) {
               if (data.gemini_warning) {
@@ -938,18 +983,27 @@
                 }
               }
             } else {
-              addFloatingMessage('bot', '❌ ' + (data.error || 'Có lỗi xảy ra'), 'error');
+              addFloatingMessage('bot', '❌ ' + (data.error || 'Có lỗi xảy ra, vui lòng thử lại.'), 'error');
             }
           })
           .catch(error => {
-            document.getElementById(loadingId).remove();
-            addFloatingMessage('bot', '❌ Có lỗi xảy ra.', 'error');
-            console.error('Error:', error);
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) loadingEl.remove();
+            addFloatingMessage('bot', '❌ Không thể kết nối đến máy chủ. Vui lòng thử lại sau.', 'error');
+            console.error('Chatbot error:', error);
+          })
+          .finally(() => {
+            chatInput.disabled = false;
+            if (sendBtn) sendBtn.disabled = false;
+            chatInput.focus();
           });
         });
         
         // Format message (convert markdown-style to HTML)
         function formatMessage(text, allowMarkup = false) {
+          if (String(text).includes('typing-indicator')) {
+            return text;
+          }
           text = String(text).replace(/[&<>"']/g, function (character) {
             return {
               '&': '&amp;',
