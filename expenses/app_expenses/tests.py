@@ -2,11 +2,12 @@ from datetime import timedelta, date
 from decimal import Decimal
 import os
 import json
-from unittest.mock import patch
+from io import BytesIO
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth import get_user_model
-
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
@@ -14,9 +15,13 @@ from django.utils import timezone
 
 from app_expenses.models import (
     Budget, Category, Expense, Income, IncomeSource,
-    RecurringExpense, RecurringIncome, SavingsGoal,
+    RecurringExpense, RecurringIncome, SavingsGoal, Profile, Announcement,
 )
-from app_expenses.form import ExpenseForm, IncomeForm, RecurringExpenseForm, SavingsGoalForm
+from app_expenses.form import (
+    ExpenseForm, IncomeForm, RecurringExpenseForm, SavingsGoalForm,
+    CategoryForm, IncomeSourceForm, BudgetForm, UserLoginForm, RegisterForm,
+    UserUpdateForm, ProfileUpdateForm,
+)
 from app_expenses.utils.chat_intent import ChatIntentDetector, ChatQueryHandler
 from app_expenses.utils.nlp_parser import ExpenseNLPParser
 
@@ -1013,3 +1018,849 @@ class ServiceLayerTests(TestCase):
         self.assertTrue(success)
         self.assertEqual(del_resp['action'], 'delete')
         self.assertFalse(Expense.objects.filter(id=exp_id).exists())
+
+
+class AuthenticationFlowTests(TestCase):
+    """Step 1: Authentication & Session Lifecycle Tests."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username='auth_user',
+            password='Password123!',
+            email='auth@example.com',
+        )
+
+    def test_login_success(self):
+        response = self.client.post(reverse('ep1:login'), {
+            'username': 'auth_user',
+            'password': 'Password123!',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('_auth_user_id', self.client.session)
+        self.assertEqual(int(self.client.session['_auth_user_id']), self.user.id)
+
+    def test_login_failure_wrong_password(self):
+        response = self.client.post(reverse('ep1:login'), {
+            'username': 'auth_user',
+            'password': 'WrongPassword!',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_login_failure_inactive_user(self):
+        self.user.is_active = False
+        self.user.save()
+        response = self.client.post(reverse('ep1:login'), {
+            'username': 'auth_user',
+            'password': 'Password123!',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_logout_view(self):
+        self.client.force_login(self.user)
+        self.assertIn('_auth_user_id', self.client.session)
+        response = self.client.post(reverse('ep1:logout'))
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_anonymous_access_redirects_to_login(self):
+        protected_urls = [
+            reverse('ep1:ep1_lists'),
+            reverse('ep1:income_list'),
+            reverse('ep1:recurring_list'),
+            reverse('ep1:savings_goal_list'),
+            reverse('ep1:profile'),
+            reverse('ep1:chat_assistant'),
+            reverse('ep1:dashboard'),
+        ]
+        login_url = reverse('ep1:login')
+        for url in protected_urls:
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 302, f"Expected 302 for {url}")
+            self.assertTrue(resp.url.startswith(login_url), f"Redirect URL {resp.url} should start with {login_url}")
+
+    def test_password_change_flow(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('ep1:password_change'), {
+            'old_password': 'Password123!',
+            'new_password1': 'NewValidPass456!',
+            'new_password2': 'NewValidPass456!',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewValidPass456!'))
+
+    def test_password_reset_flow(self):
+        response = self.client.post(reverse('ep1:password_reset'), {
+            'email': 'auth@example.com',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('ep1:password_reset_done'))
+
+
+class AuthorizationIsolationTests(TestCase):
+    """Step 2: Multi-user Data Isolation & Admin Permissions."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user_a = self.User.objects.create_user(username='user_a', password='pwd', email='a@test.com')
+        self.user_b = self.User.objects.create_user(username='user_b', password='pwd', email='b@test.com')
+        self.admin_user = self.User.objects.create_superuser(username='admin_user', password='pwd', email='admin@test.com')
+
+        self.today = timezone.now().date()
+        self.cat_b = Category.objects.create(user=self.user_b, name='Category of B')
+        self.exp_b = Expense.objects.create(
+            user=self.user_b,
+            category=self.cat_b,
+            amount=Decimal('450000'),
+            description='Confidential Expense B',
+            date=self.today,
+        )
+        self.source_b = IncomeSource.objects.create(user=self.user_b, name='Source of B')
+        self.inc_b = Income.objects.create(
+            user=self.user_b,
+            source=self.source_b,
+            amount=Decimal('8000000'),
+            description='Confidential Income B',
+            date=self.today,
+        )
+        self.rec_b = RecurringExpense.objects.create(
+            user=self.user_b,
+            category=self.cat_b,
+            name='Recurring B',
+            amount=Decimal('100000'),
+            frequency='monthly',
+            start_date=self.today,
+            next_due_date=self.today,
+        )
+        self.goal_b = SavingsGoal.objects.create(
+            user=self.user_b,
+            goal_name='Goal B',
+            target_amount=Decimal('10000000'),
+            current_amount=Decimal('2000000'),
+            start_date=self.today,
+            target_date=self.today + timedelta(days=60),
+        )
+
+    def test_user_a_cannot_view_or_filter_user_b_expenses(self):
+        self.client.force_login(self.user_a)
+        response = self.client.get(reverse('ep1:ep1_lists'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Confidential Expense B')
+
+    def test_user_a_cannot_edit_or_delete_user_b_expense(self):
+        self.client.force_login(self.user_a)
+        # Edit
+        resp_edit = self.client.post(reverse('ep1:edit_ep1', kwargs={'pk': self.exp_b.pk}), {
+            'amount': '999999',
+            'description': 'Hacked',
+            'date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 404)
+
+        # Delete
+        resp_del = self.client.post(reverse('ep1:delete_ep1', kwargs={'pk': self.exp_b.pk}))
+        self.assertEqual(resp_del.status_code, 404)
+        self.assertTrue(Expense.objects.filter(pk=self.exp_b.pk).exists())
+
+    def test_user_a_cannot_edit_or_delete_user_b_income(self):
+        self.client.force_login(self.user_a)
+        resp_edit = self.client.post(reverse('ep1:edit_income', kwargs={'pk': self.inc_b.pk}), {
+            'amount': '999999',
+            'description': 'Hacked',
+            'date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 404)
+
+        resp_del = self.client.post(reverse('ep1:delete_income', kwargs={'pk': self.inc_b.pk}))
+        self.assertEqual(resp_del.status_code, 404)
+        self.assertTrue(Income.objects.filter(pk=self.inc_b.pk).exists())
+
+    def test_user_a_cannot_edit_or_delete_user_b_category(self):
+        self.client.force_login(self.user_a)
+        resp_edit = self.client.post(reverse('ep1:edit_category', kwargs={'pk': self.cat_b.pk}), {
+            'name': 'Hacked Category',
+        })
+        self.assertEqual(resp_edit.status_code, 404)
+
+        resp_del = self.client.post(reverse('ep1:delete_category', kwargs={'pk': self.cat_b.pk}))
+        self.assertEqual(resp_del.status_code, 404)
+        self.assertTrue(Category.objects.filter(pk=self.cat_b.pk).exists())
+
+    def test_user_a_cannot_edit_or_delete_user_b_income_source(self):
+        self.client.force_login(self.user_a)
+        resp_edit = self.client.post(reverse('ep1:edit_income_source', kwargs={'pk': self.source_b.pk}), {
+            'name': 'Hacked Source',
+        })
+        self.assertEqual(resp_edit.status_code, 404)
+
+        resp_del = self.client.post(reverse('ep1:delete_income_source', kwargs={'pk': self.source_b.pk}))
+        self.assertEqual(resp_del.status_code, 404)
+        self.assertTrue(IncomeSource.objects.filter(pk=self.source_b.pk).exists())
+
+    def test_user_a_cannot_access_or_manipulate_user_b_savings_goal(self):
+        self.client.force_login(self.user_a)
+        resp_detail = self.client.get(reverse('ep1:savings_goal_detail', kwargs={'pk': self.goal_b.pk}))
+        self.assertEqual(resp_detail.status_code, 404)
+
+        resp_edit = self.client.post(reverse('ep1:edit_savings_goal', kwargs={'pk': self.goal_b.pk}), {
+            'goal_name': 'Hacked Goal',
+            'target_amount': '5000000',
+            'target_date': (self.today + timedelta(days=30)).isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 404)
+
+        resp_prog = self.client.post(reverse('ep1:update_savings_progress', kwargs={'pk': self.goal_b.pk}), {
+            'current_amount': '9999999',
+        })
+        self.assertEqual(resp_prog.status_code, 404)
+
+        resp_del = self.client.post(reverse('ep1:delete_savings_goal', kwargs={'pk': self.goal_b.pk}))
+        self.assertEqual(resp_del.status_code, 404)
+
+    def test_user_a_cannot_toggle_edit_delete_user_b_recurring(self):
+        self.client.force_login(self.user_a)
+        resp_toggle = self.client.post(reverse('ep1:toggle_recurring', kwargs={'pk': self.rec_b.pk}))
+        self.assertEqual(resp_toggle.status_code, 404)
+
+        resp_edit = self.client.post(reverse('ep1:edit_recurring', kwargs={'pk': self.rec_b.pk}), {
+            'name': 'Hacked Recurring',
+            'amount': '500000',
+            'frequency': 'monthly',
+            'start_date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 404)
+
+        resp_del = self.client.post(reverse('ep1:delete_recurring', kwargs={'pk': self.rec_b.pk}))
+        self.assertEqual(resp_del.status_code, 404)
+
+    def test_admin_permissions_matrix(self):
+        admin_urls = [
+            reverse('ep1:admin_dashboard'),
+            reverse('ep1:user_management'),
+            reverse('ep1:ai_monitor'),
+            reverse('ep1:announcement_manager'),
+        ]
+        # Regular user A cannot access admin URLs (302 redirect)
+        self.client.force_login(self.user_a)
+        for url in admin_urls:
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 302, f"Regular user should be redirected from {url}")
+
+        # Superuser can access all admin URLs (200 OK)
+        self.client.force_login(self.admin_user)
+        for url in admin_urls:
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200, f"Superuser should access {url}")
+
+
+class MoneyFieldsValidationTests(TestCase):
+    """Step 3: Validation of currency and financial fields."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(username='money_user', password='pwd')
+        self.cat = Category.objects.create(user=self.user, name='Ăn uống')
+        self.source = IncomeSource.objects.create(user=self.user, name='Lương')
+        self.today = timezone.now().date()
+
+    def test_positive_decimal_amount(self):
+        exp = Expense.objects.create(
+            user=self.user,
+            category=self.cat,
+            amount=Decimal('150000.50'),
+            date=self.today,
+        )
+        self.assertEqual(exp.amount, Decimal('150000.50'))
+
+    def test_negative_amount_rejected_by_form_and_db(self):
+        form = ExpenseForm(
+            data={'amount': '-50000', 'description': 'Negative test', 'category': self.cat.pk, 'date': self.today},
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('amount', form.errors)
+
+        with self.assertRaises((IntegrityError, ValidationError)):
+            Expense.objects.create(
+                user=self.user,
+                category=self.cat,
+                amount=Decimal('-50000'),
+                date=self.today,
+            )
+
+    def test_zero_amount_rejected_by_form_and_db(self):
+        form = ExpenseForm(
+            data={'amount': '0', 'description': 'Zero test', 'category': self.cat.pk, 'date': self.today},
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('amount', form.errors)
+
+        with self.assertRaises((IntegrityError, ValidationError)):
+            Expense.objects.create(
+                user=self.user,
+                category=self.cat,
+                amount=Decimal('0'),
+                date=self.today,
+            )
+
+    def test_income_negative_or_zero_rejected(self):
+        form = IncomeForm(
+            data={'amount': '-1000', 'source': self.source.pk, 'date': self.today},
+            user=self.user,
+        )
+        self.assertFalse(form.is_valid())
+
+        with self.assertRaises((IntegrityError, ValidationError)):
+            Income.objects.create(
+                user=self.user,
+                source=self.source,
+                amount=Decimal('-1000'),
+                date=self.today,
+            )
+
+    def test_boundary_decimal_values(self):
+        large_amount = Decimal('9999999999.99')
+        exp = Expense.objects.create(
+            user=self.user,
+            category=self.cat,
+            amount=large_amount,
+            date=self.today,
+        )
+        self.assertEqual(exp.amount, large_amount)
+
+    def test_budget_negative_rejected(self):
+        with self.assertRaises((IntegrityError, ValidationError)):
+            Budget.objects.create(
+                user=self.user,
+                total=Decimal('-50000'),
+            )
+
+
+class ComprehensiveCrudFlowTests(TestCase):
+    """Step 4: Full lifecycle CRUD flows for domain entities."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(username='crud_user', password='pwd')
+        self.client.force_login(self.user)
+        self.today = timezone.now().date()
+        self.cat = Category.objects.create(user=self.user, name='Ăn uống')
+        self.source = IncomeSource.objects.create(user=self.user, name='Lương chính')
+
+    def test_expense_crud_flow(self):
+        # Create
+        resp_add = self.client.post(reverse('ep1:add_ep1'), {
+            'amount': '75000',
+            'description': 'Phở bò CRUD',
+            'category': self.cat.pk,
+            'date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_add.status_code, 302)
+        exp = Expense.objects.filter(user=self.user, description='Phở bò CRUD').first()
+        self.assertIsNotNone(exp)
+
+        # Read
+        resp_list = self.client.get(reverse('ep1:ep1_lists'))
+        self.assertEqual(resp_list.status_code, 200)
+        self.assertContains(resp_list, 'Phở bò CRUD')
+
+        # Update
+        resp_edit = self.client.post(reverse('ep1:edit_ep1', kwargs={'pk': exp.pk}), {
+            'amount': '80000',
+            'description': 'Phở bò đặc biệt',
+            'category': self.cat.pk,
+            'date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 302)
+        exp.refresh_from_db()
+        self.assertEqual(exp.amount, Decimal('80000'))
+        self.assertEqual(exp.description, 'Phở bò đặc biệt')
+
+        # Delete
+        resp_del = self.client.post(reverse('ep1:delete_ep1', kwargs={'pk': exp.pk}))
+        self.assertEqual(resp_del.status_code, 302)
+        self.assertFalse(Expense.objects.filter(pk=exp.pk).exists())
+
+    def test_income_and_source_crud_flow(self):
+        # Source Create
+        resp_src_add = self.client.post(reverse('ep1:income_source_manage'), {
+            'name': 'Freelance Project',
+        })
+        self.assertEqual(resp_src_add.status_code, 302)
+        src = IncomeSource.objects.filter(user=self.user, name='Freelance Project').first()
+        self.assertIsNotNone(src)
+
+        # Source Update
+        resp_src_edit = self.client.post(reverse('ep1:edit_income_source', kwargs={'pk': src.pk}), {
+            'name': 'Freelance Web',
+        })
+        self.assertEqual(resp_src_edit.status_code, 302)
+        src.refresh_from_db()
+        self.assertEqual(src.name, 'Freelance Web')
+
+        # Income Create
+        resp_inc_add = self.client.post(reverse('ep1:add_income'), {
+            'source': src.pk,
+            'amount': '5000000',
+            'description': 'Dự án website',
+            'date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_inc_add.status_code, 302)
+        inc = Income.objects.filter(user=self.user, description='Dự án website').first()
+        self.assertIsNotNone(inc)
+
+        # Income Update
+        resp_inc_edit = self.client.post(reverse('ep1:edit_income', kwargs={'pk': inc.pk}), {
+            'source': src.pk,
+            'amount': '6000000',
+            'description': 'Dự án website fullstack',
+            'date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_inc_edit.status_code, 302)
+        inc.refresh_from_db()
+        self.assertEqual(inc.amount, Decimal('6000000'))
+
+        # Income Delete
+        resp_inc_del = self.client.post(reverse('ep1:delete_income', kwargs={'pk': inc.pk}))
+        self.assertEqual(resp_inc_del.status_code, 302)
+        self.assertFalse(Income.objects.filter(pk=inc.pk).exists())
+
+        # Source Delete
+        resp_src_del = self.client.post(reverse('ep1:delete_income_source', kwargs={'pk': src.pk}))
+        self.assertEqual(resp_src_del.status_code, 302)
+        self.assertFalse(IncomeSource.objects.filter(pk=src.pk).exists())
+
+    def test_category_crud_flow(self):
+        # Create
+        resp_add = self.client.post(reverse('ep1:add_category'), {
+            'name': 'Học tập & Sách',
+        })
+        self.assertEqual(resp_add.status_code, 302)
+        cat = Category.objects.filter(user=self.user, name='Học tập & Sách').first()
+        self.assertIsNotNone(cat)
+
+        # Read
+        resp_list = self.client.get(reverse('ep1:category_list'))
+        self.assertEqual(resp_list.status_code, 200)
+        self.assertContains(resp_list, 'Học tập &amp; Sách')
+
+        # Update
+        resp_edit = self.client.post(reverse('ep1:edit_category', kwargs={'pk': cat.pk}), {
+            'name': 'Giáo trình & Sách',
+        })
+        self.assertEqual(resp_edit.status_code, 302)
+        cat.refresh_from_db()
+        self.assertEqual(cat.name, 'Giáo trình & Sách')
+
+        # Delete
+        resp_del = self.client.post(reverse('ep1:delete_category', kwargs={'pk': cat.pk}))
+        self.assertEqual(resp_del.status_code, 302)
+        self.assertFalse(Category.objects.filter(pk=cat.pk).exists())
+
+    def test_recurring_crud_flow(self):
+        # Create Expense Recurring
+        resp_add = self.client.post(reverse('ep1:add_recurring'), {
+            'transaction_type': 'expense',
+            'name': 'Tiền mạng FPT',
+            'amount': '330000',
+            'category': self.cat.pk,
+            'frequency': 'monthly',
+            'start_date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_add.status_code, 302)
+        rec = RecurringExpense.objects.filter(user=self.user, name='Tiền mạng FPT').first()
+        self.assertIsNotNone(rec)
+
+        # Read
+        resp_list = self.client.get(reverse('ep1:recurring_list'))
+        self.assertEqual(resp_list.status_code, 200)
+        self.assertContains(resp_list, 'Tiền mạng FPT')
+
+        # Update
+        resp_edit = self.client.post(reverse('ep1:edit_recurring', kwargs={'pk': rec.pk}), {
+            'transaction_type': 'expense',
+            'name': 'Tiền mạng FPT Gói VIP',
+            'amount': '385000',
+            'category': self.cat.pk,
+            'frequency': 'monthly',
+            'start_date': self.today.isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 302)
+        rec.refresh_from_db()
+        self.assertEqual(rec.name, 'Tiền mạng FPT Gói VIP')
+        self.assertEqual(rec.amount, Decimal('385000'))
+
+        # Delete
+        resp_del = self.client.post(reverse('ep1:delete_recurring', kwargs={'pk': rec.pk}))
+        self.assertEqual(resp_del.status_code, 302)
+        self.assertFalse(RecurringExpense.objects.filter(pk=rec.pk).exists())
+
+    def test_savings_goal_crud_flow(self):
+        # Create
+        resp_add = self.client.post(reverse('ep1:add_savings_goal'), {
+            'goal_name': 'Mua iPhone 16 Pro',
+            'target_amount': '28000000',
+            'current_amount': '5000000',
+            'start_date': self.today.isoformat(),
+            'target_date': (self.today + timedelta(days=90)).isoformat(),
+        })
+        self.assertEqual(resp_add.status_code, 302)
+        goal = SavingsGoal.objects.filter(user=self.user, goal_name='Mua iPhone 16 Pro').first()
+        self.assertIsNotNone(goal)
+
+        # Detail Read
+        resp_det = self.client.get(reverse('ep1:savings_goal_detail', kwargs={'pk': goal.pk}))
+        self.assertEqual(resp_det.status_code, 200)
+        self.assertContains(resp_det, 'Mua iPhone 16 Pro')
+
+        # Update
+        resp_edit = self.client.post(reverse('ep1:edit_savings_goal', kwargs={'pk': goal.pk}), {
+            'goal_name': 'Mua iPhone 16 Pro Max',
+            'target_amount': '32000000',
+            'current_amount': '5000000',
+            'start_date': self.today.isoformat(),
+            'target_date': (self.today + timedelta(days=90)).isoformat(),
+        })
+        self.assertEqual(resp_edit.status_code, 302)
+        goal.refresh_from_db()
+        self.assertEqual(goal.goal_name, 'Mua iPhone 16 Pro Max')
+
+        # Update Progress
+        resp_prog = self.client.post(reverse('ep1:update_savings_progress', kwargs={'pk': goal.pk}), {
+            'current_amount': '15000000',
+        })
+        self.assertEqual(resp_prog.status_code, 302)
+        goal.refresh_from_db()
+        self.assertEqual(goal.current_amount, Decimal('15000000'))
+
+        # Delete
+        resp_del = self.client.post(reverse('ep1:delete_savings_goal', kwargs={'pk': goal.pk}))
+        self.assertEqual(resp_del.status_code, 302)
+        self.assertFalse(SavingsGoal.objects.filter(pk=goal.pk).exists())
+
+
+class RecurringAdvancedGenerationTests(TestCase):
+    """Step 5: Frequencies, end date expiration, idempotency, and rollback."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(username='rec_adv_user', password='pwd')
+        self.cat = Category.objects.create(user=self.user, name='Dịch vụ')
+        self.today = timezone.now().date()
+
+    def test_all_frequency_advancements(self):
+        from app_expenses.services import generate_due_recurring_transactions
+        from dateutil.relativedelta import relativedelta
+
+        frequencies = [
+            ('daily', timedelta(days=1)),
+            ('weekly', timedelta(weeks=1)),
+            ('monthly', relativedelta(months=1)),
+            ('yearly', relativedelta(years=1)),
+        ]
+
+        for freq, delta in frequencies:
+            rec = RecurringExpense.objects.create(
+                user=self.user,
+                name=f'Test Freq {freq}',
+                amount=Decimal('50000'),
+                category=self.cat,
+                frequency=freq,
+                start_date=self.today,
+                next_due_date=self.today,
+            )
+            generate_due_recurring_transactions(self.user, today=self.today)
+            rec.refresh_from_db()
+            expected_next = self.today + delta
+            self.assertEqual(rec.next_due_date, expected_next, f"Frequency {freq} did not advance correctly")
+
+    def test_end_date_expiration_auto_deactivates(self):
+        from app_expenses.services import generate_due_recurring_transactions
+
+        # Template that has reached end_date
+        rec = RecurringExpense.objects.create(
+            user=self.user,
+            name='Expired Template',
+            amount=Decimal('100000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=self.today - timedelta(days=60),
+            end_date=self.today - timedelta(days=1),
+            next_due_date=self.today,
+            is_active=True,
+        )
+
+        gen_exp, _, _ = generate_due_recurring_transactions(self.user, today=self.today)
+        self.assertEqual(gen_exp, 0)
+        rec.refresh_from_db()
+        self.assertFalse(rec.is_active)
+
+    def test_repeated_generation_idempotency(self):
+        from app_expenses.services import generate_due_recurring_transactions
+
+        rec = RecurringExpense.objects.create(
+            user=self.user,
+            name='Idempotent Template',
+            amount=Decimal('120000'),
+            category=self.cat,
+            frequency='monthly',
+            start_date=self.today,
+            next_due_date=self.today,
+            is_active=True,
+        )
+
+        # Run 1: Should create 1 expense
+        gen1, _, skip1 = generate_due_recurring_transactions(self.user, today=self.today)
+        self.assertEqual(gen1, 1)
+        self.assertEqual(skip1, 0)
+
+        # Run 2: Without due date change, should generate 0
+        gen2, _, skip2 = generate_due_recurring_transactions(self.user, today=self.today)
+        self.assertEqual(gen2, 0)
+
+        # Force due date back to today (simulating concurrency collision) -> should skip duplicate occurrence
+        rec.refresh_from_db()
+        rec.next_due_date = self.today
+        rec.save()
+
+        gen3, _, skip3 = generate_due_recurring_transactions(self.user, today=self.today)
+        self.assertEqual(gen3, 0)
+        self.assertEqual(skip3, 1)
+        self.assertEqual(Expense.objects.filter(recurring_template=rec).count(), 1)
+
+
+class ChatbotActionAndSecurityTests(TestCase):
+    """Step 6: Chatbot intent detection, rate limiting, and ownership isolation."""
+
+    def setUp(self):
+        self.gemini_patcher = patch(
+            'app_expenses.utils.gemini_service.analyze_chat_message',
+            side_effect=RuntimeError('Gemini disabled in unit tests'),
+        )
+        self.gemini_patcher.start()
+
+        self.User = get_user_model()
+        self.user_a = self.User.objects.create_user(username='chat_user_a', password='pwd')
+        self.user_b = self.User.objects.create_user(username='chat_user_b', password='pwd')
+        self.cat_a = Category.objects.create(user=self.user_a, name='Ăn uống')
+        self.today = timezone.now().date()
+        self.exp_b = Expense.objects.create(
+            user=self.user_b,
+            amount=Decimal('90000'),
+            description='Ăn tối User B',
+            date=self.today,
+        )
+
+    def tearDown(self):
+        self.gemini_patcher.stop()
+
+    def test_chat_rate_limiting_429_and_retry_after(self):
+        self.client.force_login(self.user_a)
+        # Send requests up to limit
+        for _ in range(10):
+            resp = self.client.post(
+                reverse('ep1:parse_expense_api'),
+                data=json.dumps({'text': 'Ăn sáng 30k'}),
+                content_type='application/json',
+            )
+            self.assertIn(resp.status_code, (200, 400))
+
+        # 11th request should hit 429
+        resp_limit = self.client.post(
+            reverse('ep1:parse_expense_api'),
+            data=json.dumps({'text': 'Ăn sáng 30k'}),
+            content_type='application/json',
+        )
+        self.assertEqual(resp_limit.status_code, 429)
+        self.assertIn('Retry-After', resp_limit)
+        data = resp_limit.json()
+        self.assertFalse(data['success'])
+        self.assertIn('quá nhiều yêu cầu', data['error'])
+
+    def test_chat_expense_ownership_isolation(self):
+        self.client.force_login(self.user_a)
+        # User A attempts to edit User B's expense via chat action API
+        resp = self.client.post(
+            reverse('ep1:manage_expense_from_chat_api'),
+            data=json.dumps({
+                'expense_id': self.exp_b.id,
+                'action': 'edit',
+                'amount': '10000',
+                'description': 'Hacked',
+            }),
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(resp.json()['success'])
+
+    def test_chat_history_api_bounds(self):
+        self.client.force_login(self.user_a)
+        # limit < 1
+        resp_low = self.client.get(reverse('ep1:chat_history_api') + '?limit=0')
+        self.assertEqual(resp_low.status_code, 400)
+
+        # limit > 50
+        resp_high = self.client.get(reverse('ep1:chat_history_api') + '?limit=99')
+        self.assertEqual(resp_high.status_code, 400)
+
+        # valid limit
+        resp_ok = self.client.get(reverse('ep1:chat_history_api') + '?limit=5')
+        self.assertEqual(resp_ok.status_code, 200)
+        self.assertTrue(resp_ok.json()['success'])
+
+
+class AvatarUploadAndProfileTests(TestCase):
+    """Step 7: Profile updates, avatar upload, and Cloudinary mock safety."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(
+            username='profile_user',
+            password='pwd',
+            email='profile@test.com',
+            first_name='Nguyen',
+            last_name='Van A',
+        )
+        self.profile = Profile.objects.get(user=self.user)
+
+    def test_profile_update_and_avatar_upload_mocked(self):
+        self.client.force_login(self.user)
+
+        # Mock image file
+        image_content = b'fake-image-binary-data'
+        image_file = SimpleUploadedFile('avatar.jpg', image_content, content_type='image/jpeg')
+
+        with patch('cloudinary.uploader.upload') as mock_upload, \
+             patch('cloudinary.uploader.destroy') as mock_destroy:
+            mock_upload.return_value = {
+                'public_id': 'avatars/sample',
+                'version': 1,
+                'format': 'jpg',
+                'type': 'upload',
+                'resource_type': 'image',
+                'secure_url': 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
+                'url': 'http://res.cloudinary.com/demo/image/upload/v1/sample.jpg',
+                'width': 100,
+                'height': 100,
+                'bytes': 1024,
+            }
+            mock_destroy.return_value = {'result': 'ok'}
+
+            response = self.client.post(reverse('ep1:profile'), {
+                'email': 'profile_edited@test.com',
+                'full_name': 'Nguyen Van Edited',
+                'hometown': 'Ha Noi',
+                'avatar': image_file,
+            })
+            self.assertIn(response.status_code, (200, 302))
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, 'profile_edited@test.com')
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.full_name, 'Nguyen Van Edited')
+        self.assertEqual(self.profile.hometown, 'Ha Noi')
+
+
+class CsvExportTests(TestCase):
+    """Step 8: CSV export structure, user isolation, and filtering."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user_a = self.User.objects.create_user(username='csv_user_a', password='pwd')
+        self.user_b = self.User.objects.create_user(username='csv_user_b', password='pwd')
+        self.today = timezone.now().date()
+
+        self.cat_a1 = Category.objects.create(user=self.user_a, name='Ăn uống A')
+        self.cat_a2 = Category.objects.create(user=self.user_a, name='Đi lại A')
+        self.cat_b = Category.objects.create(user=self.user_b, name='Ăn uống B')
+
+        Expense.objects.create(user=self.user_a, category=self.cat_a1, amount=Decimal('50000'), description='Bún bò A', date=self.today)
+        Expense.objects.create(user=self.user_a, category=self.cat_a2, amount=Decimal('20000'), description='Vé xe A', date=self.today - timedelta(days=5))
+        Expense.objects.create(user=self.user_b, category=self.cat_b, amount=Decimal('900000'), description='Bí mật B', date=self.today)
+
+    def test_csv_export_headers_and_user_isolation(self):
+        self.client.force_login(self.user_a)
+        response = self.client.get(reverse('ep1:export_expenses'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response['Content-Type'].startswith('text/csv'))
+
+        content = response.content.decode('utf-8-sig')
+        self.assertIn('Bún bò A', content)
+        self.assertIn('Vé xe A', content)
+        self.assertNotIn('Bí mật B', content)
+
+    def test_csv_export_empty_dataset(self):
+        empty_user = self.User.objects.create_user(username='empty_csv_user', password='pwd')
+        self.client.force_login(empty_user)
+        response = self.client.get(reverse('ep1:export_expenses'))
+        self.assertEqual(response.status_code, 200)
+
+        content = response.content.decode('utf-8-sig')
+        lines = [line.strip() for line in content.strip().splitlines() if line.strip()]
+        self.assertEqual(len(lines), 1, "Empty dataset export should only contain header line")
+
+    def test_csv_export_filtering(self):
+        self.client.force_login(self.user_a)
+        response = self.client.get(reverse('ep1:export_expenses') + f'?category={self.cat_a1.id}')
+        self.assertEqual(response.status_code, 200)
+
+        content = response.content.decode('utf-8-sig')
+        self.assertIn('Bún bò A', content)
+        self.assertNotIn('Vé xe A', content)
+
+
+class SecurityAndRegressionSuiteTests(TestCase):
+    """Step 9: Open redirect prevention, GET mutation blocks, and SQL safety."""
+
+    def setUp(self):
+        self.User = get_user_model()
+        self.user = self.User.objects.create_user(username='sec_user', password='pwd')
+        self.cat = Category.objects.create(user=self.user, name='Bảo mật')
+        self.today = timezone.now().date()
+        self.exp = Expense.objects.create(user=self.user, category=self.cat, amount=Decimal('50000'), date=self.today)
+        self.rec = RecurringExpense.objects.create(user=self.user, category=self.cat, name='Rec Sec', amount=Decimal('10000'), frequency='monthly', start_date=self.today, next_due_date=self.today)
+
+    def test_open_redirect_prevention(self):
+        self.client.force_login(self.user)
+        # Attempt open redirect via toggle_recurring next param
+        response = self.client.post(
+            reverse('ep1:toggle_recurring', kwargs={'pk': self.rec.pk}),
+            {'next': 'https://evil-hacker.com/steal-cookie'},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn('evil-hacker.com', response.url)
+        self.assertEqual(response.url, reverse('ep1:recurring_list'))
+
+    def test_get_mutation_rejected_with_405(self):
+        self.client.force_login(self.user)
+        # Endpoints strictly requiring POST
+        post_only_endpoints = [
+            reverse('ep1:toggle_recurring', kwargs={'pk': self.rec.pk}),
+            reverse('ep1:generate_recurring'),
+        ]
+        for url in post_only_endpoints:
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 405, f"Expected 405 for GET on {url}")
+
+        # Endpoint with GET confirmation view: GET must NOT mutate data
+        get_confirm_resp = self.client.get(reverse('ep1:delete_ep1', kwargs={'pk': self.exp.pk}))
+        self.assertEqual(get_confirm_resp.status_code, 200)
+        self.assertTrue(Expense.objects.filter(pk=self.exp.pk).exists(), "GET confirmation view must not delete record")
+
+    def test_search_sql_injection_safety(self):
+        self.client.force_login(self.user)
+        sql_payloads = [
+            "' OR '1'='1' --",
+            "'; DROP TABLE app_expenses_expense; --",
+            '" OR 1=1 --',
+            "admin'--",
+        ]
+        for payload in sql_payloads:
+            resp = self.client.get(reverse('ep1:ep1_lists') + f'?search={payload}')
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(Expense.objects.filter(pk=self.exp.pk).exists())
+

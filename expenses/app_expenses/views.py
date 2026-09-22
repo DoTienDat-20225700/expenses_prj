@@ -3,8 +3,7 @@ import threading
 import os
 import logging
 import re
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, get_user
 from django.contrib.auth.decorators import user_passes_test, login_required
@@ -1116,7 +1115,10 @@ def _get_safe_redirect_url(request, next_param_value, fallback):
 @require_http_methods(["POST"])
 def toggle_recurring_status(request, pk):
     """Bật/tắt trạng thái chi tiêu định kỳ"""
-    is_active, name = toggle_recurring_active_status(pk, request.user)
+    try:
+        is_active, name = toggle_recurring_active_status(pk, request.user)
+    except RecurringExpense.DoesNotExist:
+        raise Http404("Chi tiêu định kỳ không tồn tại")
     status = "kích hoạt" if is_active else "vô hiệu hóa"
     messages.success(request, f'Đã {status} chi tiêu định kỳ "{name}".')
 
