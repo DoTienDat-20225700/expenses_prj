@@ -278,9 +278,7 @@ def profile(request):
                         is_cloudinary = isinstance(old_avatar, CloudinaryResource)
                         avatar_str = str(old_avatar)
                         
-                        print(f"🔍 Debug - Avatar từ DB: {avatar_str}")
-                        print(f"🔍 Debug - Là CloudinaryResource: {is_cloudinary}")
-                        print(f"🔍 Debug - Type: {type(old_avatar)}")
+                        logger.debug("Old avatar info: %s (CloudinaryResource=%s)", avatar_str, is_cloudinary)
                         
                         # Nếu là CloudinaryResource HOẶC URL chứa cloudinary.com
                         if is_cloudinary or 'cloudinary.com' in avatar_str or 'res.cloudinary.com' in avatar_str:
@@ -288,17 +286,13 @@ def profile(request):
                             
                             # Cách 1: Nếu là CloudinaryResource, lấy public_id trực tiếp
                             if is_cloudinary:
-                                # CloudinaryResource có thể chứa public_id trực tiếp khi convert sang string
                                 if hasattr(old_avatar, 'public_id') and old_avatar.public_id:
                                     old_public_id = old_avatar.public_id
                                 else:
-                                    # Nếu không có thuộc tính, string representation chính là public_id
                                     old_public_id = avatar_str
-                                print(f"✅ CloudinaryResource - public_id: {old_public_id}")
                             
                             # Cách 2: Parse từ URL đầy đủ nếu có
                             elif 'cloudinary.com' in avatar_str:
-                                print(f"⚠️ Parse từ URL đầy đủ...")
                                 parts = avatar_str.split('/upload/')
                                 if len(parts) > 1:
                                     path_with_version = parts[1]
@@ -306,29 +300,18 @@ def profile(request):
                                     if len(path_parts) > 1:
                                         full_path = path_parts[1]
                                         old_public_id = full_path.split('?')[0].rsplit('.', 1)[0]
-                                        print(f"✅ Parse được public_id từ URL: {old_public_id}")
                             
                             # Xóa ảnh cũ nếu tìm được public_id
                             if old_public_id:
                                 result = cloudinary.uploader.destroy(old_public_id)
-                                print(f"✅ Đã gọi API xóa - public_id: {old_public_id}")
-                                print(f"📊 Kết quả từ Cloudinary: {result}")
-                                
-                                if result.get('result') == 'ok':
-                                    print(f"✅✅✅ ĐÃ XÓA THÀNH CÔNG avatar cũ trên Cloudinary!")
-                                elif result.get('result') == 'not found':
-                                    print(f"⚠️ Cloudinary không tìm thấy ảnh: {old_public_id}")
-                                else:
-                                    print(f"⚠️ Kết quả: {result.get('result', 'unknown')}")
+                                logger.info("Cloudinary old avatar deletion result for %s: %s", old_public_id, result.get('result'))
                             else:
-                                print(f"❌ Không xác định được public_id")
+                                logger.warning("Could not determine public_id for old avatar: %s", avatar_str)
                         else:
-                            print(f"ℹ️ Avatar cũ là file local: {avatar_str}")
+                            logger.debug("Old avatar is local file: %s", avatar_str)
                             
                     except Exception as e:
-                        print(f"❌ Lỗi khi xóa avatar: {e}")
-                        import traceback
-                        traceback.print_exc()
+                        logger.warning("Error deleting old avatar from Cloudinary: %s", e)
                 
                 # Save cả 2 form
                 u_form.save()
@@ -563,7 +546,7 @@ def add_ep1(request):
                 thread = threading.Thread(target=train_model, args=(request.user,))
                 thread.start()
             except Exception as e:
-                print(f"Lỗi chạy background task: {e}")
+                logger.warning("Lỗi chạy background task: %s", e)
             # -----------------------------------------------------
 
             return redirect('ep1:ep1_lists')
@@ -1464,13 +1447,11 @@ def parse_expense_api(request):
         
         return JsonResponse(expense_result)
         
-    except Exception as e:
-        import traceback
-        error_msg = str(e)
+    except Exception:
         logger.exception('Chat processing failed: user_id=%s', request.user.id)
         return JsonResponse({
             'success': False,
-            'error': f'Lỗi xử lý: {error_msg}'
+            'error': 'Đã xảy ra lỗi trong quá trình xử lý tin nhắn. Vui lòng thử lại sau.'
         }, status=500)
 
 

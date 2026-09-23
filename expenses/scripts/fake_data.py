@@ -9,14 +9,13 @@ current_dir = Path(__file__).resolve().parent
 sys.path.append(str(current_dir.parent))
 
 # Cài đặt môi trường Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'expenses.config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from django.contrib.auth.models import User
 from app_expenses.models import Category, Expense, Budget, Income, IncomeSource, RecurringExpense, Announcement, Profile
-from app_expenses.ml_utils import train_model # Import hàm huấn luyện AI
+from app_expenses.ml_utils import train_model, get_model_path # Import hàm huấn luyện AI
 from faker import Faker
-import random
 
 fake = Faker('vi_VN')
 
@@ -43,7 +42,7 @@ def create_smart_fake_data(num_expenses=50):
     profile.full_name = "Nguyễn Văn Admin"
     profile.date_of_birth = datetime(1995, 1, 1).date()
     profile.gender = 'M'
-    profile.job = "Lập trình viên"
+    profile.occupation = "Lập trình viên"
     profile.save()
 
     # --- TẠO NGÂN SÁCH ---
@@ -191,8 +190,9 @@ def create_smart_fake_data(num_expenses=50):
     print("🧠 Đang huấn luyện lại AI từ dữ liệu mới...")
     try:
         # Xóa file model cũ nếu có để học lại từ đầu
-        if os.path.exists('expense_model.pkl'):
-            os.remove('expense_model.pkl')
+        model_path = get_model_path(user)
+        if os.path.exists(model_path):
+            os.remove(model_path)
         
         train_model(user)
         print("🤖 AI đã học xong! Sẵn sàng dự đoán.")

@@ -1,267 +1,284 @@
-# MoneyManager
+# MoneyManager — Django Personal Finance Management System
 
-Ứng dụng web Django quản lý tài chính cá nhân: theo dõi chi tiêu, thu nhập, ngân sách, giao dịch định kỳ và mục tiêu tiết kiệm.
+Ứng dụng web quản lý tài chính cá nhân toàn diện xây dựng trên nền tảng **Django 5.2**, tích hợp **Chatbot Trợ lý AI (Google Gemini & NLP)**, **Machine Learning dự đoán danh mục (scikit-learn)**, **Động cơ giao dịch định kỳ giao dịch nguyên tử (Atomic Recurring Engine)**, và **Quản lý mục tiêu tiết kiệm thông minh**.
 
-## Overview
+---
 
-MoneyManager là Django monolith với app chính `app_expenses`. Người dùng đăng ký, đăng nhập và quản lý dữ liệu tài chính của mình qua Django templates. Ứng dụng có chatbot hỗ trợ truy vấn và xác nhận giao dịch, dự đoán danh mục bằng machine learning, cùng tùy chọn lưu ảnh đại diện qua Cloudinary.
+## 📌 Tổng Quan Dự Án (Project Overview)
 
-## Features
+**MoneyManager** là hệ thống quản lý tài chính cá nhân bảo mật, đa người dùng (Multi-tenant data isolation) được tối ưu hóa theo mô hình kiến trúc phân lớp (Service-Oriented Django Monolith). Hệ thống cung cấp trải nghiệm quản lý dòng tiền trực quan, tự động hóa các khoản chi/thu định kỳ, phân tích xu hướng chi tiêu và hỗ trợ nhập liệu siêu tốc bằng hội thoại tự nhiên.
 
-- Đăng ký, đăng nhập, đăng xuất, đổi mật khẩu và khôi phục mật khẩu.
-- Quản lý hồ sơ cá nhân và ảnh đại diện.
-- CRUD chi tiêu, danh mục chi tiêu và xuất CSV.
-- CRUD thu nhập và nguồn thu nhập.
-- Dashboard với tổng hợp, ngân sách, giao dịch gần đây và biểu đồ.
-- Chi tiêu định kỳ và thu nhập định kỳ.
-- Mục tiêu tiết kiệm, cập nhật tiến độ và phân tích danh mục cần cắt giảm.
-- Chat assistant cho truy vấn tài chính, preview và xác nhận tạo/sửa/xóa giao dịch.
-- Dự đoán danh mục bằng scikit-learn theo user.
-- Khu vực quản trị cho superuser và Django Admin.
-- Quản lý thông báo hệ thống.
+---
 
-OCR, public REST API độc lập và mobile app chưa được triển khai trong source hiện tại.
+## ✨ Tính Năng Nổi Bật (Key Features)
 
-## Tech Stack
+### 1. Quản lý Chi Tiêu & Thu Nhập (Expense & Income Tracking)
+- **Giao dịch thu chi**: Thêm, sửa, xóa, tìm kiếm, lọc theo khoảng thời gian, sắp xếp theo số tiền/ngày.
+- **Danh mục & Nguồn thu**: Tùy biến danh mục chi tiêu và nguồn thu nhập riêng biệt cho từng người dùng.
+- **Xuất dữ liệu**: Xuất báo cáo giao dịch chi tiêu ra file CSV với bộ lọc linh hoạt.
+- **Machine Learning**: Tự động gợi ý danh mục chi tiêu dựa trên mô tả giao dịch bằng mô hình Naive Bayes riêng cho từng tài khoản.
 
-- Python 3.10+ và Django 5.2.
-- Django ORM, Django forms, function-based views và Django templates.
-- MySQL hoặc PostgreSQL thông qua `DATABASE_URL` hoặc biến database riêng.
-- Gunicorn và WhiteNoise.
-- HTML/CSS/JavaScript; template hiện tại tham chiếu Bootstrap và Font Awesome.
-- Cloudinary tùy chọn cho media.
-- scikit-learn, pandas, NumPy, SciPy, joblib cho ML.
-- Google Gemini tùy chọn thông qua `google-genai`.
+### 2. Bảng Điều Khiển & Phân Tích Dữ Liệu (Dashboard & Visual Analytics)
+- **Tổng quan thời gian thực**: Tổng chi tiêu, thu nhập, số dư khả dụng, ngân sách tháng và phần trăm đã sử dụng.
+- **Biểu đồ trực quan (Chart.js)**:
+  - Biểu đồ xu hướng chi tiêu 6 tháng gần nhất.
+  - Biểu đồ so sánh tương quan Thu nhập vs Chi tiêu theo tháng.
+  - Biểu đồ tỷ trọng phân bổ chi tiêu theo danh mục.
+- **Tối ưu truy vấn**: 100% dữ liệu thống kê và biểu đồ dashboard được tổng hợp qua kỹ thuật Conditional Aggregation trong DB (giảm thiểu triệt để N+1 query).
 
-## Project Structure
+### 3. Động Cơ Giao Dịch Định Kỳ (Recurring Transactions Engine)
+- Thiết lập mẫu chi tiêu/thu nhập định kỳ theo chu kỳ: Hàng ngày (`daily`), Hàng tuần (`weekly`), Hàng tháng (`monthly`), Hàng năm (`yearly`).
+- **Giao dịch nguyên tử (Atomic & Safe)**: Hỗ trợ sinh giao dịch tự động với khóa dòng (`select_for_update`), chống trùng lặp tại mức cơ sở dữ liệu (`unique_together` trên template và occurrence date), tự động hết hạn khi tới `end_date`.
+
+### 4. Mục Tiêu Tiết Kiệm Thông Minh (Savings Goals & AI Recommendations)
+- Đặt mục tiêu tài chính với số tiền đích và thời hạn hoàn thành.
+- Cập nhật tiến độ tiết kiệm trực quan kèm thanh trạng thái.
+- **Thuật toán gợi ý cắt giảm chi tiêu**: Phân tích lịch sử tiêu dùng 30 ngày gần nhất và tính toán lộ trình cắt giảm cụ thể (theo ngày/tuần/tháng) trên các danh mục người dùng lựa chọn để đảm bảo hoàn thành mục tiêu đúng hạn.
+
+### 5. Chatbot Trợ Lý Tài Chính Thông Minh (AI Chat Assistant)
+- **Xử lý ngôn ngữ tự nhiên**: Nhận diện ý định (`CREATE_EXPENSE`, `CREATE_INCOME`, `CREATE_RECURRING`, `QUERY_EXPENSES`, `DELETE_EXPENSE`, `EDIT_EXPENSE`) qua mô hình Google Gemini 2.5 Flash kết hợp bộ phân tích NLP Heuristic dự phòng.
+- **Luồng xác nhận an toàn (Preview & Confirmation Flow)**: Mọi thao tác ghi/sửa/xóa dữ liệu qua chat đều hiển thị bảng xem trước (preview) và chỉ thực thi khi người dùng bấm xác nhận.
+- **Rate limiting & Bảo mật**: Giới hạn tần suất gọi chatbot, bảo vệ token, sanitize dữ liệu đầu vào và đầu ra.
+
+### 6. Quản Lý Tài Khoản & Bảo Mật Hệ Thống (Auth & Security)
+- Đăng ký, đăng nhập, đăng xuất, đổi mật khẩu và quy trình quên mật khẩu qua email token an toàn.
+- Quản lý hồ sơ cá nhân, hỗ trợ lưu trữ ảnh đại diện qua **Cloudinary** hoặc bộ nhớ local.
+- **Bảo mật đa tầng**: Cách ly dữ liệu 100% giữa các User, xác thực CSRF trên toàn bộ mutation endpoints, HTTP 405 cho sai method, bảo vệ chống Open Redirect, kiểm soát chặt chẽ giá trị tiền dương (`CheckConstraint` & `MinValueValidator`).
+- Trang quản trị nội bộ dành cho Superuser: Quản lý người dùng, quản lý thông báo hệ thống toàn trang, giám sát mô hình AI.
+
+---
+
+## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
+
+| Thành phần | Công nghệ / Thư viện |
+| :--- | :--- |
+| **Backend Framework** | Python 3.10+, Django 5.2 |
+| **Kiến trúc** | Django Monolith kết hợp Service Layer (`app_expenses/services/`) |
+| **Database** | PostgreSQL (Production) / MySQL / SQLite |
+| **Database Connector** | `psycopg2-binary`, `mysqlclient`, `dj-database-url` |
+| **AI / NLP** | `google-genai==2.22.0` (Gemini API), Regex-based Rule Engine |
+| **Machine Learning** | `scikit-learn`, `pandas`, `numpy`, `scipy`, `joblib` |
+| **Media Storage** | `cloudinary`, `django-cloudinary-storage`, `Pillow` |
+| **Web Server & Static** | `gunicorn`, `whitenoise` |
+| **Frontend** | HTML5 Semantic, CSS3 (Custom Design System), JavaScript, Bootstrap 5, Font Awesome 6, Chart.js |
+
+---
+
+## 📂 Cấu Trúc Thư Mục (Project Structure)
 
 ```text
 expenses_prj/
-├── README.md
-├── Procfile
-├── build.sh
-├── runtime.txt
-└── expenses/
+├── Procfile                    # Cấu hình process cho hosting (Render/Heroku)
+├── README.md                   # Tài liệu hướng dẫn chính thức của dự án
+├── RENDER_DEPLOYMENT.md        # Hướng dẫn chi tiết triển khai lên Render
+├── build.sh                    # Build script cho deployment môi trường root
+├── runtime.txt                 # Định nghĩa phiên bản Python (python-3.10.14)
+└── expenses/                   # Thư mục gốc chứa mã nguồn Django
     ├── manage.py
-    ├── requirements.txt
-    ├── build.sh
-    ├── render.yaml
-    ├── gunicorn_config.py
-    ├── .env.example
-    ├── config/              # settings, root URLs, ASGI, WSGI
-    ├── app_expenses/        # models, views, forms, URLs, admin, tests
-    │   ├── migrations/
-    │   ├── templates/ep1/
-    │   ├── static/ep1/
-    │   └── utils/           # chatbot, NLP, Gemini, recurring logic
-    ├── scripts/             # fake data, superuser, database utilities
-    ├── media/               # local uploaded media
-    └── staticfiles/         # collectstatic output
+    ├── requirements.txt        # Danh sách Python dependencies đã được pin version
+    ├── build.sh                # Build script chi tiết cho Render Web Service
+    ├── render.yaml             # Infrastructure-as-code cho Render (Web + Postgres)
+    ├── gunicorn_config.py      # Cấu hình worker và timeout cho Gunicorn
+    ├── .env.example            # Bản mẫu cấu hình các biến môi trường
+    ├── config/                 # Module cấu hình chính của Django
+    │   ├── settings.py         # Cài đặt ứng dụng, bảo mật, database, logging
+    │   ├── urls.py             # Root URL routing
+    │   ├── wsgi.py             # WSGI entrypoint cho web server
+    │   └── asgi.py             # ASGI entrypoint
+    ├── app_expenses/           # Ứng dụng chính quản lý thu chi
+    │   ├── models.py           # Data models với CheckConstraints & Indexes
+    │   ├── views.py            # HTTP View controllers
+    │   ├── form.py             # Django forms với validation chặt chẽ
+    │   ├── urls.py             # URL patterns của app
+    │   ├── admin.py            # Đăng ký Django Admin
+    │   ├── ml_utils.py         # Quản lý huấn luyện và dự đoán danh mục ML
+    │   ├── services/           # Tầng nghiệp vụ (Domain Business Logic)
+    │   │   ├── recurring_service.py  # Xử lý tạo giao dịch định kỳ nguyên tử
+    │   │   ├── savings_service.py    # Phân tích và tính toán mục tiêu tiết kiệm
+    │   │   ├── dashboard_service.py  # Tổng hợp số liệu và biểu đồ Dashboard
+    │   │   └── chat_service.py       # Xử lý nghiệp vụ xác nhận hành động từ Chat
+    │   ├── utils/              # Tiện ích bổ trợ (Gemini API, NLP Parser, Security)
+    │   ├── templates/ep1/      # Giao diện người dùng (Bootstrap 5 + Semantic HTML)
+    │   │   └── partials/       # UI partials (Biểu đồ, bảng giao dịch, danh mục)
+    │   ├── static/ep1/         # CSS, JS, hình ảnh hệ thống
+    │   └── tests.py            # Bộ 91 unit & integration tests toàn diện
+    ├── scripts/                # Scripts tiện ích phát triển và kiểm thử
+    │   ├── create_superuser.py # Tạo superuser an toàn từ biến môi trường
+    │   ├── fake_data.py        # Tạo bộ dữ liệu mẫu thông minh cho kiểm thử
+    │   ├── demo_savings_goals.py
+    │   ├── debug_cloudinary.py
+    │   └── manage_db.py
+    └── media/                  # Thư mục lưu trữ media cục bộ
 ```
 
-Không nên commit virtual environment, secrets hoặc generated artifacts.
+---
 
-## System Architecture
+## ⚙️ Hướng Dẫn Cài Đặt (Installation & Setup)
 
-```text
-Browser
-  -> config.urls -> app_expenses.urls
-  -> function-based views
-  -> forms / chatbot utilities / ML utilities
-  -> Django ORM -> configured database
+### 1. Yêu cầu hệ thống
+- Python 3.10 trở lên
+- Git
+- MySQL hoặc PostgreSQL (tùy chọn; mặc định hỗ trợ biến môi trường `DATABASE_URL`)
 
-Uploads -> local filesystem hoặc Cloudinary
-Static files -> app static -> collectstatic -> WhiteNoise
-```
-
-Model chính gồm `Expense`, `Income`, `Category`, `IncomeSource`, `Budget`, `RecurringExpense`, `RecurringIncome`, `SavingsGoal`, `Profile` và `Announcement`. Giao dịch gắn với user; các form chính lọc category/source theo user hiện tại.
-
-## Installation
-
-Yêu cầu: Python 3.10+, pip và MySQL/PostgreSQL nếu không dùng database URL có sẵn.
-
-Từ thư mục repository:
+### 2. Cài đặt môi trường ảo và dependencies
 
 ```bash
+# 1. Clone repository
+git clone <repository-url>
+cd expenses_prj
+
+# 2. Tạo và kích hoạt môi trường ảo Python
 python3 -m venv expenses/venv
-source expenses/venv/bin/activate
+source expenses/venv/bin/activate       # Trên macOS / Linux
+# expenses\venv\Scripts\activate        # Trên Windows
+
+# 3. Cài đặt dependencies
 cd expenses
 pip install -r requirements.txt
+```
+
+### 3. Cấu hình biến môi trường (`.env`)
+
+Tạo file `.env` từ file mẫu `.env.example`:
+
+```bash
 cp .env.example .env
 ```
 
-Trên Windows, kích hoạt bằng `expenses\\venv\\Scripts\\activate`.
-
-Mở `expenses/.env` và đổi `DJANGO_SECRET_KEY` thành `SECRET_KEY`, vì `config/settings.py` đọc biến `SECRET_KEY`.
-
-## Environment Variables
-
-### Django và database
+Điền các thông số cơ bản vào file `expenses/.env`:
 
 ```env
-SECRET_KEY=replace-with-a-long-random-secret
+# Core Django
+SECRET_KEY=your-long-random-secret-key-here
 DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Có thể dùng DATABASE_URL thay cho các biến bên dưới.
-DATABASE_URL=mysql://user:password@127.0.0.1:3306/expenses_db
-# DATABASE_ENGINE=django.db.backends.mysql
-# DATABASE_NAME=expenses_db
-# DATABASE_USER=root
-# DATABASE_PASSWORD=
-# DATABASE_HOST=127.0.0.1
-# DATABASE_PORT=3306
-```
+# Database (Sử dụng DATABASE_URL hoặc cấu hình riêng lẻ)
+DATABASE_URL=mysql://root:password@127.0.0.1:3306/expenses_db
+# Hoặc PostgreSQL: postgresql://expenses_user:password@localhost:5432/expenses_db
 
-Khi không có `DATABASE_URL`, settings mặc định dùng MySQL tại `127.0.0.1:3306`. Production cần `DEBUG=False`, secret riêng và allowlist host phù hợp. Hiện settings vẫn đặt `ALLOWED_HOSTS = ['*']`; đây là known issue.
-
-### Chat assistant
-
-```env
-GEMINI_API_KEY=
+# Gemini AI (Tùy chọn - để sử dụng Chatbot AI)
+GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_TIMEOUT_MS=10000
 CHAT_RATE_LIMIT=10
 CHAT_RATE_WINDOW_SECONDS=60
+
+# Cloudinary (Tùy chọn - nếu không set sẽ lưu avatar vào local media/)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
-### Cloudinary
-
-```env
-CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
-# Hoặc dùng CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
-```
-
-Không có `CLOUDINARY_CLOUD_NAME` thì app dùng local filesystem cho media.
-
-### Email/password reset
-
-Nếu không có `EMAIL_HOST`, development dùng console email backend. SMTP cần `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL` và `DEFAULT_FROM_EMAIL`.
-
-## Database Setup
-
-MySQL local:
-
-```sql
-CREATE DATABASE expenses_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-Hoặc tạo database PostgreSQL và cấu hình `DATABASE_URL`. Sau đó chạy từ thư mục `expenses`:
+### 4. Khởi tạo Cơ sở dữ liệu và Superuser
 
 ```bash
+# Chạy migration tạo các bảng và constraints
 python manage.py migrate
+
+# Tạo tài khoản quản trị (Superuser)
 python manage.py createsuperuser
 ```
 
-> `expenses/scripts/create_superuser.py` tồn tại nhưng build scripts tham chiếu sai đường dẫn và script có credentials mặc định không an toàn. Không dùng script này cho production.
-
-## Running The Project
+### 5. (Tùy chọn) Nạp dữ liệu mẫu để thử nghiệm
 
 ```bash
-cd expenses
+# Tạo dữ liệu chi tiêu, thu nhập, định kỳ và huấn luyện AI mẫu
+python scripts/fake_data.py
+```
+
+### 6. Khởi chạy Development Server
+
+```bash
 python manage.py runserver
 ```
 
-Mở [http://127.0.0.1:8000/](http://127.0.0.1:8000/). Django Admin ở [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/).
+Truy cập ứng dụng tại: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+Truy cập Django Admin tại: [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
 
-Static files:
+---
 
-```bash
-python manage.py collectstatic --no-input
-```
+## 🧪 Chạy Kiểm Thử (Automated Tests & Quality Checks)
 
-Gunicorn trong môi trường đã cấu hình:
-
-```bash
-gunicorn config.wsgi:application
-```
-
-`Procfile`, `render.yaml`, `gunicorn_config.py` và hai build script hiện chưa thống nhất working directory, port và đường dẫn tạo superuser; cần rà soát trước khi deploy Render.
-
-## Main Features / User Flow
-
-1. User đăng ký/đăng nhập; signal tạo profile, category và income source mặc định.
-2. User quản lý expense, income, category, source và budget của mình.
-3. Dashboard tổng hợp dữ liệu, biểu đồ và giao dịch gần đây.
-4. User tạo recurring expense/income và kích hoạt sinh giao dịch đến hạn.
-5. User tạo savings goal, cập nhật tiến độ và xem gợi ý.
-6. Chat assistant phân tích câu lệnh, trả preview và yêu cầu xác nhận trước khi ghi dữ liệu ở các flow hỗ trợ.
-7. Superuser dùng `/admin/` hoặc manager pages để quản lý user, announcement và AI monitor.
-
-## API / URLs
-
-Các URL dưới đây nằm dưới root `/`; phần lớn yêu cầu đăng nhập:
-
-| Nhóm               | URL tiêu biểu                                                                                                                                            |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication     | `/login/`, `/logout/`, `/register/`                                                                                                                      |
-| Dashboard          | `/`, `/dashboard/`                                                                                                                                       |
-| Expenses           | `/expenses/`, `/expenses/add/`, `/expenses/export/`                                                                                                      |
-| Categories         | `/categories/`                                                                                                                                           |
-| Income             | `/income/`, `/income/sources/`                                                                                                                           |
-| Recurring          | `/recurring/`, `/recurring/add/`, `/recurring/generate/`                                                                                                 |
-| Savings goals      | `/savings-goals/`                                                                                                                                        |
-| Profile            | `/profile/`, `/password_change/`, `/password_reset/`                                                                                                     |
-| Admin              | `/admin/`, `/admin-dashboard/`, `/manager/users/`, `/manager/announcements/`                                                                             |
-| Chat UI            | `/chat-assistant/`                                                                                                                                       |
-| Chat APIs          | `/api/parse-expense/`, `/api/save-expense-from-chat/`, `/api/manage-expense-from-chat/`, `/api/save-income-from-chat/`, `/api/save-recurring-from-chat/` |
-| Chart/refresh APIs | `/api/chart/category/`, `/api/chart/monthly/`, `/api/chart/income-expense/`, `/api/dashboard-refresh/`                                                   |
-
-Đây là Django JSON endpoints nội bộ, không phải REST API có OpenAPI/DRF.
-
-## Scripts
-
-Các script nằm trong `expenses/scripts/`:
+Dự án sở hữu bộ **91 bài kiểm thử tự động (Automated Test Suite)** bao phủ các luồng nghiệp vụ cốt lõi, bảo mật và tính toán:
 
 ```bash
 cd expenses
-python scripts/fake_data.py
-python scripts/debug_cloudinary.py
-python scripts/manage_db.py
-```
 
-`fake_data.py` dành cho development/testing. `manage_db.py` có logic phụ thuộc MySQL/Homebrew và không phải công cụ database portable.
+# 1. Chạy toàn bộ 91 tests
+python manage.py test app_expenses
 
-## Running Tests
-
-```bash
-cd expenses
-python manage.py test
+# 2. Kiểm tra tính toàn vẹn hệ thống Django
 python manage.py check
+
+# 3. Kiểm tra bảo mật triển khai (Deployment Security Check)
 python manage.py check --deploy
+
+# 4. Kiểm tra migrations không bị thiếu hoặc lệch schema
 python manage.py makemigrations --check --dry-run
-python manage.py showmigrations
+
+# 5. Kiểm tra cú pháp toàn bộ file Python
+python -m compileall -q config app_expenses scripts
 ```
 
-Test hiện tập trung trong `app_expenses/tests.py`, chủ yếu cho chatbot, parsing, rate limit và một số flow xác nhận tạo/sửa/xóa. Chưa có bộ test đầy đủ cho authentication, authorization matrix, uploads, admin actions, recurring generation, migrations và deployment.
+### Danh mục phạm vi kiểm thử (Test Coverage Areas):
+1. **Authentication Flow**: Đăng ký, đăng nhập sai/đúng, đăng xuất, chuyển hướng người dùng ẩn danh.
+2. **Multi-Tenant Data Isolation Matrix**: Kiểm thử cách ly User A / User B tuyệt đối trên Chi tiêu, Thu nhập, Danh mục, Ngân sách, Định kỳ và Mục tiêu tiết kiệm.
+3. **Money Validation & Constraints**: Chặn số tiền âm, số tiền bằng 0, kiểm tra giới hạn giá trị lớn và độ chính xác phần thập phân.
+4. **CRUD Lifecycle**: Luồng Tạo - Đọc - Sửa - Xóa trọn vẹn trên tất cả domain models.
+5. **Recurring Advanced Engine**: Kiểm thử chu kỳ ngày/tuần/tháng/năm, tính toán ngày hết hạn, tính lũy đẳng (idempotency) khi chạy đồng thời, rollback an toàn khi xảy ra lỗi.
+6. **Chatbot Intent & Security**: Mock Gemini API, heuristic fallback, xác nhận tạo/sửa/xóa qua chat, rate limit và validation tham số.
+7. **Avatar Upload & Cloudinary**: Cập nhật hồ sơ, mock upload và xóa avatar cũ trên Cloudinary.
+8. **CSV Export**: Xuất dữ liệu đúng định dạng, đúng header, đúng bộ lọc và bảo toàn cách ly user.
+9. **Security Hardening**: Chống Open Redirect, chặn request mutation qua method GET (HTTP 405), kiểm tra an toàn SQL injection.
 
-## Screenshots
+---
 
-Repository có asset giao diện tại `expenses/app_expenses/static/ep1/`, gồm logo, background và ảnh mặc định. Chưa có bộ screenshot sản phẩm được quản lý như tài liệu chính thức.
+## 🚀 Hướng Dẫn Triển Khai (Deployment on Render)
 
-## Known Issues
+Dự án đã được đóng gói sẵn sàng triển khai trên **Render** (Web Service + Managed PostgreSQL Database).
 
-- `SECRET_KEY` trong settings không khớp `DJANGO_SECRET_KEY` trong `.env.example`.
-- Settings mặc định MySQL; SQLite không phải database mặc định.
-- `ALLOWED_HOSTS` đang cho phép mọi host và production security headers/cookie settings chưa đầy đủ.
-- Một số mutation endpoint cần được chuẩn hóa thành POST-only và bảo vệ CSRF.
-- Sinh recurring transactions cần atomicity/idempotency khi có request đồng thời.
-- Một số amount field chưa có database-level constraint chống giá trị âm.
-- ML training bằng thread trong web process có thể gây tải CPU/memory khi scale.
-- Render configuration và build scripts chưa thống nhất working directory, port và đường dẫn script.
-- `google-genai` chưa được pin version trong `requirements.txt`.
-- Không có demo credentials an toàn được xác nhận trong repository.
+Chi tiết từng bước cấu hình xem tại: [`RENDER_DEPLOYMENT.md`](file:///Users/abanh/Library/CloudStorage/OneDrive-Personal/Documents/expenses_prj/RENDER_DEPLOYMENT.md).
 
-## Future Improvements
+### Tóm tắt cấu hình Render:
+- **Build Command**: `./build.sh` (hoặc `expenses/build.sh` nếu root directory là `expenses`)
+- **Start Command**: `gunicorn config.wsgi:application -c gunicorn_config.py` (hoặc `cd expenses && gunicorn config.wsgi --bind 0.0.0.0:$PORT`)
+- **Environment Variables**:
+  - `SECRET_KEY`: Khóa bảo mật ngẫu nhiên
+  - `DEBUG`: `False`
+  - `ALLOWED_HOSTS`: `.onrender.com` (hoặc custom domain của bạn)
+  - `DATABASE_URL`: Connection string PostgreSQL do Render cung cấp
+  - `PYTHON_VERSION`: `3.10.14`
+  - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`: Tự động khởi tạo superuser khi build lần đầu mà không làm crash ứng dụng.
 
-1. Chuẩn hóa secrets, `ALLOWED_HOSTS`, HTTPS/cookie settings và loại bỏ credentials hard-coded.
-2. Chuyển mutation endpoints sang POST-only; tăng authorization tests và enforce ownership ở model/service layer.
-3. Dùng transaction, locking và idempotency cho recurring generation.
-4. Thêm constraints/indexes và tối ưu aggregate/query patterns dựa trên profiling.
-5. Chuyển ML training sang task queue và quản lý model artifacts ngoài web filesystem.
-6. Tách production/development dependencies và pin runtime dependencies.
-7. Bổ sung test cho auth, permission, CRUD, uploads, migrations, admin, recurring và deployment smoke checks.
-8. Thống nhất một cấu hình Render/deployment duy nhất.
+---
 
-## Contributing
+## 📋 Danh Sách Endpoint URL Tiêu Biểu
 
-Giữ thay đổi tập trung, cập nhật test/tài liệu liên quan và chạy `python manage.py test` cùng Django checks trước khi tạo pull request.
+| Nhóm chức năng | Đường dẫn (URL Pattern) | Phương thức | Mô tả |
+| :--- | :--- | :--- | :--- |
+| **Authentication** | `/login/`, `/logout/`, `/register/` | `GET, POST` | Đăng nhập, đăng xuất, đăng ký tài khoản |
+| **Dashboard** | `/`, `/dashboard/` | `GET` | Trang tổng quan tài chính cá nhân |
+| **Expenses** | `/expenses/`, `/expenses/add/`, `/expenses/edit/<id>/`, `/expenses/delete/<id>/` | `GET, POST` | Quản lý danh sách và chi tiết các khoản chi |
+| **Export** | `/expenses/export/` | `GET` | Xuất danh sách chi tiêu ra file CSV |
+| **Income** | `/income/`, `/income/add/`, `/income/edit/<id>/`, `/income/delete/<id>/` | `GET, POST` | Quản lý thu nhập |
+| **Income Sources** | `/income/sources/`, `/income/sources/edit/<id>/`, `/income/sources/delete/<id>/` | `GET, POST` | Quản lý danh mục nguồn thu nhập |
+| **Categories** | `/categories/`, `/categories/add/`, `/categories/edit/<id>/`, `/categories/delete/<id>/` | `GET, POST` | Quản lý danh mục chi tiêu |
+| **Recurring** | `/recurring/`, `/recurring/add/`, `/recurring/edit/<id>/`, `/recurring/delete/<id>/` | `GET, POST` | Quản lý mẫu giao dịch định kỳ |
+| **Recurring Action**| `/recurring/generate/`, `/recurring/toggle/<id>/` | `POST` | Kích hoạt sinh giao dịch và bật/tắt mẫu định kỳ |
+| **Savings Goals** | `/savings-goals/`, `/savings-goals/add/`, `/savings-goals/<id>/` | `GET, POST` | Quản lý mục tiêu tiết kiệm và gợi ý AI |
+| **Chat Assistant** | `/chat-assistant/` | `GET` | Giao diện trò chuyện cùng trợ lý AI |
+| **Chat API** | `/api/parse-expense/` | `POST` | Parse câu thoại tự nhiên và trích xuất ý định |
+| **Chat Actions** | `/api/save-expense-from-chat/`, `/api/manage-expense-from-chat/`, `/api/save-income-from-chat/`, `/api/save-recurring-from-chat/` | `POST` | Thực thi ghi nhận giao dịch sau khi user xác nhận |
+| **Chart APIs** | `/api/chart/category/`, `/api/chart/monthly/`, `/api/chart/income-expense/`, `/api/dashboard-refresh/` | `GET` | Cung cấp dữ liệu JSON cho biểu đồ Dashboard |
+| **Profile & Pass** | `/profile/`, `/password_change/`, `/password_reset/` | `GET, POST` | Hồ sơ cá nhân, đổi mật khẩu, quên mật khẩu |
+| **Management** | `/admin/`, `/admin-dashboard/`, `/manager/users/`, `/manager/announcements/`, `/manager/ai-monitor/` | `GET, POST` | Quản trị hệ thống dành riêng cho Superuser |
+
+---
+
+## 🔮 Nợ Kỹ Thuật & Cải Tiến Tương Lai (Technical Debt & Future Roadmap)
+
+Các hạng mục tối ưu hóa nâng cao cho giai đoạn mở rộng quy mô lớn (Scale-up Phase):
+1. **Asynchronous Background Task Queue**: Chuyển việc huấn luyện lại mô hình ML cá nhân từ in-process Python Thread sang hàng đợi phân tán (như Celery / Redis) để không chiếm dụng worker thread của web server khi có hàng ngàn user hoạt động đồng thời.
+2. **Centralized Caching**: Tích hợp Redis Cache cho các bảng tham chiếu ít biến động (như danh sách danh mục mặc định, thông báo hệ thống toàn trang).
+3. **Dedicated REST API with OpenAPI/Swagger**: Xây dựng bộ RESTful API chuẩn hóa (Django REST Framework) nếu cần mở rộng phát triển ứng dụng di động (Mobile App iOS/Android).

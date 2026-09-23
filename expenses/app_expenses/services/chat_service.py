@@ -258,16 +258,16 @@ def create_expense_from_chat(user: User, data: dict) -> Tuple[bool, dict, int]:
         amount = Decimal(str(amount_raw))
         if amount <= 0:
             return False, {'success': False, 'error': 'Số tiền phải lớn hơn 0'}, 400
-    except (TypeError, ValueError, ArithmeticError) as e:
-        return False, {'success': False, 'error': f'Số tiền không hợp lệ: {str(e)}'}, 400
+    except (TypeError, ValueError, ArithmeticError):
+        return False, {'success': False, 'error': 'Số tiền không hợp lệ'}, 400
 
     try:
         if 'T' in date_str:
             expense_date = datetime.fromisoformat(date_str).date()
         else:
             expense_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-    except Exception as e:
-        return False, {'success': False, 'error': f'Ngày tháng không hợp lệ ({date_str}): {str(e)}'}, 400
+    except (ValueError, TypeError):
+        return False, {'success': False, 'error': 'Ngày tháng không hợp lệ'}, 400
 
     category = None
     if category_id:
